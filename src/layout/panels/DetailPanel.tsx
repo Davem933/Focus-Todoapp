@@ -366,11 +366,15 @@ export function DetailPanel({
   }
 
   function getSubtaskUpdate(subtasks: TaskSubtask[]): TaskUpdate {
+    const areAllSubtasksCompleted =
+      subtasks.length > 0 && subtasks.every((subtask) => subtask.completed);
+
     return {
       subtasks,
-      completed:
-        subtasks.length > 0 && subtasks.every((subtask) => subtask.completed)
-          ? true
+      completed: areAllSubtasksCompleted
+        ? true
+        : activeTask.subtasks.length > 0
+          ? false
           : activeTask.completed,
     };
   }

@@ -228,6 +228,36 @@ export async function updateProjectColumn(columnId: string, title: string): Prom
   return mapProjectColumnRow(data as ProjectColumnRow);
 }
 
+export async function archiveProjectColumn(columnId: string): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase neni nakonfigurovany.');
+  }
+
+  const { error } = await supabase
+    .from('project_columns')
+    .delete()
+    .eq('id', columnId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function deleteProjectColumn(columnId: string): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase neni nakonfigurovany.');
+  }
+
+  const { error } = await supabase
+    .from('project_columns')
+    .delete()
+    .eq('id', columnId);
+
+  if (error) {
+    throw error;
+  }
+}
+
 async function ensureDefaultProjectColumns(projectId: string): Promise<ProjectColumn[]> {
   if (!supabase) {
     throw new Error('Supabase neni nakonfigurovany.');

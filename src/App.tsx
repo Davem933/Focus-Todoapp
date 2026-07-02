@@ -846,7 +846,7 @@ export function App() {
         return {
           ...task,
           subtasks,
-          completed: areAllSubtasksCompleted ? true : task.completed,
+          completed: areAllSubtasksCompleted ? true : task.subtasks.length > 0 ? false : task.completed,
         };
       }),
     );
@@ -1304,6 +1304,8 @@ function createCloudSyncSnapshot(lists: TaskList[], tasks: Task[]) {
         teamId: list.teamId ?? null,
       })),
     tasks: tasks.map((task) => ({
+      assigneeId: task.assigneeId,
+      boardColumnKey: task.boardColumnKey,
       id: task.id,
       completed: task.completed,
       dueDate: task.dueDate,
@@ -1317,12 +1319,14 @@ function createCloudSyncSnapshot(lists: TaskList[], tasks: Task[]) {
       listId: task.listId,
       note: task.note,
       priority: task.priority,
+      projectId: task.projectId,
       recurrence: task.recurrence,
       subtasks: task.subtasks.map((subtask) => ({
         id: subtask.id,
         completed: subtask.completed,
         title: subtask.title,
       })),
+      teamId: task.teamId,
       title: task.title,
     })),
   });
@@ -1473,7 +1477,25 @@ function normalizeListName(name: string) {
 }
 
 function normalizeTaskUpdate(task: Task, update: TaskUpdate): Task {
-  const nextTask = { ...task, ...update };
+  const normalizedUpdate: TaskUpdate = { ...update };
+
+  if ("boardColumnKey" in update && update.boardColumnKey) {
+    if (update.boardColumnKey === "done") {
+      normalizedUpdate.completed = true;
+    } else if (task.boardColumnKey === "done" && !("completed" in update)) {
+      normalizedUpdate.completed = false;
+    }
+  }
+
+  if ("completed" in update && typeof update.completed === "boolean" && !("boardColumnKey" in update)) {
+    if (update.completed) {
+      normalizedUpdate.boardColumnKey = "done";
+    } else if (task.boardColumnKey === "done") {
+      normalizedUpdate.boardColumnKey = "todo";
+    }
+  }
+
+  const nextTask = { ...task, ...normalizedUpdate };
 
   if ("dueDate" in update && !update.dueDate) {
     return {

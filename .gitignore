@@ -6,3 +6,6 @@ dist/
 .env.*.local
 _backups/
 _experiments/
+
+.vercel
+.env*
