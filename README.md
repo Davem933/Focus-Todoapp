@@ -1,6 +1,25 @@
 # Focus-Todoapp
 
-Focus Todo app built with Vite, React, Capacitor, and Supabase.
+Focus Todoapp je produktivni task manager zamereny na kazdodenni planovani, soustredeni a tymovou spolupraci. Kombinuje klasicke osobni ukoly se seznamy, detailnimi tasky, fokus rezimem, dashboardem a projektovymi boardy ve stylu kanbanu.
+
+## Co aplikace umi
+
+- Sprava ukolu, seznamu a detailu tasku vcetne poznamek, terminu, priorit, stitku a podukolu.
+- Fokus rezim pro praci na jednom ukolu s navazujicimi doporucenymi kroky.
+- Dashboard a check-in prehledy pro rychly denni stav, overdue ukoly a priority.
+- Projektove nastenky s vlastnimi sloupci, drag and drop presunem karet a spravou sloupcu.
+- Tymove prostory, prirazeni clenu a projektove ukoly navazane na tym.
+- Archivaci tasku a seznamu, cloud sync a notifikace na naplanovane ukoly.
+- PWA a mobilni smerovani pres Capacitor pro web i Android build.
+
+## Technologie
+
+- React 19 + TypeScript
+- Vite 7
+- Supabase pro autentizaci a cloudova data
+- Capacitor pro mobilni shell a lokalni notifikace
+- Lucide React pro ikonky
+- Vercel pro produkcni deployment
 
 ## Development
 
