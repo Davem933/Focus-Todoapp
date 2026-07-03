@@ -10,6 +10,7 @@ import {
   Clock3,
   FolderKanban,
   Download,
+  Home,
   List,
   Moon,
   Pencil,
@@ -73,8 +74,10 @@ type SidebarPanelProps = {
   onRestoreList: (listId: string) => void;
   onDeleteList: (listId: string) => void;
   onToggleTheme: () => void;
+  onOpenWorkspaceHome: () => void;
   onOpenTeamsOverview: () => void;
   onOpenProjectsOverview: () => void;
+  isWorkspaceHomeOpen: boolean;
   isTeamsOverviewOpen: boolean;
   isProjectsOverviewOpen: boolean;
   isMobileDrawer?: boolean;
@@ -129,8 +132,10 @@ export function SidebarPanel({
   onRestoreList,
   onDeleteList,
   onToggleTheme,
+  onOpenWorkspaceHome,
   onOpenTeamsOverview,
   onOpenProjectsOverview,
+  isWorkspaceHomeOpen,
   isTeamsOverviewOpen,
   isProjectsOverviewOpen,
   isMobileDrawer = false,
@@ -554,8 +559,21 @@ export function SidebarPanel({
                   </small>
                 </button>
               </div>
-              {isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen ? (
+              {isTeamWorkspace || isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen ? (
                 <nav className="list-nav workspace-nav" aria-label="Workspace menu">
+                  <button
+                    className="list-nav__item workspace-nav__item"
+                    data-selected={isWorkspaceHomeOpen}
+                    type="button"
+                    onClick={onOpenWorkspaceHome}
+                  >
+                    <span className="list-nav__main">
+                      <span className="workspace-nav__icon" aria-hidden="true">
+                        <Home size={16} strokeWidth={1.9} />
+                      </span>
+                      <span className="list-nav__name">Home</span>
+                    </span>
+                  </button>
                   <button
                     className="list-nav__item workspace-nav__item"
                     data-selected={isTeamsOverviewOpen}

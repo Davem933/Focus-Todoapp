@@ -7,6 +7,7 @@ import { getTodayDateValue } from "../tasks/dateUtils";
 import { DetailPanel } from "./panels/DetailPanel";
 import { ListPanel } from "./panels/ListPanel";
 import { SidebarPanel } from "./panels/SidebarPanel";
+import { WorkspaceHomePanel } from "./panels/WorkspaceHomePanel";
 import type { LayoutMode } from "./layoutTypes";
 import { buildCountsByListId } from "../tasks/taskCounts";
 import { buildCountsByTeamId } from "../teams/teamCounts";
@@ -150,8 +151,11 @@ export function AppShell({
   const [isFocusAssistantOpen, setIsFocusAssistantOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+  const [isWorkspaceHomeOpen, setIsWorkspaceHomeOpen] = useState(false);
   const [isTeamsOverviewOpen, setIsTeamsOverviewOpen] = useState(false);
   const [isProjectsOverviewOpen, setIsProjectsOverviewOpen] = useState(false);
+  const [teamCreateRequestToken, setTeamCreateRequestToken] = useState(0);
+  const [projectCreateRequestToken, setProjectCreateRequestToken] = useState(0);
   const drawerTouchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [recommendationMessage, setRecommendationMessage] = useState<
     string | null
@@ -207,6 +211,12 @@ export function AppShell({
   }, [isMobileLayout]);
 
   useEffect(() => {
+    if (activeTeamId === null) {
+      setIsWorkspaceHomeOpen(false);
+    }
+  }, [activeTeamId]);
+
+  useEffect(() => {
     setRecommendedTaskIndex(0);
     setAssistantTaskIndex(0);
     setRecommendationMessage(null);
@@ -231,6 +241,7 @@ export function AppShell({
   }, [assistantRecommendedTasks.length, assistantTaskIndex]);
 
   function handleSelectList(listId: string) {
+    setIsWorkspaceHomeOpen(false);
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     onSelectList(listId);
@@ -242,6 +253,7 @@ export function AppShell({
   }
 
   function handleSelectWorkspace(teamId: string | null) {
+    setIsWorkspaceHomeOpen(teamId !== null);
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     onSelectWorkspace(teamId);
@@ -299,7 +311,22 @@ export function AppShell({
     setIsCheckInOpen(true);
   }
 
+  function handleOpenWorkspaceHome() {
+    if (!activeTeamId) {
+      return;
+    }
+
+    setIsWorkspaceHomeOpen(true);
+    setIsTeamsOverviewOpen(false);
+    setIsProjectsOverviewOpen(false);
+
+    if (isMobileLayout) {
+      setIsSidebarOpen(false);
+    }
+  }
+
   function handleOpenTeamsOverview() {
+    setIsWorkspaceHomeOpen(false);
     setIsTeamsOverviewOpen(true);
     setIsProjectsOverviewOpen(false);
 
@@ -309,8 +336,31 @@ export function AppShell({
   }
 
   function handleOpenProjectsOverview() {
+    setIsWorkspaceHomeOpen(false);
     setIsProjectsOverviewOpen(true);
     setIsTeamsOverviewOpen(false);
+
+    if (isMobileLayout) {
+      setIsSidebarOpen(false);
+    }
+  }
+
+  function handleOpenTeamCreateFlow() {
+    setIsWorkspaceHomeOpen(false);
+    setIsProjectsOverviewOpen(false);
+    setIsTeamsOverviewOpen(true);
+    setTeamCreateRequestToken((currentValue) => currentValue + 1);
+
+    if (isMobileLayout) {
+      setIsSidebarOpen(false);
+    }
+  }
+
+  function handleOpenProjectCreateFlow() {
+    setIsWorkspaceHomeOpen(false);
+    setIsTeamsOverviewOpen(false);
+    setIsProjectsOverviewOpen(true);
+    setProjectCreateRequestToken((currentValue) => currentValue + 1);
 
     if (isMobileLayout) {
       setIsSidebarOpen(false);
@@ -391,8 +441,10 @@ export function AppShell({
         onRestoreList={onRestoreList}
         onDeleteList={onDeleteList}
         onToggleTheme={onToggleTheme}
+        onOpenWorkspaceHome={handleOpenWorkspaceHome}
         onOpenTeamsOverview={handleOpenTeamsOverview}
         onOpenProjectsOverview={handleOpenProjectsOverview}
+        isWorkspaceHomeOpen={isWorkspaceHomeOpen}
         isTeamsOverviewOpen={isTeamsOverviewOpen}
         isProjectsOverviewOpen={isProjectsOverviewOpen}
         isMobileDrawer={isMobileDrawer}
@@ -483,9 +535,23 @@ export function AppShell({
           ? renderSidebarPanel()
           : null}
         {isPanelVisible(layout.visiblePanels, "list") ? (
-          isTeamsOverviewOpen ? (
+          isWorkspaceHomeOpen && activeTeamId ? (
+            <WorkspaceHomePanel
+              activeTeam={teams.find((team) => team.id === activeTeamId) ?? null}
+              currentUserId={currentUserId}
+              tasks={tasks}
+              onCreateBoard={handleOpenProjectCreateFlow}
+              onCreateTeam={handleOpenTeamCreateFlow}
+              onOpenProjectsOverview={handleOpenProjectsOverview}
+              onOpenTask={(taskId) => {
+                setIsWorkspaceHomeOpen(false);
+                handleSelectTask(taskId);
+              }}
+            />
+          ) : isTeamsOverviewOpen ? (
             <TeamsOverviewPanel
               activeTeamId={activeTeamId}
+              createRequestToken={teamCreateRequestToken}
               currentUserId={currentUserId}
               teams={teams}
               onCreateTeam={onCreateTeam}
@@ -495,6 +561,7 @@ export function AppShell({
           ) : isProjectsOverviewOpen ? (
             <ProjectsOverviewPanel
               activeTeamId={activeTeamId}
+              createRequestToken={projectCreateRequestToken}
               currentUserId={currentUserId}
               tasks={allTasks}
               teams={teams}
@@ -538,7 +605,7 @@ export function AppShell({
           />
           )
         ) : null}
-        {!isTeamsOverviewOpen && !isProjectsOverviewOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
+        {!isWorkspaceHomeOpen && !isTeamsOverviewOpen && !isProjectsOverviewOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
           <DetailPanel
             task={selectedTask}
             lists={lists}
@@ -632,6 +699,7 @@ type CreateTeamDraftMember = {
 
 type TeamsOverviewPanelProps = {
   activeTeamId: string | null;
+  createRequestToken?: number;
   currentUserId: string | null;
   teams: Team[];
   onCreateTeam: (name: string, color?: string | null, description?: string | null) => Promise<Team | null | void>;
@@ -641,6 +709,7 @@ type TeamsOverviewPanelProps = {
 
 function TeamsOverviewPanel({
   activeTeamId,
+  createRequestToken = 0,
   currentUserId,
   teams,
   onCreateTeam,
@@ -689,6 +758,12 @@ function TeamsOverviewPanel({
         : teams[0]?.id ?? null,
     );
   }, [activeTeamId, teams]);
+
+  useEffect(() => {
+    if (createRequestToken > 0) {
+      setIsCreateTeamOpen(true);
+    }
+  }, [createRequestToken]);
 
   useEffect(() => {
     if (!selectedTeamId) {
@@ -1314,6 +1389,7 @@ function TeamsOverviewPanel({
 
 type ProjectsOverviewPanelProps = {
   activeTeamId: string | null;
+  createRequestToken?: number;
   currentUserId: string | null;
   tasks: Task[];
   teams: Team[];
@@ -1324,6 +1400,7 @@ type ProjectsOverviewPanelProps = {
 
 function ProjectsOverviewPanel({
   activeTeamId,
+  createRequestToken = 0,
   currentUserId,
   tasks,
   teams,
@@ -1411,6 +1488,11 @@ function ProjectsOverviewPanel({
     };
   }, [teams]);
 
+  useEffect(() => {
+    if (createRequestToken > 0 && teams.length > 0) {
+      openCreateProject();
+    }
+  }, [createRequestToken, teams.length]);
 
   useEffect(() => {
     if (!selectedProject) {
