@@ -583,7 +583,7 @@ export function DetailPanel({
     if (editingSubtaskId === subtask.id) {
       return (
         <input
-          aria-label={`Upravit subtask ${subtask.title}`}
+          aria-label={`Upravit podúkol ${subtask.title}`}
           autoFocus
           className="subtask-row__edit"
           value={editingSubtaskTitle}
@@ -852,7 +852,7 @@ export function DetailPanel({
             data-empty={task.subtasks.length === 0}
           >
             <div className="detail-section__header">
-              <h3>Subtasky</h3>
+              <h3>Podúkoly</h3>
               {task.subtasks.length > 0 ? (
                 <span>
                   {completedSubtasks.length} / {task.subtasks.length} dokončeno
@@ -879,7 +879,7 @@ export function DetailPanel({
                     />
                     {renderSubtaskTitle(subtask)}
                     <button
-                      aria-label={`Smazat subtask ${subtask.title}`}
+                      aria-label={`Smazat podúkol ${subtask.title}`}
                       className="subtask-row__delete"
                       type="button"
                       onClick={() => handleDeleteSubtask(subtask.id)}

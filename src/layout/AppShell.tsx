@@ -80,6 +80,7 @@ type AppShellProps = {
   selectedTaskId: string | null;
   themeMode: "dark" | "light";
   currentUserId: string | null;
+  isGlobalAdmin: boolean;
   onSelectList: (listId: string) => void;
   onCreateList: (name: string, color?: string | null) => void;
   onRenameList: (listId: string, name: string) => void;
@@ -89,6 +90,7 @@ type AppShellProps = {
   onSelectTask: (taskId: string) => void;
   onCreateTask: (title: string, options?: CreateTaskOptions) => string | null;
   onCreateTeam: (name: string, color?: string | null, description?: string | null) => Promise<Team | null | void>;
+  onDeleteTeam: (teamId: string) => Promise<void>;
   onTeamUpdated: (team: Team) => void;
   onSelectWorkspace: (teamId: string | null) => void;
   activeTeamId: string | null;
@@ -108,42 +110,45 @@ type AppShellProps = {
   onToggleTheme: () => void;
 };
 
-export function AppShell({
-  tasks,
-  allTasks,
-  lists,
-  allLists,
-  activeListId,
-  selectedTaskId,
-  themeMode,
-  currentUserId,
-  onSelectList,
-  onCreateList,
-  onRenameList,
-  onArchiveList,
-  onRestoreList,
-  onDeleteList,
-  onSelectTask,
-  onCreateTask,
-  onCreateTeam,
-  onTeamUpdated,
-  onSelectWorkspace,
-  activeTeamId,
-  teams,
-  onUpdateTask,
-  onArchiveTask,
-  onDeleteTask,
-  deletedTaskUndo,
-  onUndoDeleteTask,
-  archivedTaskUndo,
-  onUndoArchiveTask,
-  missedNotificationTask,
-  onOpenMissedNotificationTask,
-  onDismissMissedNotification,
-  onStartFocus,
-  onClearTaskSelection,
-  onToggleTheme,
-}: AppShellProps) {
+export function AppShell(props: AppShellProps) {
+  const {
+    tasks,
+    allTasks,
+    lists,
+    allLists,
+    activeListId,
+    selectedTaskId,
+    themeMode,
+    isGlobalAdmin,
+    currentUserId,
+    onSelectList,
+    onCreateList,
+    onRenameList,
+    onArchiveList,
+    onRestoreList,
+    onDeleteList,
+    onSelectTask,
+    onCreateTask,
+    onCreateTeam,
+    onDeleteTeam,
+    onTeamUpdated,
+    onSelectWorkspace,
+    activeTeamId,
+    teams,
+    onUpdateTask,
+    onArchiveTask,
+    onDeleteTask,
+    deletedTaskUndo,
+    onUndoDeleteTask,
+    archivedTaskUndo,
+    onUndoArchiveTask,
+    missedNotificationTask,
+    onOpenMissedNotificationTask,
+    onDismissMissedNotification,
+    onStartFocus,
+    onClearTaskSelection,
+    onToggleTheme,
+  } = props;
   const layout = useAppLayout({
     selectedTaskId,
   });
@@ -164,6 +169,10 @@ export function AppShell({
   const isMobileLayout =
     layout.mode === "mobile-list-only" || layout.mode === "mobile-detail-only";
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
+
+  function handleDeleteTaskAction(taskId: string) {
+    onDeleteTask(taskId);
+  }
   const globalFocusScope = getFocusScope(lists, activeListId, "global");
   const listFocusScope = getFocusScope(lists, activeListId, "list");
   const listVisibleTasks = getVisibleTasksForList(tasks, lists, activeListId);
@@ -266,7 +275,7 @@ export function AppShell({
 
   function handleStartRecommendedTask() {
     if (!recommendedTaskPreview) {
-      setRecommendationMessage("Nem� ��dn� aktivn� �koly");
+      setRecommendationMessage("Nem?? ??dn? aktivn? ?koly");
       return;
     }
 
@@ -276,7 +285,7 @@ export function AppShell({
 
   function handleSkipRecommendedTask() {
     if (recommendedTaskIndex + 1 >= currentRecommendedTasks.length) {
-      setRecommendationMessage("Tohle byl nejlep�� �kol");
+      setRecommendationMessage("Tohle byl nejlep?? ?kol");
       return;
     }
 
@@ -316,6 +325,7 @@ export function AppShell({
       return;
     }
 
+    onClearTaskSelection();
     setIsWorkspaceHomeOpen(true);
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
@@ -326,6 +336,7 @@ export function AppShell({
   }
 
   function handleOpenTeamsOverview() {
+    onClearTaskSelection();
     setIsWorkspaceHomeOpen(false);
     setIsTeamsOverviewOpen(true);
     setIsProjectsOverviewOpen(false);
@@ -336,6 +347,7 @@ export function AppShell({
   }
 
   function handleOpenProjectsOverview() {
+    onClearTaskSelection();
     setIsWorkspaceHomeOpen(false);
     setIsProjectsOverviewOpen(true);
     setIsTeamsOverviewOpen(false);
@@ -381,7 +393,7 @@ export function AppShell({
 
   function handleStartRecommendedTaskFromAssistant() {
     if (!assistantRecommendation) {
-      setRecommendationMessage("Nem� ��dn� aktivn� �koly");
+      setRecommendationMessage("Nem?? ??dn? aktivn? ?koly");
       return;
     }
 
@@ -430,6 +442,7 @@ export function AppShell({
         activeListId={activeListId}
         activeTeamId={activeTeamId}
         teams={teams}
+        isGlobalAdmin={isGlobalAdmin}
         themeMode={themeMode}
         currentUserId={currentUserId}
         onSelectList={handleSelectList}
@@ -491,16 +504,16 @@ export function AppShell({
         <header className="app-shell__topbar">
           <button
             className="app-shell__menu-button"
-            aria-label="Otev��t seznamy"
+            aria-label="Otev??t seznamy"
             type="button"
             onClick={() => setIsSidebarOpen(true)}
           >
             <MoreVertical aria-hidden="true" size={16} />
           </button>
-          <div className="app-shell__topbar-actions" aria-label="Rychl� akce">
+          <div className="app-shell__topbar-actions" aria-label="Rychl? akce">
             <button
               className="app-shell__topbar-action"
-              aria-label="Otev��t asistenta"
+              aria-label="Otev??t asistenta"
               title="Asistent"
               type="button"
               onClick={handleOpenFocusAssistant}
@@ -509,7 +522,7 @@ export function AppShell({
             </button>
             <button
               className="app-shell__topbar-action"
-              aria-label="Otev��t dashboard"
+              aria-label="Otev??t dashboard"
               title="Dashboard"
               type="button"
               onClick={handleOpenDashboard}
@@ -518,7 +531,7 @@ export function AppShell({
             </button>
             <button
               className="app-shell__topbar-action"
-              aria-label="Otev��t check-in"
+              aria-label="Otev??t check-in"
               data-active={checkInSummary.isActive ? "true" : "false"}
               title="Check-in"
               type="button"
@@ -530,7 +543,7 @@ export function AppShell({
         </header>
       ) : null}
 
-      <main className="app-shell__main" aria-label="Hlavn� rozvr�en� aplikace">
+      <main className="app-shell__main" aria-label="Hlavn? rozvr?en? aplikace">
         {!isMobileLayout && isPanelVisible(layout.visiblePanels, "sidebar")
           ? renderSidebarPanel()
           : null}
@@ -555,6 +568,7 @@ export function AppShell({
               currentUserId={currentUserId}
               teams={teams}
               onCreateTeam={onCreateTeam}
+              onDeleteTeam={onDeleteTeam}
               onOpenTeamWorkspace={handleSelectWorkspace}
               onTeamUpdated={onTeamUpdated}
             />
@@ -567,6 +581,7 @@ export function AppShell({
               teams={teams}
               onCreateTask={onCreateTask}
               onUpdateTask={onUpdateTask}
+              onDeleteTask={onDeleteTask}
               onOpenTask={(taskId) => {
                 setIsProjectsOverviewOpen(false);
                 handleSelectTask(taskId);
@@ -600,7 +615,7 @@ export function AppShell({
             }
             onUpdateTask={onUpdateTask}
             onArchiveTask={onArchiveTask}
-            onDeleteTask={onDeleteTask}
+            onDeleteTask={handleDeleteTaskAction}
             onMoveTask={(taskId, listId) => onUpdateTask(taskId, { listId })}
           />
           )
@@ -612,20 +627,20 @@ export function AppShell({
             onClose={onClearTaskSelection}
             onUpdateTask={onUpdateTask}
             onArchiveTask={onArchiveTask}
-            onDeleteTask={onDeleteTask}
+            onDeleteTask={handleDeleteTaskAction}
             onStartFocus={onStartFocus}
           />
         ) : null}
       </main>
       {deletedTaskUndo || archivedTaskUndo ? (
         <div className="app-toast" role="status">
-          <span>{deletedTaskUndo ? "�kol smaz�n" : "�kol archivov�n"}</span>
-          <span aria-hidden="true">�</span>
+          <span>{deletedTaskUndo ? "?kol smaz?n" : "?kol archivov?n"}</span>
+          <span aria-hidden="true">?</span>
           <button
             type="button"
             onClick={deletedTaskUndo ? onUndoDeleteTask : onUndoArchiveTask}
           >
-            Zp�t
+            Zp?t
           </button>
         </div>
       ) : null}
@@ -633,7 +648,7 @@ export function AppShell({
         <div className="sidebar-drawer" role="presentation">
           <button
             className="sidebar-drawer__backdrop"
-            aria-label="Zav��t seznamy"
+            aria-label="Zav??t seznamy"
             type="button"
             onClick={() => setIsSidebarOpen(false)}
           />
@@ -646,7 +661,7 @@ export function AppShell({
           >
             <button
               className="sidebar-drawer__close"
-              aria-label="Zav��t seznamy"
+              aria-label="Zav??t seznamy"
               type="button"
               onClick={() => setIsSidebarOpen(false)}
             >
@@ -703,6 +718,7 @@ type TeamsOverviewPanelProps = {
   currentUserId: string | null;
   teams: Team[];
   onCreateTeam: (name: string, color?: string | null, description?: string | null) => Promise<Team | null | void>;
+  onDeleteTeam: (teamId: string) => Promise<void>;
   onOpenTeamWorkspace: (teamId: string | null) => void;
   onTeamUpdated: (team: Team) => void;
 };
@@ -713,6 +729,7 @@ function TeamsOverviewPanel({
   currentUserId,
   teams,
   onCreateTeam,
+  onDeleteTeam,
   onOpenTeamWorkspace,
   onTeamUpdated,
 }: TeamsOverviewPanelProps) {
@@ -1065,22 +1082,85 @@ function TeamsOverviewPanel({
     }
   }
 
+  async function handleDeleteTeamAction() {
+    if (!selectedTeam || !canManageSelectedTeam || isLoading) {
+      return;
+    }
+
+    const shouldDelete = window.confirm(
+      `Smazat tým ${selectedTeam.name}? Smažou se i jeho týmové seznamy, úkoly a nástěnky.`,
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await onDeleteTeam(selectedTeam.id);
+      setIsInviteOpen(false);
+      setMembers([]);
+      setInvites([]);
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "T�m se nepoda�ilo smazat.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+  async function handleDeleteSpecificTeam(team: Team) {
+    if (!currentUserId || team.ownerId !== currentUserId || isLoading) {
+      return;
+    }
+
+    const shouldDelete = window.confirm(
+      `Smazat tým ${team.name}? Smažou se i jeho týmové seznamy, úkoly a nástěnky.`,
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await onDeleteTeam(team.id);
+      setIsInviteOpen(false);
+      setMembers([]);
+      setInvites([]);
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Tým se nepodařilo smazat.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   const adminCount = members.filter((member) => isTeamAdminRole(member.role)).length;
   const openInviteCount = invites.length;
   const totalWorkspacePeople = members.length + openInviteCount;
   const selectedTeamMemberCount = members.length;
 
   return (
-    <section className="app-panel teams-overview" aria-label="Teams overview">
+    <section className="app-panel teams-overview" aria-label="Přehled týmů">
       <div className="teams-overview__header">
         <div>
-          <h2>Team Management</h2>
-          <p>Spravuj role, pozv�nky a �leny pracovn�ho prostoru.</p>
+          <h2>Správa týmů</h2>
+          <p>Spravuj role, pozvánky a členy pracovního prostoru.</p>
         </div>
         <div className="teams-overview__actions">
           <button type="button" onClick={openCreateTeamFlow}>
             <UserPlus aria-hidden="true" size={16} />
-            <span>Create Team</span>
+            <span>Vytvořit tým</span>
           </button>
           <button
             type="button"
@@ -1088,23 +1168,23 @@ function TeamsOverviewPanel({
             onClick={() => setIsInviteOpen((isOpen) => !isOpen)}
           >
             <MailPlus aria-hidden="true" size={16} />
-            <span>Invite Member</span>
+            <span>Pozvat člena</span>
           </button>
         </div>
       </div>
 
-      <div className="teams-overview__metrics" aria-label="Team metrics">
-        <TeamMetricCard label="Total members" value={totalWorkspacePeople} tone="purple" />
-        <TeamMetricCard label="Active members" value={selectedTeamMemberCount} tone="mint" />
-        <TeamMetricCard label="Admin roles" value={adminCount} tone="slate" />
-        <TeamMetricCard label="Open invites" value={openInviteCount} tone="slate" />
+      <div className="teams-overview__metrics" aria-label="Metriky týmu">
+        <TeamMetricCard label="Celkem členů" value={totalWorkspacePeople} tone="purple" />
+        <TeamMetricCard label="Aktivní členové" value={selectedTeamMemberCount} tone="mint" />
+        <TeamMetricCard label="Správci" value={adminCount} tone="slate" />
+        <TeamMetricCard label="Otevřené pozvánky" value={openInviteCount} tone="slate" />
       </div>
 
 
       {isInviteOpen && selectedTeam ? (
         <form className="teams-overview__inline-form" onSubmit={handleInviteMember}>
           <label>
-            <span>Email �lena</span>
+            <span>E-mail člena</span>
             <input
               autoComplete="email"
               inputMode="email"
@@ -1124,31 +1204,40 @@ function TeamsOverviewPanel({
         <div className="teams-overview__members-card">
           <div className="teams-overview__card-head">
             <div>
-              <h3>Active Members</h3>
+              <h3>Členové týmu</h3>
             </div>
             <button
               className="teams-overview__icon-button"
               type="button"
-              aria-label="Upravit tym"
+              aria-label="Upravit tým"
               disabled={!selectedTeam || !canManageSelectedTeam}
               onClick={openEditTeamFlow}
             >
               <Pencil aria-hidden="true" size={16} />
             </button>
+            <button
+              className="teams-overview__icon-button"
+              type="button"
+              aria-label="Smazat tým"
+              disabled={!selectedTeam || !canManageSelectedTeam || isLoading}
+              onClick={() => void handleDeleteTeamAction()}
+            >
+              <Trash2 aria-hidden="true" size={16} />
+            </button>
           </div>
 
-          <div className="teams-overview__table" role="table" aria-label="�lenov? t?mu">
+          <div className="teams-overview__table" role="table" aria-label="Členové týmu">
             <div className="teams-overview__table-row teams-overview__table-row--head" role="row">
-              <span role="columnheader">Member</span>
+              <span role="columnheader">Člen</span>
               <span role="columnheader">Role</span>
               <span role="columnheader">Status</span>
-              <span role="columnheader">Actions</span>
+              <span role="columnheader">Akce</span>
             </div>
             {isLoading && members.length === 0 && invites.length === 0 ? (
-              <p className="teams-overview__empty">Na??t?m �leny...</p>
+              <p className="teams-overview__empty">Načítám členy...</p>
             ) : null}
             {!isLoading && members.length === 0 && invites.length === 0 ? (
-              <p className="teams-overview__empty">Vybran? t?m zat?m nem? ??dn? �leny ani pozv?nky.</p>
+              <p className="teams-overview__empty">Vybraný tým zatím nemá žádné členy ani pozvánky.</p>
             ) : null}
             {members.map((member) => {
               const memberIsAdmin = isTeamAdminRole(member.role);
@@ -1167,7 +1256,7 @@ function TeamsOverviewPanel({
                   <span role="cell" data-role={memberIsAdmin ? "admin" : "member"}>
                     {getTeamRoleLabel(member.role)}
                   </span>
-                  <span role="cell" data-status="active">Active</span>
+                  <span role="cell" data-status="active">Aktivní</span>
                   <span className="teams-overview__row-actions" role="cell">
                     {canManageSelectedTeam ? (
                       <>
@@ -1189,7 +1278,7 @@ function TeamsOverviewPanel({
                         </button>
                       </>
                     ) : (
-                      <small>Jen admin</small>
+                      <small>Jen správce</small>
                     )}
                   </span>
                 </div>
@@ -1198,31 +1287,43 @@ function TeamsOverviewPanel({
           </div>
         </div>
 
-        <aside className="teams-overview__side-stack" aria-label="Teams sidebar">
+        <aside className="teams-overview__side-stack" aria-label="Postranní panel týmů">
           <section className="teams-overview__side-card">
             <div className="teams-overview__card-head">
               <div>
-                <h3>Teams</h3>
-                <p>Vyber pracovni prostor</p>
+                <h3>Týmy</h3>
+                <p>Vyber pracovní prostor</p>
               </div>
             </div>
             <div className="teams-overview__team-list">
               {teams.length > 0 ? (
                 teams.map((team) => (
-                  <button
-                    className="teams-overview__team-card"
-                    data-selected={team.id === selectedTeamId}
-                    key={team.id}
-                    style={{ "--team-color": team.color ?? "#6d5dfc" } as CSSProperties}
-                    type="button"
-                    onClick={() => setSelectedTeamId(team.id)}
-                  >
-                    <span aria-hidden="true" />
-                    <strong>{team.name}</strong>
-                  </button>
+                  <div className="teams-overview__team-row" key={team.id}>
+                    <button
+                      className="teams-overview__team-card"
+                      data-selected={team.id === selectedTeamId}
+                      style={{ "--team-color": team.color ?? "#6d5dfc" } as CSSProperties}
+                      type="button"
+                      onClick={() => setSelectedTeamId(team.id)}
+                    >
+                      <span aria-hidden="true" />
+                      <strong>{team.name}</strong>
+                    </button>
+                    {currentUserId && team.ownerId === currentUserId ? (
+                      <button
+                        className="teams-overview__icon-button teams-overview__team-delete"
+                        type="button"
+                        aria-label={`Smazat tým ${team.name}`}
+                        disabled={isLoading}
+                        onClick={() => void handleDeleteSpecificTeam(team)}
+                      >
+                        <X aria-hidden="true" size={14} />
+                      </button>
+                    ) : null}
+                  </div>
                 ))
               ) : (
-                <p className="teams-overview__empty">Zat�m nem� ��dn� t�m.</p>
+                <p className="teams-overview__empty">Zatím nemáš žádné týmy.</p>
               )}
             </div>
           </section>
@@ -1230,8 +1331,8 @@ function TeamsOverviewPanel({
           <section className="teams-overview__side-card">
             <div className="teams-overview__card-head">
               <div>
-                <h3>Pending Invites</h3>
-                <p>{openInviteCount} �ek�</p>
+                <h3>Čekající pozvánky</h3>
+                <p>{openInviteCount === 1 ? "1 čekající pozvánka" : `${openInviteCount} čekajících pozvánek`}</p>
               </div>
             </div>
             <div className="teams-overview__invite-list">
@@ -1243,12 +1344,12 @@ function TeamsOverviewPanel({
                     </span>
                     <span>
                       <strong>{invite.email}</strong>
-                      <small>�ek� na registraci</small>
+                      <small>Čeká na registraci</small>
                     </span>
                   </div>
                 ))
               ) : (
-                <p className="teams-overview__empty">��dn� otev�en� pozv�nky.</p>
+                <p className="teams-overview__empty">Žádné otevřené pozvánky.</p>
               )}
             </div>
           </section>
@@ -1259,7 +1360,7 @@ function TeamsOverviewPanel({
         <div className="team-create-flow" role="presentation">
           <button
             className="team-create-flow__backdrop"
-            aria-label="Zavrit vytvoreni tymu"
+            aria-label="Zavřít vytváření týmu"
             type="button"
             onClick={closeCreateTeamFlow}
           />
@@ -1272,13 +1373,13 @@ function TeamsOverviewPanel({
           >
             <div className="team-create-flow__header">
               <div>
-                <span>{editingTeamId ? "Team Settings" : "Create New Team"}</span>
-                <h2 id="team-create-title">{editingTeamId ? "Edit Team Workspace" : "Initialize Your Squad"}</h2>
-                <p>{editingTeamId ? "Uprav misi tymu a dopln cleny kdykoliv pozdeji." : "Definuj tym, nastav zakladni kontext a rovnou pridej registrovane cleny."}</p>
+                <span>{editingTeamId ? "Nastavení týmu" : "Vytvořit nový tým"}</span>
+                <h2 id="team-create-title">{editingTeamId ? "Upravit tým" : "Vytvořit tým"}</h2>
+                <p>{editingTeamId ? "Uprav zaměření týmu a doplň členy kdykoliv později." : "Definuj tým, nastav základní kontext a rovnou přidej registrované členy."}</p>
               </div>
               <button
                 className="team-create-flow__close"
-                aria-label="Zavrit"
+                aria-label="Zavřít"
                 type="button"
                 onClick={closeCreateTeamFlow}
               >
@@ -1288,21 +1389,21 @@ function TeamsOverviewPanel({
 
             <div className="team-create-flow__grid">
               <section className="team-create-flow__card">
-                <h3>Team Identity</h3>
+                <h3>Identita týmu</h3>
                 <label className="team-create-flow__field">
-                  <span>Team name</span>
+                  <span>Název týmu</span>
                   <input
                     autoFocus
                     maxLength={60}
-                    placeholder="napr. Produktovy tym"
+                    placeholder="např. Produktový tým"
                     value={newTeamName}
                     onChange={(event) => setNewTeamName(event.currentTarget.value)}
                   />
                 </label>
                 <label className="team-create-flow__field">
-                  <span>Focus & mission</span>
+                  <span>Zaměření a mise</span>
                   <textarea
-                    placeholder="Strucne popis, k cemu tym slouzi."
+                    placeholder="Stručně popiš, k čemu tým slouží."
                     rows={4}
                     value={newTeamMission}
                     onChange={(event) => setNewTeamMission(event.currentTarget.value)}
@@ -1311,10 +1412,10 @@ function TeamsOverviewPanel({
               </section>
 
               <section className="team-create-flow__card team-create-flow__deploy">
-                <h3>Deploy Members</h3>
+                <h3>Přidat členy</h3>
                 <div className="team-create-flow__member-add">
                   <input
-                    aria-label="Email clena"
+                    aria-label="E-mail člena"
                     autoComplete="email"
                     inputMode="email"
                     placeholder="kolega@firma.cz"
@@ -1323,20 +1424,20 @@ function TeamsOverviewPanel({
                     onChange={(event) => setNewTeamMemberEmail(event.currentTarget.value)}
                   />
                   <select
-                    aria-label="Role clena"
+                    aria-label="Role člena"
                     value={newTeamMemberRole}
                     onChange={(event) =>
                       setNewTeamMemberRole(event.currentTarget.value as "admin" | "member")
                     }
                   >
-                    <option value="member">Clen</option>
+                    <option value="member">Člen</option>
                     <option value="admin">Admin</option>
                   </select>
                   <button type="button" onClick={handleAddDraftTeamMember} disabled={!trimmedNewTeamMemberEmail}>
                     +
                   </button>
                 </div>
-                <div className="team-create-flow__staging-title">Staging invitations</div>
+                <div className="team-create-flow__staging-title">Připravené pozvánky</div>
                 <div className="team-create-flow__draft-list">
                   {newTeamMembers.length > 0 ? (
                     newTeamMembers.map((member) => (
@@ -1356,7 +1457,7 @@ function TeamsOverviewPanel({
                               )
                             }
                           >
-                            <option value="member">Clen</option>
+                            <option value="member">Člen</option>
                             <option value="admin">Admin</option>
                           </select>
                         </span>
@@ -1368,14 +1469,14 @@ function TeamsOverviewPanel({
                       </div>
                     ))
                   ) : (
-                    <p className="team-create-flow__empty">Cleny muzes pridat hned, nebo pozdeji v Teams.</p>
+                    <p className="team-create-flow__empty">Členy můžeš přidat hned, nebo později v týmu.</p>
                   )}
                 </div>
                 <button className="team-create-flow__submit" type="submit" disabled={!trimmedNewTeamName || isLoading}>
-                  {editingTeamId ? "Save Team" : "Create Team"}
+                  {editingTeamId ? "Uložit tým" : "Vytvořit tým"}
                 </button>
                 <button className="team-create-flow__cancel" type="button" onClick={closeCreateTeamFlow}>
-                  Cancel
+                  Zrušit
                 </button>
               </section>
             </div>
@@ -1396,8 +1497,8 @@ type ProjectsOverviewPanelProps = {
   onCreateTask: (title: string, options?: CreateTaskOptions) => string | null;
   onUpdateTask: (taskId: string, update: TaskUpdate) => void;
   onOpenTask: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
 };
-
 function ProjectsOverviewPanel({
   activeTeamId,
   createRequestToken = 0,
@@ -1407,6 +1508,7 @@ function ProjectsOverviewPanel({
   onCreateTask,
   onUpdateTask,
   onOpenTask,
+  onDeleteTask,
 }: ProjectsOverviewPanelProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -1994,6 +2096,7 @@ function ProjectsOverviewPanel({
           onCreateTask={handleCreateProjectTask}
           onArchiveColumn={handleArchiveProjectColumn}
           onChangeOpenColumnMenuId={setOpenColumnMenuId}
+          onDeleteTask={onDeleteTask}
           onDeleteColumn={handleDeleteProjectColumn}
           onEditProject={() => openEditProject(selectedProject)}
           onOpenTask={handleOpenProjectCard}
@@ -2004,7 +2107,7 @@ function ProjectsOverviewPanel({
         />
         {cardComposerColumnKey ? (
           <ProjectCardComposerModal
-            actionLabel={cardComposerTaskId ? "Ulozit kartu" : "Add Card"}
+            actionLabel={cardComposerTaskId ? "Ulo?it kartu" : "Add Card"}
             assigneeId={cardComposerAssigneeId}
             columnTitle={composerColumn?.title ?? "Sloupec"}
             dueDate={cardComposerDueDate}
@@ -2038,11 +2141,11 @@ function ProjectsOverviewPanel({
   }
 
   return (
-    <section className="app-panel teams-overview projects-overview" aria-label="Nastenky overview">
+    <section className="app-panel teams-overview projects-overview" aria-label="Přehled nástěnk">
       <div className="teams-overview__header">
         <div>
-          <h2>Nastenky</h2>
-          <p>Vytvor tymove nastenky a posouvej praci ve sloupcich.</p>
+          <h2>Nástěnky</h2>
+          <p>Vytvoř týmové nástěnky a posouvej práci ve sloupcích.</p>
         </div>
         <div className="teams-overview__actions">
           <button
@@ -2051,15 +2154,15 @@ function ProjectsOverviewPanel({
             onClick={openCreateProject}
           >
             <FolderKanban aria-hidden="true" size={16} />
-            <span>Vytvorit nastenku</span>
+            <span>Vytvořit nástěnku</span>
           </button>
         </div>
       </div>
 
-      <div className="teams-overview__metrics" aria-label="Nastenky metrics">
-        <TeamMetricCard label="Nastenky" value={projects.length} tone="purple" />
-        <TeamMetricCard label="Aktivni" value={activeProjects} tone="mint" />
-        <TeamMetricCard label="S terminem" value={plannedProjects} tone="slate" />
+      <div className="teams-overview__metrics" aria-label="Metriky nástěnek">
+        <TeamMetricCard label="Nástěnky" value={projects.length} tone="purple" />
+        <TeamMetricCard label="Aktivní" value={activeProjects} tone="mint" />
+        <TeamMetricCard label="S termínem" value={plannedProjects} tone="slate" />
         <TeamMetricCard label="Hotovo" value={completedProjects} tone="slate" />
       </div>
 
@@ -2067,12 +2170,12 @@ function ProjectsOverviewPanel({
 
       <div className="projects-overview__grid">
         {isLoading && projects.length === 0 ? (
-          <p className="teams-overview__empty projects-overview__empty">Nacitam nastenky...</p>
+          <p className="teams-overview__empty projects-overview__empty">Načítám nástěnky...</p>
         ) : null}
         {!isLoading && projects.length === 0 ? (
           <div className="projects-overview__empty-card">
-            <strong>Zatim nemas zadnou nastenku</strong>
-            <span>Vytvor nastenku, prirad ji tymu a dej praci jasny tok.</span>
+            <strong>Zatím nemáš žádnou nástěnku</strong>
+            <span>Vytvoř nástěnku, přiřaď ji týmu a dej práci jasný tok.</span>
           </div>
         ) : null}
         {projects.map((project) => {
@@ -2094,7 +2197,7 @@ function ProjectsOverviewPanel({
               }}
             >
               <div className="projects-overview__card-header">
-                <span className="projects-overview__team-pill">{projectTeam?.name ?? "Tym"}</span>
+                <span className="projects-overview__team-pill">{projectTeam?.name ?? "Tým"}</span>
                 <span className="projects-overview__status">{getProjectStatusLabel(project.status)}</span>
               </div>
               <h3>{project.name}</h3>
@@ -2103,14 +2206,14 @@ function ProjectsOverviewPanel({
                 <span>{dateRange}</span>
                 <span className="projects-overview__card-actions">
                   <button
-                    aria-label={"Upravit nastenku " + project.name}
+                    aria-label={"Upravit nástěnku " + project.name}
                     type="button"
                     onClick={(event) => { event.stopPropagation(); openEditProject(project); }}
                   >
                     <Pencil aria-hidden="true" size={14} />
                   </button>
                   <button
-                    aria-label={"Smazat nastenku " + project.name}
+                    aria-label={"Smazat nástěnku " + project.name}
                     type="button"
                     onClick={(event) => { event.stopPropagation(); void handleDeleteProject(project); }}
                   >
@@ -2127,7 +2230,7 @@ function ProjectsOverviewPanel({
         <div className="team-create-flow" role="presentation">
           <button
             className="team-create-flow__backdrop"
-            aria-label="Zavrit vytvoreni nastenky"
+            aria-label="Zavřít vytváření nástěnky"
             type="button"
             onClick={closeCreateProject}
           />
@@ -2140,13 +2243,13 @@ function ProjectsOverviewPanel({
           >
             <div className="team-create-flow__header">
               <div>
-                <span>{editingProjectId ? "Upravit nastenku" : "Vytvorit nastenku"}</span>
-                <h2 id="nastenka-create-title">{editingProjectId ? "Upravit nastenku" : "Nova nastenka"}</h2>
-                <p>{editingProjectId ? "Uprav cil, termin a tym nastenky." : "Nastav cil, casovy ramec a tym, ktery bude na nastence pracovat."}</p>
+                <span>{editingProjectId ? "Upravit nástěnku" : "Vytvořit nástěnku"}</span>
+                <h2 id="nastenka-create-title">{editingProjectId ? "Upravit nástěnku" : "Nová nástěnka"}</h2>
+                <p>{editingProjectId ? "Uprav cíl, termín a tým nástěnky." : "Nastav cíl, časový rámec a tým, který bude na nástěnce pracovat."}</p>
               </div>
               <button
                 className="team-create-flow__close"
-                aria-label="Zavrit"
+                aria-label="Zavřít"
                 type="button"
                 onClick={closeCreateProject}
               >
@@ -2156,13 +2259,13 @@ function ProjectsOverviewPanel({
 
             <div className="team-create-flow__grid">
               <section className="team-create-flow__card">
-                <h3>Nastenka</h3>
+                <h3>Nástěnka</h3>
                 <label className="team-create-flow__field">
-                  <span>Nazev nastenky</span>
+                  <span>Název nástěnky</span>
                   <input
                     autoFocus
                     maxLength={80}
-                    placeholder="napr. Redesign klientsk? z?ny"
+                    placeholder="např. Redesign klientské zóny"
                     value={projectName}
                     onChange={(event) => setProjectName(event.currentTarget.value)}
                   />
@@ -2170,7 +2273,7 @@ function ProjectsOverviewPanel({
                 <label className="team-create-flow__field">
                   <span>Popis / mise</span>
                   <textarea
-                    placeholder="Co ma tahle nastenka pomoct dorucit?"
+                    placeholder="Co má tahle nástěnka pomoct doručit?"
                     rows={4}
                     value={projectDescription}
                     onChange={(event) => setProjectDescription(event.currentTarget.value)}
@@ -2179,9 +2282,9 @@ function ProjectsOverviewPanel({
               </section>
 
               <section className="team-create-flow__card team-create-flow__deploy">
-                <h3>Scope</h3>
+                <h3>Rozsah</h3>
                 <label className="team-create-flow__field">
-                  <span>Priradit tymu</span>
+                  <span>Přiřadit týmu</span>
                   <select
                     value={projectTeamId}
                     onChange={(event) => setProjectTeamId(event.currentTarget.value)}
@@ -2200,7 +2303,7 @@ function ProjectsOverviewPanel({
                     value={projectStatus}
                     onChange={(event) => setProjectStatus(event.currentTarget.value as Project["status"])}
                   >
-                    <option value="active">Aktivni</option>
+                    <option value="active">Aktivní</option>
                     <option value="paused">Pozastaveno</option>
                     <option value="completed">Hotovo</option>
                   </select>
@@ -2224,10 +2327,10 @@ function ProjectsOverviewPanel({
                   </label>
                 </div>
                 <button className="team-create-flow__submit" type="submit" disabled={!trimmedProjectName || !projectTeamId || isLoading}>
-                  {editingProjectId ? "Ulozit nastenku" : "Vytvorit nastenku"}
+                  {editingProjectId ? "Uložit nástěnku" : "Vytvořit nástěnku"}
                 </button>
                 <button className="team-create-flow__cancel" type="button" onClick={closeCreateProject}>
-                  Cancel
+                  Zrušit
                 </button>
               </section>
             </div>
@@ -2302,7 +2405,7 @@ function ProjectCardComposerModal({
       <button
         className="board-card-modal__backdrop"
         type="button"
-        aria-label="Zavrit vytvoreni karty"
+        aria-label="Zavřít vytváření karty"
         onClick={onClose}
       />
       <form
@@ -2330,21 +2433,21 @@ function ProjectCardComposerModal({
       >
         <header className="board-card-modal__header">
           <div>
-            <h2 id="board-card-modal-title">{isEditing ? "Edit Task" : "Create New Task"}</h2>
-            <p>{isEditing ? "Uprav kartu v boardu " + projectName + "." : "Add a new card to the " + projectName + " board."}</p>
+            <h2 id="board-card-modal-title">{isEditing ? "Upravit kartu" : "Vytvořit kartu"}</h2>
+            <p>{isEditing ? "Uprav kartu na nástěnce " + projectName + "." : "Přidej novou kartu do nástěnky " + projectName + "."}</p>
           </div>
-          <button className="board-card-modal__close" type="button" aria-label="Zavrit" onClick={onClose}>
+          <button className="board-card-modal__close" type="button" aria-label="Zavřít" onClick={onClose}>
             <X size={18} />
           </button>
         </header>
 
         <div className="board-card-modal__body">
           <label className="board-card-modal__field board-card-modal__field--full">
-            <span>Task title</span>
+            <span>Název karty</span>
             <input
               autoFocus
               maxLength={120}
-              placeholder="e.g., Implement OAuth Flow"
+              placeholder="Např. Implementovat OAuth flow"
               value={title}
               onChange={(event) => onTitleChange(event.currentTarget.value)}
             />
@@ -2503,6 +2606,7 @@ function ProjectDetailView({
   onCreateTask,
   onArchiveColumn,
   onChangeOpenColumnMenuId,
+  onDeleteTask,
   onDeleteColumn,
   onEditProject,
   onOpenTask,
@@ -2528,9 +2632,10 @@ function ProjectDetailView({
   onChangeNewColumnTitle: (value: string) => void;
   onChangeOpenColumnMenuId: (columnId: string | null) => void;
   onCreateTask: (columnKey?: Task["boardColumnKey"]) => void;
+  onDeleteTask: (taskId: string) => void;
   onDeleteColumn: (column: ProjectColumn) => void;
-  onEditProject: () => void;
   onOpenTask: (taskId: string) => void;
+  onEditProject: () => void;
   onOpenColumnMenuId: string | null;
   onRenameColumn: (columnId: string, title: string) => void;
   onStartRenameColumn: (column: ProjectColumn) => void;
@@ -2653,7 +2758,7 @@ function ProjectDetailView({
         <header className="project-detail__header">
           <div>
             <button className="project-detail__breadcrumb" type="button" onClick={onBack}>
-              Nastenky / {team?.name ?? "Tym"}
+              Nástěnky / {team?.name ?? "Tým"}
             </button>
             <h2>{project.name}</h2>
             <div className="project-detail__meta">
@@ -2663,13 +2768,13 @@ function ProjectDetailView({
           </div>
           <div className="project-detail__progress">
             <strong>{progress}%</strong>
-            <span>Progress nastenky</span>
+            <span>Progres nástěnky</span>
             <div aria-hidden="true">
               <i style={{ width: progress + "%" }} />
             </div>
           </div>
           <button className="project-detail__edit" type="button" onClick={onEditProject}>
-            Upravit nastenku
+            Upravit nástěnku
           </button>
         </header>
 
@@ -2697,7 +2802,7 @@ function ProjectDetailView({
                         }}
                       >
                         <input
-                          aria-label="Nazev sloupce"
+                          aria-label="Název sloupce"
                           autoFocus
                           maxLength={48}
                           value={editingColumnTitle}
@@ -2716,7 +2821,7 @@ function ProjectDetailView({
                         className="project-detail__column-title"
                         type="button"
                         onClick={() => onStartRenameColumn(column)}
-                        aria-label={"Prejmenovat sloupec " + column.title}
+                        aria-label={"Přejmenovat sloupec " + column.title}
                       >
                         <strong>{column.title}</strong>
                       </button>
@@ -2776,12 +2881,13 @@ function ProjectDetailView({
                         key={task.id}
                         task={task}
                         onDragEnd={handleTaskDragEnd}
+                        onDeleteTask={onDeleteTask}
                         onDragStart={handleTaskDragStart}
                         onOpenTask={onOpenTask}
                       />
                     ))
                   ) : (
-                    <p>Sem zatim nic nepada.</p>
+                    <p>Sem zatím nic nepadá.</p>
                   )}
                 </div>
                 <button
@@ -2790,21 +2896,21 @@ function ProjectDetailView({
                   onClick={() => onCreateTask(column.key)}
                 >
                   <span aria-hidden="true">+</span>
-                  Pridat kartu
+                  Přidat kartu
                 </button>
               </section>
             );
           })}
           <form className="project-detail__add-column" onSubmit={onAddColumn}>
             <input
-              aria-label="Nazev noveho sloupce"
+              aria-label="Název nového sloupce"
               maxLength={48}
-              placeholder="Novy sloupec"
+              placeholder="Nový sloupec"
               value={newColumnTitle}
               onChange={(event) => onChangeNewColumnTitle(event.currentTarget.value)}
             />
             <button type="submit" disabled={!newColumnTitle.trim() || isBusy}>
-              + Pridat sloupec
+              + Přidat sloupec
             </button>
           </form>
         </div>
@@ -2812,13 +2918,13 @@ function ProjectDetailView({
     </section>
   );
 }
-
 function ProjectTaskMiniRow({
   assignee,
   isDragging,
   isSettling,
   task,
   onDragEnd,
+  onDeleteTask,
   onDragStart,
   onOpenTask,
 }: {
@@ -2827,9 +2933,44 @@ function ProjectTaskMiniRow({
   isSettling: boolean;
   task: Task;
   onDragEnd: () => void;
+  onDeleteTask: (taskId: string) => void;
   onDragStart: (event: DragEvent<HTMLElement>, task: Task) => void;
   onOpenTask: (taskId: string) => void;
 }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (menuRef.current?.contains(target)) {
+        return;
+      }
+
+      setIsMenuOpen(false);
+    }
+
+    window.addEventListener("mousedown", handlePointerDown);
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [isMenuOpen]);
+
+  function handleMenuAction(action: () => void) {
+    setIsMenuOpen(false);
+    action();
+  }
+
   return (
     <article
       className="project-detail__task-row"
@@ -2842,8 +2983,47 @@ function ProjectTaskMiniRow({
     >
       <button className="project-detail__task-open" type="button" onClick={() => onOpenTask(task.id)}>
         <span>{task.title}</span>
-        <small>{assignee ? getMemberDisplayName(assignee.email) : "Bez prirazeni"}</small>
+        <small>{assignee ? getMemberDisplayName(assignee.email) : "Bez přiřazení"}</small>
       </button>
+      <div className="project-detail__task-menu" ref={menuRef}>
+        <button
+          className="project-detail__task-menu-button"
+          type="button"
+          aria-label={"Další akce pro kartu " + task.title}
+          aria-expanded={isMenuOpen}
+          onClick={(event) => {
+            event.stopPropagation();
+            setIsMenuOpen((currentValue) => !currentValue);
+          }}
+        >
+          <MoreVertical aria-hidden="true" size={15} />
+        </button>
+        {isMenuOpen ? (
+          <div className="project-detail__task-menu-content" role="menu">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleMenuAction(() => onOpenTask(task.id));
+              }}
+            >
+              Upravit
+            </button>
+            <button
+              className="project-detail__task-menu-danger"
+              type="button"
+              role="menuitem"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleMenuAction(() => onDeleteTask(task.id));
+              }}
+            >
+              Smazat
+            </button>
+          </div>
+        ) : null}
+      </div>
     </article>
   );
 }
@@ -2927,7 +3107,7 @@ function getProjectStatusLabel(status: Project["status"]) {
       return "Archiv";
     case "active":
     default:
-      return "Aktivni";
+      return "Aktivní";
   }
 }
 
@@ -2965,11 +3145,11 @@ function getMemberInitials(email: string) {
 }
 
 function isTeamAdminRole(role: TeamMember["role"] | undefined) {
-  return role === "owner" || role === "admin";
+  return role === "admin";
 }
 
 function getTeamRoleLabel(role: TeamMember["role"]) {
-  return isTeamAdminRole(role) ? "Admin" : "Clen";
+  return isTeamAdminRole(role) ? "Admin" : "Člen";
 }
 
 function sortTeamMembers(left: TeamMember, right: TeamMember) {
@@ -3008,7 +3188,7 @@ function DashboardOverlay({ summary, onClose }: DashboardOverlayProps) {
     <div className="dashboard-overlay" role="presentation">
       <button
         className="dashboard-overlay__backdrop"
-        aria-label="Zav��t dashboard"
+        aria-label="Zav??t dashboard"
         type="button"
         onClick={onClose}
       />
@@ -3022,7 +3202,7 @@ function DashboardOverlay({ summary, onClose }: DashboardOverlayProps) {
           <strong id="dashboard-title">{summary.headline}</strong>
           <button
             className="dashboard-overlay__close"
-            aria-label="Zav��t"
+            aria-label="Zav??t"
             type="button"
             onClick={onClose}
           >
@@ -3032,7 +3212,7 @@ function DashboardOverlay({ summary, onClose }: DashboardOverlayProps) {
         <div className="dashboard-overlay__hero">
           <div
             className="dashboard-overlay__percent"
-            aria-label={`Dokon�eno ${summary.progressValue} procent`}
+            aria-label={`Dokon?eno ${summary.progressValue} procent`}
             style={
               {
                 "--dashboard-progress": `${summary.progressValue}%`,
@@ -3047,8 +3227,8 @@ function DashboardOverlay({ summary, onClose }: DashboardOverlayProps) {
           </div>
         </div>
         <div className="dashboard-overlay__metric-row">
-          <DashboardMetric label="Po term�nu" value={summary.overdueCount} tone="danger" />
-          <DashboardMetric label="Urgentn�" value={summary.urgentCount} tone="danger" />
+          <DashboardMetric label="Po term?nu" value={summary.overdueCount} tone="danger" />
+          <DashboardMetric label="Urgentn?" value={summary.urgentCount} tone="danger" />
           <DashboardMetric label="Dnes" value={summary.todayCount} />
           <DashboardMetric label="Hotovo" value={summary.completedCount} tone="success" />
         </div>
@@ -3122,15 +3302,15 @@ function getDashboardSummary(tasks: Task[], scopeLabel: string): DashboardSummar
   const insights: string[] = [];
 
   if (oldestOverdueDays > 0) {
-    insights.push(`Nejstar�� skluz �ek� ${formatDayCount(oldestOverdueDays)}.`);
+    insights.push(`Nejstar?? skluz ?ek? ${formatDayCount(oldestOverdueDays)}.`);
   }
 
   if (inProgressTasks.length > 0) {
-    insights.push(`${formatTaskCount(inProgressTasks.length)} rozpracovan�.`);
+    insights.push(`${formatTaskCount(inProgressTasks.length)} rozpracovan?.`);
   }
 
   if (noDueTasks.length > 0) {
-    insights.push(`${formatTaskCount(noDueTasks.length)} bez term�nu.`);
+    insights.push(`${formatTaskCount(noDueTasks.length)} bez term?nu.`);
   }
 
   return {
@@ -3222,18 +3402,18 @@ function getCheckInHeadline({
   todayCount: number;
 }) {
   if (remainingCount === 0) {
-    return "Dnes je �isto";
+    return "Dnes je ?isto";
   }
 
   if (overdueCount > 0) {
-    return "Uzav�i skluz";
+    return "Uzav?i skluz";
   }
 
   if (isEvening && todayCount > 0) {
-    return "P�iprav z�t�ek";
+    return "P?iprav z?t?ek";
   }
 
-  return "Dne�n� stav";
+  return "Dne?n? stav";
 }
 
 function getCheckInSubtitle({
@@ -3248,15 +3428,15 @@ function getCheckInSubtitle({
   scopeLabel: string;
 }) {
   if (remainingCount === 0) {
-    return `V�echno aktivn� je hotov� ${scopeLabel}.`;
+    return `V?echno aktivn? je hotov? ${scopeLabel}.`;
   }
 
   if (moveCount > 0 && isEvening) {
-    return `Vyber, co m� p�ej�t na z�tra ${scopeLabel}.`;
+    return `Vyber, co m? p?ej?t na z?tra ${scopeLabel}.`;
   }
 
   if (moveCount > 0) {
-    return `M� ${formatTaskCount(moveCount)} k do�e�en� ${scopeLabel}.`;
+    return `M?? ${formatTaskCount(moveCount)} k do?e?en? ${scopeLabel}.`;
   }
 
   return `${formatTaskVerb(remainingCount)} ${formatTaskCount(remainingCount)} ${scopeLabel}.`;
@@ -3266,7 +3446,7 @@ function getCheckInTaskReason(task: Task) {
   const timeStatus = getPrimaryTimeStatus(task, getTodayDateValue());
 
   if (timeStatus === "overdue") {
-    return "po term�nu";
+    return "po term?nu";
   }
 
   if (timeStatus === "today") {
@@ -3274,10 +3454,10 @@ function getCheckInTaskReason(task: Task) {
   }
 
   if (task.priority === "high") {
-    return "d�le�it�";
+    return "d?le?it?";
   }
 
-  return "zb�v�";
+  return "zb?v?";
 }
 
 function getDashboardHeadline({
@@ -3296,7 +3476,7 @@ function getDashboardHeadline({
   totalCount: number;
 }) {
   if (totalCount === 0) {
-    return "Seznam je pr�zdn�";
+    return "Seznam je pr?zdn?";
   }
 
   if (activeCount === 0 && completedCount > 0) {
@@ -3308,14 +3488,14 @@ function getDashboardHeadline({
   }
 
   if (todayCount > 0) {
-    return "Dnes je co d�lat";
+    return "Dnes je co d?lat";
   }
 
   if (importantCount > 0) {
-    return "D�le�it� �ek�";
+    return "D?le?it? ?ek?";
   }
 
-  return "V�echno je pod kontrolou";
+  return "V?echno je pod kontrolou";
 }
 
 function getDashboardStatusLabel({
@@ -3328,15 +3508,15 @@ function getDashboardStatusLabel({
   totalCount: number;
 }) {
   if (totalCount === 0) {
-    return "Pr�zdn� seznam";
+    return "Pr?zdn? seznam";
   }
 
   if (activeCount === 0) {
-    return "�isto";
+    return "?isto";
   }
 
   if (overdueCount > 0) {
-    return "Vy�aduje pozornost";
+    return "Vy?aduje pozornost";
   }
 
   return "Stav";
@@ -3345,8 +3525,8 @@ function getDashboardStatusLabel({
 function getDashboardRemainingText(activeCount: number, scopeLabel: string) {
   if (activeCount === 0) {
     return scopeLabel === "v tomto seznamu"
-      ? "V tomto seznamu je �isto."
-      : "V tomto pohledu je �isto.";
+      ? "V tomto seznamu je ?isto."
+      : "V tomto pohledu je ?isto.";
   }
 
   return `${formatTaskVerb(activeCount)} ${formatTaskCount(activeCount)} ${scopeLabel}.`;
@@ -3354,11 +3534,11 @@ function getDashboardRemainingText(activeCount: number, scopeLabel: string) {
 
 function getDashboardProgressText(completedCount: number, totalCount: number) {
   if (totalCount === 0) {
-    return "Tady te� nic ne�ek�.";
+    return "Tady te? nic ne?ek?.";
   }
 
   if (completedCount === totalCount) {
-    return "V�echno je hotovo.";
+    return "V?echno je hotovo.";
   }
 
   return `Hotovo ${completedCount} z ${totalCount}.`;
@@ -3379,18 +3559,18 @@ function getDashboardStatusText({
 }) {
   if (activeCount === 0) {
     return scopeLabel === "v tomto seznamu"
-      ? "V tomto seznamu te� nic ne�ek�."
-      : "V tomto pohledu te� nic ne�ek�.";
+      ? "V tomto seznamu te? nic ne?ek?."
+      : "V tomto pohledu te? nic ne?ek?.";
   }
 
   if (overdueCount > 0) {
     return oldestOverdueDays > 0
-      ? `${formatTaskCount(overdueCount)} po term�nu. Nejstar�� �ek� ${formatDayCount(oldestOverdueDays)}.`
-      : `${formatTaskCount(overdueCount)} po term�nu.`;
+      ? `${formatTaskCount(overdueCount)} po term?nu. Nejstar?? ?ek? ${formatDayCount(oldestOverdueDays)}.`
+      : `${formatTaskCount(overdueCount)} po term?nu.`;
   }
 
   if (todayCount > 0) {
-    return `${formatTaskCount(todayCount)} �ek� dnes.`;
+    return `${formatTaskCount(todayCount)} ?ek? dnes.`;
   }
 
   return `${formatTaskVerb(activeCount)} ${formatTaskCount(activeCount)} ${scopeLabel}.`;
@@ -3432,23 +3612,23 @@ function formatDayCount(count: number) {
     return `${count} dny`;
   }
 
-  return `${count} dn�`;
+  return `${count} dn?`;
 }
 
 function formatTaskCount(count: number) {
   if (count === 1) {
-    return "1 �kol";
+    return "1 ?kol";
   }
 
   if (count >= 2 && count <= 4) {
-    return `${count} �koly`;
+    return `${count} ?koly`;
   }
 
-  return `${count} �kol�`;
+  return `${count} ?kol?`;
 }
 
 function formatTaskVerb(count: number) {
-  return count === 1 ? "Zb�v�" : "Zb�vaj�";
+  return count === 1 ? "Zb?v?" : "Zb?vaj?";
 }
 
 function getTomorrowDateValue() {
@@ -3521,7 +3701,7 @@ function CheckInOverlay({
     <div className="checkin-overlay" role="presentation">
       <button
         className="checkin-overlay__backdrop"
-        aria-label="Zav��t check-in"
+        aria-label="Zav??t check-in"
         type="button"
         onClick={onClose}
       />
@@ -3533,12 +3713,12 @@ function CheckInOverlay({
       >
         <div className="checkin-overlay__header">
           <div>
-            <span>{summary.isActive ? "Ve�ern� check-in" : "Dne�n� stav"}</span>
+            <span>{summary.isActive ? "Ve?ern? check-in" : "Dne?n? stav"}</span>
             <strong id="checkin-title">{summary.headline}</strong>
           </div>
           <button
             className="checkin-overlay__close"
-            aria-label="Zav��t"
+            aria-label="Zav??t"
             type="button"
             onClick={onClose}
           >
@@ -3548,19 +3728,19 @@ function CheckInOverlay({
 
         <div className="checkin-overlay__summary">
           <p>{summary.subtitle}</p>
-          <div className="checkin-overlay__chips" aria-label="Rychl� souhrn">
+          <div className="checkin-overlay__chips" aria-label="Rychl? souhrn">
             <span>{formatTaskCount(summary.completedCount)} hotovo</span>
-            <span>{formatTaskCount(summary.remainingCount)} zb�v�</span>
+            <span>{formatTaskCount(summary.remainingCount)} zb?v?</span>
             {summary.overdueCount > 0 ? (
-              <span data-tone="danger">{formatTaskCount(summary.overdueCount)} po term�nu</span>
+              <span data-tone="danger">{formatTaskCount(summary.overdueCount)} po term?nu</span>
             ) : null}
           </div>
         </div>
 
         {summary.moveCandidates.length > 0 ? (
           <div className="checkin-overlay__action-card">
-            <span>Co zb�v�</span>
-            <strong>{formatTaskCount(summary.moveCandidates.length)} m��e p�ej�t na z�tra</strong>
+            <span>Co zb?v?</span>
+            <strong>{formatTaskCount(summary.moveCandidates.length)} m??e p?ej?t na z?tra</strong>
             <div className="checkin-overlay__task-list">
               {summary.moveCandidates.slice(0, 3).map((task) => (
                 <div className="checkin-overlay__task-row" key={task.id}>
@@ -3569,30 +3749,30 @@ function CheckInOverlay({
                 </div>
               ))}
               {summary.moveCandidates.length > 3 ? (
-                <small>+{summary.moveCandidates.length - 3} dal��</small>
+                <small>+{summary.moveCandidates.length - 3} dal??</small>
               ) : null}
             </div>
           </div>
         ) : (
           <div className="checkin-overlay__action-card" data-tone="success">
             <span>Klid</span>
-            <strong>Nic nemus� p�esouvat</strong>
-            <p>Tenhle pohled je pro dne�ek pod kontrolou.</p>
+            <strong>Nic nemus?? p?esouvat</strong>
+            <p>Tenhle pohled je pro dne?ek pod kontrolou.</p>
           </div>
         )}
 
         <div className="checkin-overlay__actions">
           {summary.moveCandidates.length > 0 ? (
             <button type="button" onClick={onMoveToTomorrow}>
-              P�esunout na z�tra
+              P?esunout na z?tra
             </button>
           ) : (
             <button type="button" onClick={onCreateTask}>
-              P�idat �kol
+              P?idat ?kol
             </button>
           )}
           <button type="button" onClick={onClose}>
-            Zav��t
+            Zav??t
           </button>
         </div>
       </section>
@@ -3679,7 +3859,7 @@ function FocusAssistantOverlay({
     <div className="focus-assistant" role="presentation">
       <button
         className="focus-assistant__backdrop"
-        aria-label="Zav��t Focus Assistant"
+        aria-label="Zav??t Focus Assistant"
         type="button"
         onClick={onClose}
       />
@@ -3701,10 +3881,10 @@ function FocusAssistantOverlay({
       >
         <div className="focus-assistant__header">
           <span className="focus-assistant__handle" aria-hidden="true" />
-          <strong id="focus-assistant-title">Co d�lat te�</strong>
+          <strong id="focus-assistant-title">Co d?lat te?</strong>
           <button
             className="focus-assistant__close"
-            aria-label="Zav��t"
+            aria-label="Zav??t"
             type="button"
             onClick={onClose}
           >
@@ -3714,7 +3894,7 @@ function FocusAssistantOverlay({
 
         {recommendation ? (
           <div className="focus-assistant__content">
-            <div className="focus-assistant__signals" aria-label="Rychl� rozhodnut�">
+            <div className="focus-assistant__signals" aria-label="Rychl? rozhodnut?">
               {urgentSummary ? (
                 <span className="focus-assistant__signal" data-tone="danger">
                   {urgentSummary}
@@ -3724,7 +3904,7 @@ function FocusAssistantOverlay({
 
             <section className="focus-assistant__section focus-assistant__section--primary">
               <h2>{recommendation.task.title}</h2>
-              <p className="focus-assistant__message" aria-label="D�vod doporu�en�">
+              <p className="focus-assistant__message" aria-label="D?vod doporu?en?">
                 {getAssistantReasonSentence(recommendation, scopeLabel)}
               </p>
               {benefitSentence ? (
@@ -3735,31 +3915,31 @@ function FocusAssistantOverlay({
               ) : null}
               <div className="focus-assistant__actions">
                 <button type="button" onClick={onStart}>
-                  Za��t
+                  Za??t
                 </button>
                 <button type="button" onClick={onSkip}>
-                  P�esko�it
+                  P?esko?it
                 </button>
                 <button type="button" onClick={onClose}>
-                Zav��t
+                Zav??t
               </button>
             </div>
           </section>
           </div>
         ) : (
           <div className="focus-assistant__content focus-assistant__content--empty">
-            <h2>M� klid.</h2>
+            <h2>M?? klid.</h2>
             <p className="focus-assistant__message">
               {scopeLabel === "v tomto seznamu"
-                ? "V tomto seznamu te� nic neho��."
-                : "V tomto pohledu te� nic neho��."}
+                ? "V tomto seznamu te? nic neho??."
+                : "V tomto pohledu te? nic neho??."}
             </p>
             <div className="focus-assistant__actions">
               <button type="button" onClick={onCreateTask}>
-                P�idat �kol
+                P?idat ?kol
               </button>
               <button type="button" onClick={onClose}>
-                Zav��t
+                Zav??t
               </button>
             </div>
           </div>
@@ -3785,14 +3965,14 @@ function getOutsideUrgencyHint(
   }
 
   if (!localRecommendation) {
-    return "Mimo tento seznam m� urgentn�j�� �kol.";
+    return "Mimo tento seznam m? urgentn?j?? ?kol.";
   }
 
   if (
     globalRecommendation.task.id !== localRecommendation.task.id &&
     globalRecommendation.bucket < localRecommendation.bucket
   ) {
-    return "Mimo tento seznam m� urgentn�j�� �kol.";
+    return "Mimo tento seznam m? urgentn?j?? ?kol.";
   }
 
   return null;
@@ -3810,30 +3990,30 @@ function getUrgentSummary(tasks: RecommendedTask[], scopeLabel: string) {
   const scopeSuffix = scopeLabel === "v tomto seznamu" ? "v seznamu" : "v pohledu";
 
   if (overdueCount > 0) {
-    return `${formatCzechTaskCount(overdueCount)} ho�� ${scopeSuffix}`;
+    return `${formatCzechTaskCount(overdueCount)} ho?? ${scopeSuffix}`;
   }
 
   if (todayHighCount > 0) {
     return todayHighCount === 1
-      ? `Dne�n� priorita ${scopeSuffix}`
-      : `${todayHighCount} dne�n� priority ${scopeSuffix}`;
+      ? `Dne?n? priorita ${scopeSuffix}`
+      : `${todayHighCount} dne?n? priority ${scopeSuffix}`;
   }
 
   return tasks.length === 1
-    ? `1 urgentn� �kol ${scopeSuffix}`
-    : `${tasks.length} urgentn� �koly ${scopeSuffix}`;
+    ? `1 urgentn? ?kol ${scopeSuffix}`
+    : `${tasks.length} urgentn? ?koly ${scopeSuffix}`;
 }
 
 function formatCzechTaskCount(count: number) {
   if (count === 1) {
-    return "1 �kol";
+    return "1 ?kol";
   }
 
   if (count >= 2 && count <= 4) {
-    return `${count} �koly`;
+    return `${count} ?koly`;
   }
 
-  return `${count} �kol�`;
+  return `${count} ?kol?`;
 }
 
 function getTaskContextPhrase(task: Task) {
@@ -3842,16 +4022,16 @@ function getTaskContextPhrase(task: Task) {
 
   if (timeStatus === "overdue") {
     return task.priority === "high"
-      ? "Po term�nu + vysok� priorita"
-      : "Po term�nu";
+      ? "Po term?nu + vysok? priorita"
+      : "Po term?nu";
   }
 
   if (timeStatus === "today") {
-    return task.priority === "high" ? "Dnes + vysok� priorita" : "Na dne�ek";
+    return task.priority === "high" ? "Dnes + vysok? priorita" : "Na dne?ek";
   }
 
   if (task.priority === "high") {
-    return "Vysok� priorita";
+    return "Vysok? priorita";
   }
 
   return null;
@@ -3871,29 +4051,29 @@ function getAssistantBenefitSentence(
 
   if (timeStatus === "overdue") {
     return urgentCount > 1
-      ? "Sn�� skluz."
-      : "Zav�e� skluz.";
+      ? "Sn??? skluz."
+      : "Zav?e? skluz.";
   }
 
   if (timeStatus === "today" && recommendation.task.priority === "high") {
-    return "Uzav�e� dne�n� prioritu.";
+    return "Uzav?e? dne?n? prioritu.";
   }
 
   if (recommendation.task.priority === "high") {
-    return "Nejv�t�� dopad.";
+    return "Nejv?t?? dopad.";
   }
 
   if (hasSubtasks && openSubtasks > 0) {
     return openSubtasks === 1
-      ? "Jeden jasn� krok."
-      : `${openSubtasks} jasn� kroky.`;
+      ? "Jeden jasn? krok."
+      : `${openSubtasks} jasn? kroky.`;
   }
 
   if (deferredCount > 0) {
-    return "Ostatn� po�k�.";
+    return "Ostatn? po?k?.";
   }
 
-  return "Jasn� dal�� krok.";
+  return "Jasn? dal?? krok.";
 }
 
 function getAssistantReasonSentence(
@@ -3909,12 +4089,12 @@ function getAssistantReasonSentence(
   switch (recommendation.bucket) {
     case 4:
       return scopeLabel === "v tomto seznamu"
-        ? "Nejd�le�it�j�� krok v seznamu"
-        : "Nejd�le�it�j�� krok v pohledu";
+        ? "Nejd?le?it?j?? krok v seznamu"
+        : "Nejd?le?it?j?? krok v pohledu";
     default:
       return scopeLabel === "v tomto seznamu"
-        ? "Nejlep�� dal�� krok v seznamu"
-        : "Nejlep�� dal�� krok v pohledu";
+        ? "Nejlep?? dal?? krok v seznamu"
+        : "Nejlep?? dal?? krok v pohledu";
   }
 }
 
@@ -3958,5 +4138,10 @@ function orderVisibleTasksForList(
 function isPanelVisible(visiblePanels: VisiblePanel[], panel: VisiblePanel) {
   return visiblePanels.includes(panel);
 }
+
+
+
+
+
 
 

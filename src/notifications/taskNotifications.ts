@@ -1,4 +1,4 @@
-import { Capacitor } from "@capacitor/core";
+﻿import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import type { Task, TaskList } from "../tasks/taskTypes";
 
@@ -212,7 +212,7 @@ export async function showFocusSessionNotification(taskTitle: string) {
   if (isNativeNotificationPlatform()) {
     const delivered = await showNativeNotification({
       id: NATIVE_FOCUS_NOTIFICATION_ID,
-      title: "Focus session skončila",
+      title: "Režim soustředění skončil",
       body,
       extra: { kind: "focus-session" },
     });
@@ -224,7 +224,7 @@ export async function showFocusSessionNotification(taskTitle: string) {
     return false;
   }
 
-  const notification = new Notification("Focus session skončila", {
+  const notification = new Notification("Režim soustředění skončil", {
     body,
     tag: "focus-session-expired",
   });
@@ -451,7 +451,7 @@ async function ensureNativeNotificationChannel() {
     await LocalNotifications.createChannel({
       id: NATIVE_REMINDER_CHANNEL_ID,
       name: "DoNext připomínky",
-      description: "Připomínky úkolů a focus session",
+      description: "Připomínky úkolů a režimu soustředění",
       importance: 5,
       visibility: 1,
       lights: true,
@@ -511,3 +511,4 @@ function getShownNotificationKeys() {
     return new Set<string>();
   }
 }
+

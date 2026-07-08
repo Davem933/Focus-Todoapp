@@ -9,7 +9,7 @@
 export type TeamMember = {
   createdAt: string;
   email: string;
-  role: "owner" | "admin" | "member";
+  role: "admin" | "member";
   userId: string;
 };
 

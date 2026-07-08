@@ -1,7 +1,10 @@
 create extension if not exists pgcrypto;
+create schema if not exists private;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
+  role text not null default 'user'
+    check (role in ('user', 'admin')),
   created_at timestamptz not null default now()
 );
 
@@ -71,6 +74,19 @@ begin
 end;
 $$;
 
+create or replace function private.is_global_admin()
+returns boolean
+language sql
+stable
+as $$
+  select exists (
+    select 1
+    from public.profiles
+    where id = (select auth.uid())
+      and role = 'admin'
+  );
+$$;
+
 drop trigger if exists touch_task_lists_updated_at on public.task_lists;
 create trigger touch_task_lists_updated_at
 before update on public.task_lists
@@ -101,39 +117,95 @@ alter table public.task_labels enable row level security;
 drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own"
 on public.profiles for select
-using (id = auth.uid());
+to authenticated
+using (
+  id = (select auth.uid())
+  or private.is_global_admin()
+);
 
 drop policy if exists "profiles_insert_own" on public.profiles;
 create policy "profiles_insert_own"
 on public.profiles for insert
-with check (id = auth.uid());
+to authenticated
+with check (
+  id = (select auth.uid())
+  or private.is_global_admin()
+);
+
+drop policy if exists "profiles_update_own" on public.profiles;
+create policy "profiles_update_own"
+on public.profiles for update
+to authenticated
+using (
+  id = (select auth.uid())
+  or private.is_global_admin()
+)
+with check (
+  id = (select auth.uid())
+  or private.is_global_admin()
+);
 
 drop policy if exists "task_lists_owner_all" on public.task_lists;
 create policy "task_lists_owner_all"
 on public.task_lists for all
-using (owner_id = auth.uid())
-with check (owner_id = auth.uid());
+to authenticated
+using (
+  owner_id = (select auth.uid())
+  or private.is_global_admin()
+)
+with check (
+  owner_id = (select auth.uid())
+  or private.is_global_admin()
+);
 
 drop policy if exists "tasks_owner_all" on public.tasks;
 create policy "tasks_owner_all"
 on public.tasks for all
-using (owner_id = auth.uid())
-with check (owner_id = auth.uid());
+to authenticated
+using (
+  owner_id = (select auth.uid())
+  or private.is_global_admin()
+)
+with check (
+  owner_id = (select auth.uid())
+  or private.is_global_admin()
+);
 
 drop policy if exists "subtasks_owner_all" on public.subtasks;
 create policy "subtasks_owner_all"
 on public.subtasks for all
-using (owner_id = auth.uid())
-with check (owner_id = auth.uid());
+to authenticated
+using (
+  owner_id = (select auth.uid())
+  or private.is_global_admin()
+)
+with check (
+  owner_id = (select auth.uid())
+  or private.is_global_admin()
+);
 
 drop policy if exists "labels_owner_all" on public.labels;
 create policy "labels_owner_all"
 on public.labels for all
-using (owner_id = auth.uid())
-with check (owner_id = auth.uid());
+to authenticated
+using (
+  owner_id = (select auth.uid())
+  or private.is_global_admin()
+)
+with check (
+  owner_id = (select auth.uid())
+  or private.is_global_admin()
+);
 
 drop policy if exists "task_labels_owner_all" on public.task_labels;
 create policy "task_labels_owner_all"
 on public.task_labels for all
-using (owner_id = auth.uid())
-with check (owner_id = auth.uid());
+to authenticated
+using (
+  owner_id = (select auth.uid())
+  or private.is_global_admin()
+)
+with check (
+  owner_id = (select auth.uid())
+  or private.is_global_admin()
+);

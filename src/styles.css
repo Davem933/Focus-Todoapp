@@ -1964,7 +1964,7 @@ input[type="checkbox"]:focus-visible {
 
 .list-color-option[data-selected="true"]::after {
   color: var(--color-text-primary);
-  content: "✓";
+  content: "\2713";
   font-size: 0.7rem;
   font-weight: 700;
   position: absolute;
@@ -6517,8 +6517,29 @@ input[type="checkbox"]:focus-visible {
   min-width: 0;
 }
 
+.sidebar-header__title-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
 .sidebar-header h1 {
   margin: 0 0 1.25rem;
+}
+
+.sidebar-admin-badge {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.24), rgba(249, 115, 22, 0.2));
+  border: 1px solid rgba(251, 191, 36, 0.34);
+  border-radius: 999px;
+  color: #fcd34d;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  min-height: 1.7rem;
+  padding: 0.2rem 0.58rem;
 }
 
 .sidebar-content {
@@ -7276,6 +7297,10 @@ input[type="checkbox"]:focus-visible {
 
 .app-panel--sidebar[data-mobile-drawer="true"] .sidebar-header h1 {
   margin-bottom: 0.7rem;
+}
+
+.app-panel--sidebar[data-mobile-drawer="true"] .sidebar-header__title-row {
+  align-items: flex-start;
 }
 
 .app-panel--sidebar[data-mobile-drawer="true"] .sidebar-content {
@@ -8720,6 +8745,35 @@ input[type="checkbox"]:focus-visible {
   gap: 0.55rem;
 }
 
+.teams-overview__team-row {
+  position: relative;
+}
+
+.teams-overview__team-row .teams-overview__team-card {
+  min-width: 0;
+  width: 100%;
+}
+
+.teams-overview__team-delete {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.teams-overview__team-delete:hover {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.teams-overview__team-row:hover .teams-overview__team-delete,
+.teams-overview__team-row:focus-within .teams-overview__team-delete {
+  opacity: 1;
+}
+
 .teams-overview__team-card {
   align-items: center;
   background: rgba(0, 0, 0, 0.12);
@@ -8730,9 +8784,16 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   gap: 0.65rem;
   justify-content: flex-start;
-  min-height: 42px;
-  padding: 0.55rem 0.65rem;
+  min-height: 32px;
+  padding: 0.4rem 0.6rem;
   text-align: left;
+}
+
+.teams-overview__team-card strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .teams-overview__team-card > span {
@@ -9408,6 +9469,68 @@ input[type="checkbox"]:focus-visible {
 .project-detail__task-open:focus-visible {
   outline: 2px solid rgba(139, 92, 246, 0.75);
   outline-offset: 3px;
+}
+
+.project-detail__task-menu {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.project-detail__task-menu-button {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 2rem;
+  min-width: 2rem;
+  padding: 0;
+}
+
+.project-detail__task-menu-button:hover,
+.project-detail__task-menu-button:focus-visible,
+.project-detail__task-menu-button[aria-expanded="true"] {
+  background: rgba(109, 93, 252, 0.14);
+  border-color: rgba(167, 139, 250, 0.24);
+  color: var(--color-text-primary);
+}
+
+.project-detail__task-menu-content {
+  background: rgba(9, 12, 28, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 10px;
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.45);
+  display: grid;
+  gap: 0.2rem;
+  min-width: 9rem;
+  padding: 0.35rem;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 4;
+}
+
+.project-detail__task-menu-content button {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  min-height: 2rem;
+  padding: 0.42rem 0.6rem;
+  text-align: left;
+}
+
+.project-detail__task-menu-content button:hover,
+.project-detail__task-menu-content button:focus-visible {
+  background: rgba(109, 93, 252, 0.14);
+}
+
+.project-detail__task-menu-danger {
+  color: #fca5a5;
 }
 
 .project-detail__task-move {
@@ -10219,3 +10342,12 @@ input[type="checkbox"]:focus-visible {
     padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   }
 }
+.teams-overview__admin-card {
+  margin-top: 22px;
+}
+
+.teams-overview__metrics--compact {
+  margin-bottom: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+

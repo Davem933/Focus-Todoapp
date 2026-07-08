@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import {
   requestTaskNotificationPermission,
   showFocusSessionNotification,
@@ -222,7 +222,7 @@ export function FocusView({
             role="status"
           >
             <strong className="focus-view__completion-headline">
-              {showCompletionFeedback ? "✔ Hotovo" : "Skvělá práce"}
+              {showCompletionFeedback ? "✓ Hotovo" : "Skvělá práce"}
             </strong>
             <h1 className="focus-view__completion-title">{task.title}</h1>
             <p className="focus-view__completion-timer">
@@ -298,7 +298,7 @@ export function FocusView({
             >
               <div
                 className="focus-view__duration-options"
-                aria-label="Délka session"
+                aria-label="Délka relace"
               >
                 {FOCUS_DURATION_OPTIONS.map((durationMinutes) => {
                   const durationSeconds = durationMinutes * 60;
@@ -438,6 +438,7 @@ function playBeep() {
       void audioContext.close();
     };
   } catch {
-    // Zvuk je pouze volitelná vrstva. Focus flow musí fungovat i bez něj.
+    // Zvuk je pouze volitelná vrstva. Režim soustředění musí fungovat i bez něj.
   }
 }
+

@@ -201,7 +201,7 @@ export function ListPanel({
     });
     setComposerMessage(
       parsedTaskInput.message ??
-        (selectedWeekDate ? "Použit vybraný den z Week stripu." : null),
+        (selectedWeekDate ? "Použit vybraný den z týdenního přehledu." : null),
     );
     setComposerMessageTone("info");
     setNewTaskTitle("");
@@ -1350,7 +1350,7 @@ function getConflictCreateMessage(
     parserMessage ?? "Termín není jednoznačný. Metadata nebyla automaticky použita.";
 
   return selectedWeekDate
-    ? `${baseMessage} Použit vybraný den z Week stripu.`
+    ? `${baseMessage} Použit vybraný den z týdenního přehledu.`
     : `${baseMessage} Úkol byl vytvořen bez termínu.`;
 }
 

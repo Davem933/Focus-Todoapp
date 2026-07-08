@@ -1,4 +1,4 @@
-﻿import { supabase } from './supabaseClient';
+import { supabase } from './supabaseClient';
 import type { Team, TeamInvite, TeamMember } from '../teams/teamTypes';
 
 type TeamRow = {
@@ -16,7 +16,7 @@ type MembershipRow = {
 type TeamMemberRow = {
   created_at: string;
   email: string;
-  role: "owner" | "admin" | "member";
+  role: "admin" | "member";
   user_id: string;
 };
 
@@ -33,7 +33,7 @@ type TeamInviteResultRow = {
   email: string;
   invite_id: string | null;
   kind: "member" | "invite";
-  role: "owner" | "admin" | "member";
+  role: "admin" | "member";
   status: "pending" | "accepted" | "cancelled";
   user_id: string | null;
 };
@@ -42,7 +42,7 @@ export type TeamInviteResult =
   | { kind: "member"; member: TeamMember }
   | { kind: "invite"; invite: TeamInvite };
 
-export async function loadUserTeams(userId: string): Promise<Team[]> {
+export async function loadUserTeams(userId: string, includeAll = false): Promise<Team[]> {
   if (!supabase) {
     return [];
   }
@@ -66,12 +66,14 @@ export async function loadUserTeams(userId: string): Promise<Team[]> {
 
   let teamsQuery = supabase.from('teams').select('id,name,color,description,owner_id');
 
-  if (memberTeamIds.length > 0) {
-    teamsQuery = teamsQuery.or(
-      `owner_id.eq.${userId},id.in.(${memberTeamIds.join(',')})`,
-    );
-  } else {
-    teamsQuery = teamsQuery.eq('owner_id', userId);
+  if (!includeAll) {
+    if (memberTeamIds.length > 0) {
+      teamsQuery = teamsQuery.or(
+        `owner_id.eq.${userId},id.in.(${memberTeamIds.join(',')})`,
+      );
+    } else {
+      teamsQuery = teamsQuery.eq('owner_id', userId);
+    }
   }
 
   const teamsResult = await teamsQuery.order('created_at', { ascending: true });
@@ -343,11 +345,30 @@ export async function removeTeamMember({
   }
 }
 
+export async function deleteTeamInSupabase(teamId: string): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase neni nakonfigurovany.');
+  }
+
+  // All FK constraints from related tables to teams have ON DELETE CASCADE,
+  // so deleting the team row cascades to task_lists, tasks, subtasks,
+  // task_labels, team_members, team_invites, projects, project_columns.
+  // The team must be deleted first — before team_members — because the RLS
+  // DELETE policy (teams_delete_by_admin) checks team_members for admin role.
+  const { error } = await supabase
+    .from('teams')
+    .delete()
+    .eq('id', teamId);
+
+  if (error) {
+    throw error;
+  }
+}
 function mapTeamMemberRow(row: TeamMemberRow): TeamMember {
   return {
     createdAt: row.created_at,
     email: row.email,
-    role: row.role,
+    role: row.role === 'admin' ? 'admin' : 'member',
     userId: row.user_id,
   };
 }
@@ -374,3 +395,4 @@ function uniqueTeams(teams: Team[]) {
     return true;
   });
 }
+

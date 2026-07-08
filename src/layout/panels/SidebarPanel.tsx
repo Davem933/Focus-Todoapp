@@ -65,6 +65,7 @@ type SidebarPanelProps = {
   teams: Team[];
   themeMode: "dark" | "light";
   currentUserId: string | null;
+  isGlobalAdmin: boolean;
   onSelectList: (listId: string) => void;
   onSelectWorkspace: (teamId: string | null) => void;
   onCreateList: (name: string, color?: string | null) => void;
@@ -123,6 +124,7 @@ export function SidebarPanel({
   teams,
   themeMode,
   currentUserId,
+  isGlobalAdmin,
   onSelectList,
   onSelectWorkspace,
   onCreateList,
@@ -165,7 +167,8 @@ export function SidebarPanel({
   const canManageActiveTeam = Boolean(
     activeTeam &&
       currentUserId &&
-      (isTeamAdminRole(currentTeamMember?.role) ||
+      (isGlobalAdmin ||
+        isTeamAdminRole(currentTeamMember?.role) ||
         (teamMembers.length === 0 && activeTeam.ownerId === currentUserId)),
   );
   const isReservedNewListName = isReservedListName(trimmedNewListName);
@@ -271,7 +274,7 @@ export function SidebarPanel({
       setTeamInvites(invites);
     } catch (error) {
       setTeamMembersError(
-        error instanceof Error ? error.message : "Nepodarilo se nacist cleny tymu.",
+        error instanceof Error ? error.message : "Nepodařilo se načíst členy týmu.",
       );
     } finally {
       setIsTeamMembersLoading(false);
@@ -358,7 +361,7 @@ export function SidebarPanel({
       setNewMemberEmail("");
     } catch (error) {
       setTeamMembersError(
-        error instanceof Error ? error.message : "Clena se nepodarilo pridat.",
+        error instanceof Error ? error.message : "Člena se nepodařilo přidat.",
       );
     } finally {
       setIsTeamMembersLoading(false);
@@ -370,7 +373,7 @@ export function SidebarPanel({
       return;
     }
 
-    const shouldRemove = window.confirm("Odebrat clena " + member.email + " z tymu?");
+    const shouldRemove = window.confirm("Odebrat člena " + member.email + " z týmu?");
 
     if (!shouldRemove) {
       return;
@@ -386,7 +389,7 @@ export function SidebarPanel({
       );
     } catch (error) {
       setTeamMembersError(
-        error instanceof Error ? error.message : "Clena se nepodarilo odebrat.",
+        error instanceof Error ? error.message : "Člena se nepodařilo odebrat.",
       );
     } finally {
       setIsTeamMembersLoading(false);
@@ -417,7 +420,7 @@ export function SidebarPanel({
       );
     } catch (error) {
       setTeamMembersError(
-        error instanceof Error ? error.message : "Roli clena se nepodarilo zmenit.",
+        error instanceof Error ? error.message : "Roli člena se nepodařilo změnit.",
       );
     } finally {
       setIsTeamMembersLoading(false);
@@ -507,7 +510,7 @@ export function SidebarPanel({
       return;
     }
 
-    openCreateTeamDialog();
+    onOpenTeamsOverview();
   }
 
   const isTeamWorkspace = activeTeamId !== null;
@@ -525,13 +528,16 @@ export function SidebarPanel({
         data-touch-actions={useTouchListActions}
       >
         <div className="sidebar-header">
-          <h1>DoNext</h1>
+          <div className="sidebar-header__title-row">
+            <h1>DoNext</h1>
+            {isGlobalAdmin ? <span className="sidebar-admin-badge">Global admin</span> : null}
+          </div>
         </div>
         <div className="sidebar-content">
           <div className="sidebar-content__top">
-            <section className="list-section workspace-section" aria-label="Pracovni prostor">
-              <h2>Pracovni prostor</h2>
-              <div className="workspace-mode-switch" role="tablist" aria-label="Rezim prace">
+            <section className="list-section workspace-section" aria-label="Pracovní prostor">
+              <h2>Pracovní prostor</h2>
+              <div className="workspace-mode-switch" role="tablist" aria-label="Režim práce">
                 <button
                   className="workspace-mode-switch__item"
                   data-selected={!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen}
@@ -540,8 +546,8 @@ export function SidebarPanel({
                   type="button"
                   onClick={() => onSelectWorkspace(null)}
                 >
-                  <span>Osobni</span>
-                  <small aria-label={`${countsByTeamId.personal} osobnich ukolu`}>
+                  <span>Osobní</span>
+                  <small aria-label={`${countsByTeamId.personal} osobních úkolů`}>
                     {countsByTeamId.personal}
                   </small>
                 </button>
@@ -554,13 +560,13 @@ export function SidebarPanel({
                   onClick={selectTeamWorkspace}
                 >
                   <span>Workspace</span>
-                  <small aria-label={`${teamTaskCount} tymovych ukolu`}>
+                  <small aria-label={`${teamTaskCount} týmových úkolů`}>
                     {teamTaskCount}
                   </small>
                 </button>
               </div>
               {isTeamWorkspace || isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen ? (
-                <nav className="list-nav workspace-nav" aria-label="Workspace menu">
+                <nav className="list-nav workspace-nav" aria-label="Nabídka workspace">
                   <button
                     className="list-nav__item workspace-nav__item"
                     data-selected={isWorkspaceHomeOpen}
@@ -571,7 +577,7 @@ export function SidebarPanel({
                       <span className="workspace-nav__icon" aria-hidden="true">
                         <Home size={16} strokeWidth={1.9} />
                       </span>
-                      <span className="list-nav__name">Home</span>
+                      <span className="list-nav__name">Domů</span>
                     </span>
                   </button>
                   <button
@@ -584,9 +590,9 @@ export function SidebarPanel({
                       <span className="workspace-nav__icon" aria-hidden="true">
                         <Users size={16} strokeWidth={1.9} />
                       </span>
-                      <span className="list-nav__name">Teams</span>
+                      <span className="list-nav__name">Týmy</span>
                     </span>
-                    <span className="list-nav__meta" aria-label={`${teams.length} tymu`}>
+                    <span className="list-nav__meta" aria-label={`${teams.length} týmů`}>
                       {teams.length}
                     </span>
                   </button>
@@ -600,7 +606,7 @@ export function SidebarPanel({
                       <span className="workspace-nav__icon" aria-hidden="true">
                         <FolderKanban size={16} strokeWidth={1.9} />
                       </span>
-                      <span className="list-nav__name">Nastenky</span>
+                      <span className="list-nav__name">Nástěnky</span>
                     </span>
                   </button>
                 </nav>
@@ -609,10 +615,10 @@ export function SidebarPanel({
             {!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen ? (
             <section
               className="list-section list-section--system"
-              aria-label={isTeamWorkspace ? "Tymove pohledy" : "Osobni pohledy"}
+              aria-label={isTeamWorkspace ? "Týmové pohledy" : "Osobní pohledy"}
             >
-              <h2>{isTeamWorkspace ? "Tymove pohledy" : "Osobni pohledy"}</h2>
-              <nav className="list-nav" aria-label={isTeamWorkspace ? "Tymove pohledy" : "Osobni pohledy"}>
+              <h2>{isTeamWorkspace ? "Týmové pohledy" : "Osobní pohledy"}</h2>
+              <nav className="list-nav" aria-label={isTeamWorkspace ? "Týmové pohledy" : "Osobní pohledy"}>
                 {systemLists.map((list) => (
                   <ListNavRow
                     activeListId={activeListId}
@@ -642,8 +648,8 @@ export function SidebarPanel({
           </div>
           {!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen ? (
           <div className="sidebar-content__scroll">
-            <section className="list-section" aria-label={activeTeamId ? "Tymove seznamy" : "Moje seznamy"}>
-              <h2>{activeTeamId ? "Tymove seznamy" : "Moje seznamy"}</h2>
+            <section className="list-section" aria-label={activeTeamId ? "Týmové seznamy" : "Moje seznamy"}>
+              <h2>{activeTeamId ? "Týmové seznamy" : "Moje seznamy"}</h2>
               {userLists.length > 0 ? (
                 <nav className="list-nav" aria-label="Moje seznamy">
                   {userLists.map((list) => (
@@ -710,11 +716,11 @@ export function SidebarPanel({
             <button
               className="sidebar-theme-toggle"
               type="button"
-              title={themeMode === "dark" ? "Svetly rezim" : "Tmavy rezim"}
+              title={themeMode === "dark" ? "Světlý režim" : "Tmavý režim"}
               aria-label={
                 themeMode === "dark"
-                  ? "Prepnout na svetly rezim"
-                  : "Prepnout na tmavy rezim"
+                  ? "Přepnout na světlý režim"
+                  : "Přepnout na tmavý režim"
               }
               onClick={onToggleTheme}
             >
@@ -724,7 +730,7 @@ export function SidebarPanel({
                 <Moon aria-hidden="true" size={16} />
               )}
               <span className="sr-only">
-                {themeMode === "dark" ? "Svetly rezim" : "Tmavy rezim"}
+                {themeMode === "dark" ? "Světlý režim" : "Tmavý režim"}
               </span>
             </button>
             <a
@@ -732,8 +738,8 @@ export function SidebarPanel({
               href={ANDROID_APP_DOWNLOAD_URL}
               target="_blank"
               rel="noreferrer"
-              title="Stahnout Android appku"
-              aria-label="Stahnout Android appku"
+              title="Stáhnout aplikaci pro Android"
+              aria-label="Stáhnout aplikaci pro Android"
             >
               <Download aria-hidden="true" size={16} />
               <span className="sr-only">Android</span>
@@ -745,7 +751,7 @@ export function SidebarPanel({
               type="button"
               onClick={openCreateDialog}
             >
-              {isTeamWorkspace ? "Novy tymovy seznam" : "Novy seznam"}
+              {isTeamWorkspace ? "Nový týmový seznam" : "Nový seznam"}
             </button>
           ) : null}
         </div>
@@ -755,8 +761,7 @@ export function SidebarPanel({
         <div className="list-create-dialog" role="presentation">
           <button
             className="list-create-dialog__backdrop"
-            aria-label="Zavrit vytvoreni tymu"
-            type="button"
+            aria-label="Zavřít vytváření týmu"
             onClick={closeCreateTeamDialog}
           />
           <div
@@ -767,16 +772,16 @@ export function SidebarPanel({
           >
             <form className="list-create-form" onSubmit={handleSubmitTeam}>
               <div className="list-create-form__header">
-                <h2 id="create-team-title">Novy tym</h2>
-                <p>Vytvoris novy pracovni prostor nad stejnym uctem.</p>
+                <h2 id="create-team-title">Nový tým</h2>
+                <p>Vytvoří nový pracovní prostor pod stejným účtem.</p>
               </div>
               <label className="list-create-form__field">
-                <span>Nazev</span>
+                <span>Název</span>
                 <input
-                  aria-label="Nazev tymu"
+                  aria-label="Název týmu"
                   autoFocus
                   maxLength={LIST_NAME_MAX_LENGTH}
-                  placeholder="Napriklad Prace"
+                  placeholder="Například Práce"
                   value={newTeamName}
                   onChange={(event) => setNewTeamName(event.currentTarget.value)}
                   onKeyDown={(event) => {
@@ -788,10 +793,10 @@ export function SidebarPanel({
               </label>
               <div className="list-create-form__actions">
                 <button type="button" onClick={closeCreateTeamDialog}>
-                  Zrusit
+                  Zrušit
                 </button>
                 <button type="submit" disabled={!trimmedNewTeamName}>
-                  Vytvorit
+                  Vytvořit
                 </button>
               </div>
             </form>
@@ -802,7 +807,7 @@ export function SidebarPanel({
         <div className="list-create-dialog" role="presentation">
           <button
             className="list-create-dialog__backdrop"
-            aria-label="Zavrit cleny tymu"
+            aria-label="Zavřít cleny týmů"
             type="button"
             onClick={closeTeamMembersDialog}
           />
@@ -814,16 +819,16 @@ export function SidebarPanel({
           >
             <div className="list-create-form team-members-form">
               <div className="list-create-form__header">
-                <h2 id="team-members-title">Clenove tymu</h2>
+                <h2 id="team-members-title">Členové týmu</h2>
                 <p>{activeTeam.name}</p>
               </div>
 
               <div className="team-members-list" aria-live="polite">
                 {isTeamMembersLoading && teamMembers.length === 0 && teamInvites.length === 0 ? (
-                  <p className="team-members-empty">Nacitam cleny...</p>
+                  <p className="team-members-empty">Načítám členy...</p>
                 ) : null}
                 {!isTeamMembersLoading && teamMembers.length === 0 && teamInvites.length === 0 ? (
-                  <p className="team-members-empty">Zatim tu nejsou zadni clenove ani pozvanky.</p>
+                  <p className="team-members-empty">Zatím tu nejsou žádní členové ani pozvánky.</p>
                 ) : null}
                 {teamMembers.map((member) => {
                   const memberIsAdmin = isTeamAdminRole(member.role);
@@ -842,7 +847,7 @@ export function SidebarPanel({
                             disabled={isTeamMembersLoading}
                             onClick={() => void handleChangeMemberRole(member, nextRole)}
                           >
-                            {memberIsAdmin ? "Zmenit na clena" : "Nastavit admin"}
+                            {memberIsAdmin ? "Změnit na člena" : "Nastavit jako admina"}
                           </button>
                           <button
                             type="button"
@@ -857,13 +862,13 @@ export function SidebarPanel({
                   );
                 })}
                 {teamInvites.length > 0 ? (
-                  <div className="team-members-subtitle">Cekaji na registraci</div>
+                  <div className="team-members-subtitle">Čekají na registraci</div>
                 ) : null}
                 {teamInvites.map((invite) => (
                   <div className="team-member-row" data-pending="true" key={invite.id}>
                     <div>
                       <strong>{invite.email}</strong>
-                      <span>Pozvanka ceka</span>
+                      <span>Pozvánka čeká</span>
                     </div>
                   </div>
                 ))}
@@ -872,7 +877,7 @@ export function SidebarPanel({
               {canManageActiveTeam ? (
                 <form className="team-member-add" onSubmit={handleSubmitMember}>
                   <label className="list-create-form__field">
-                    <span>Pridat clena e-mailem</span>
+                    <span>Přidat člena e-mailem</span>
                     <input
                       autoComplete="email"
                       inputMode="email"
@@ -886,11 +891,11 @@ export function SidebarPanel({
                     type="submit"
                     disabled={!trimmedNewMemberEmail || isTeamMembersLoading}
                   >
-                    Pridat
+                    Přidat
                   </button>
                 </form>
               ) : (
-                <p className="team-members-empty">Cleny muze spravovat vlastnik tymu.</p>
+                <p className="team-members-empty">Členy může spravovat vlastník týmu.</p>
               )}
 
               {teamMembersError ? (
@@ -899,7 +904,7 @@ export function SidebarPanel({
 
               <div className="list-create-form__actions">
                 <button type="button" onClick={closeTeamMembersDialog}>
-                  Zavrit
+                  Zavřít
                 </button>
               </div>
             </div>
@@ -1333,11 +1338,11 @@ function sortTeamMembers(left: TeamMember, right: TeamMember) {
 }
 
 function isTeamAdminRole(role: TeamMember["role"] | undefined) {
-  return role === "owner" || role === "admin";
+  return role === "admin";
 }
 
 function getTeamRoleLabel(role: TeamMember["role"]) {
-  return isTeamAdminRole(role) ? "Admin" : "Clen";
+  return isTeamAdminRole(role) ? "Admin" : "Člen";
 }
 
 function sortTeamInvites(left: TeamInvite, right: TeamInvite) {

@@ -78,7 +78,7 @@ export function WorkspaceHomePanel({
           setError(
             loadError instanceof Error
               ? loadError.message
-              : "Workspace se nepodarilo nacist.",
+              : "Pracovní prostor se nepodařilo načíst.",
           );
         }
       } finally {
@@ -123,11 +123,11 @@ export function WorkspaceHomePanel({
   });
 
   return (
-    <section className="app-panel workspace-home" aria-label="Workspace home">
+    <section className="app-panel workspace-home" aria-label="Domov pracovního prostoru">
       <div className="workspace-home__hero">
         <div>
-          <span className="workspace-home__eyebrow">Workspace overview</span>
-          <h2>Vitej zpet, {welcomeName}</h2>
+          <span className="workspace-home__eyebrow">Přehled pracovního prostoru</span>
+          <h2>Vítej zpět, {welcomeName}</h2>
           <p>{welcomeSummary}</p>
         </div>
       </div>
@@ -136,54 +136,54 @@ export function WorkspaceHomePanel({
         <div className="workspace-home__main">
           <section className="workspace-home__section">
             <div className="workspace-home__section-head">
-              <h3>Rychly prehled</h3>
+              <h3>Rychlý přehled</h3>
             </div>
             <div className="workspace-home__metrics">
               <MetricCard
                 icon={<Users aria-hidden="true" size={16} />}
-                label="Clenove tymu"
+                label="Členové týmu"
                 tone="purple"
                 value={members.length}
-                detail={members.length > 0 ? members.length + " v tymu" : "Zatim bez clenu"}
+                detail={members.length > 0 ? members.length + " v týmu" : "Zatím bez členů"}
                 avatars={members.slice(0, 4).map((member) => getMemberInitials(member.email))}
               />
               <MetricCard
                 icon={<FolderKanban aria-hidden="true" size={16} />}
-                label="Bezici nastenky"
+                label="Běžící nástěnky"
                 tone="blue"
                 value={activeProjects.length}
-                detail={projects.length > 0 ? projects.length + " celkem" : "Zatim zadna"}
+                detail={projects.length > 0 ? projects.length + " celkem" : "Zatím žádná"}
               />
               <MetricCard
                 icon={<Clock3 aria-hidden="true" size={16} />}
-                label="Termin dnes"
+                label="Termíny dnes"
                 tone={overdueCount > 0 ? "danger" : "orange"}
                 value={dueTodayCount + overdueCount}
-                detail={overdueCount > 0 ? overdueCount + " po terminu" : "Dnes bez skluzu"}
+                detail={overdueCount > 0 ? overdueCount + " po termínu" : "Dnes bez skluzu"}
               />
             </div>
           </section>
 
           <section className="workspace-home__section workspace-home__boards">
             <div className="workspace-home__section-head">
-              <h3>Stav nastenek</h3>
+              <h3>Stav nástěnek</h3>
               <button type="button" onClick={onOpenProjectsOverview}>
-                Otevrit vse
+                Otevřít vše
                 <ArrowRight aria-hidden="true" size={15} />
               </button>
             </div>
 
             {error ? <p className="workspace-home__error">{error}</p> : null}
             {isLoading && projects.length === 0 ? (
-              <p className="workspace-home__empty">Nacitam stav workspace...</p>
+              <p className="workspace-home__empty">Načítám stav pracovního prostoru...</p>
             ) : null}
             {!isLoading && projects.length === 0 ? (
               <div className="workspace-home__empty-card">
-                <strong>Zatim tu neni zadna nastenka</strong>
-                <span>Vytvor prvni board a dej tymu jasny tok prace.</span>
+                <strong>Zatím tu není žádná nástěnka</strong>
+                <span>Vytvoř první board a dej týmu jasný tok práce.</span>
                 <button type="button" onClick={onCreateBoard}>
                   <PlusSquare aria-hidden="true" size={16} />
-                  Nova nastenka
+                  Nová nástěnka
                 </button>
               </div>
             ) : null}
@@ -201,7 +201,7 @@ export function WorkspaceHomePanel({
                         </div>
                         <span data-status={project.status}>{getProjectStatusLabel(project.status)}</span>
                       </div>
-                      <div className="workspace-home__progress-row" aria-label={"Dokonceno " + stats.progress + " procent"}>
+                      <div className="workspace-home__progress-row" aria-label={"Dokončeno " + stats.progress + " procent"}>
                         <div className="workspace-home__progress-bar">
                           <span style={{ width: stats.progress + "%" }} />
                         </div>
@@ -218,27 +218,27 @@ export function WorkspaceHomePanel({
         <aside className="workspace-home__side">
           <section className="workspace-home__section workspace-home__actions">
             <div className="workspace-home__section-head">
-              <h3>Rychle akce</h3>
+              <h3>Rychlé akce</h3>
             </div>
             <div className="workspace-home__action-grid">
               <button type="button" onClick={onCreateTeam}>
                 <Users aria-hidden="true" size={17} />
-                <span>Novy tym</span>
+                <span>Nový tým</span>
               </button>
               <button type="button" onClick={onCreateBoard}>
                 <FolderKanban aria-hidden="true" size={17} />
-                <span>Nova nastenka</span>
+                <span>Nová nástěnka</span>
               </button>
             </div>
           </section>
 
           <section className="workspace-home__section workspace-home__activity">
             <div className="workspace-home__section-head">
-              <h3>Tymova aktivita</h3>
+              <h3>Týmová aktivita</h3>
               <Activity aria-hidden="true" size={16} />
             </div>
             {activity.length === 0 ? (
-              <p className="workspace-home__empty">Jakmile pribudou ukoly a pohyb na boardech, objevi se tady.</p>
+              <p className="workspace-home__empty">Jakmile přibudou úkoly a pohyb na boardech, objeví se tady.</p>
             ) : (
               <div className="workspace-home__activity-list">
                 {activity.map((item) => {
@@ -326,19 +326,19 @@ function getWorkspaceWelcomeSummary({
 }) {
   if (activeProjects === 0 && dueTodayCount === 0 && overdueCount === 0) {
     return memberCount > 0
-      ? "Tym je pripraveny. Ted chybi uz jen nastenky a prvni fokus."
-      : "Zacni sestavenim tymu a prvni nastenky.";
+      ? "Tým je připravený. Teď chybí už jen nástěnky a první úkoly."
+      : "Začni sestavením týmu a první nástěnky.";
   }
 
   if (overdueCount > 0) {
-    return "Bezi " + formatBoardCount(activeProjects) + " a " + formatTaskCount(overdueCount) + " je po terminu.";
+    return "Běží " + formatBoardCount(activeProjects) + " a " + formatTaskCount(overdueCount) + " je po termínu.";
   }
 
   if (dueTodayCount > 0) {
-    return "Bezi " + formatBoardCount(activeProjects) + " a dnes ceka " + formatTaskCount(dueTodayCount) + ".";
+    return "Běží " + formatBoardCount(activeProjects) + " a dnes čeká " + formatTaskCount(dueTodayCount) + ".";
   }
 
-  return "Bezi " + formatBoardCount(activeProjects) + " a tym ma otevreno " + formatTaskCount(Math.max(activeProjects, 1)) + ".";
+  return "Běží " + formatBoardCount(activeProjects) + " a tým má otevřené " + formatTaskCount(Math.max(activeProjects, 1)) + ".";
 }
 
 function buildWorkspaceActivityItems(
@@ -375,8 +375,8 @@ function buildWorkspaceActivityItems(
         id: "completed-" + task.id,
         actor,
         detail: projectName
-          ? task.title + " na " + projectName + " je hotovy ukol."
-          : task.title + " je hotovy ukol.",
+          ? task.title + " na " + projectName + " je hotový úkol."
+          : task.title + " je hotový úkol.",
         status: "Hotovo",
         taskId: task.id,
         tone: "success",
@@ -386,9 +386,9 @@ function buildWorkspaceActivityItems(
         id: "overdue-" + task.id,
         actor,
         detail: projectName
-          ? task.title + " na " + projectName + " potrebuje pozornost."
-          : task.title + " potrebuje pozornost.",
-        status: "Po terminu",
+          ? task.title + " na " + projectName + " potřebuje pozornost."
+          : task.title + " potřebuje pozornost.",
+        status: "Po termínu",
         taskId: task.id,
         tone: "danger",
       });
@@ -408,7 +408,7 @@ function buildWorkspaceActivityItems(
         id: "active-" + task.id,
         actor,
         detail: projectName
-          ? task.title + " bezi na " + projectName + "."
+          ? task.title + " běží na " + projectName + "."
           : task.title + " je v pohybu.",
         status: task.priority === "high" ? "Priorita" : "V procesu",
         taskId: task.id,
@@ -440,10 +440,10 @@ function getProjectProgress(project: Project, tasks: Task[], today: string) {
     progress,
     subtitle:
       overdueCount > 0
-        ? formatTaskCount(overdueCount) + " po terminu"
+        ? formatTaskCount(overdueCount) + " po termínu"
         : projectTasks.length > 0
           ? "Hotovo " + completedCount + " z " + projectTasks.length
-          : "Zatim bez ukolu",
+          : "Zatím bez úkolů",
   };
 }
 
@@ -456,7 +456,7 @@ function getProjectStatusLabel(status: Project["status"]) {
     case "archived":
       return "Archiv";
     default:
-      return "Aktivni";
+      return "Aktivní";
   }
 }
 
@@ -487,24 +487,24 @@ function getMemberInitials(email: string) {
 
 function formatTaskCount(count: number) {
   if (count === 1) {
-    return "1 ukol";
+    return "1 úkol";
   }
 
   if (count >= 2 && count <= 4) {
-    return count + " ukoly";
+    return count + " úkoly";
   }
 
-  return count + " ukolu";
+  return count + " úkolů";
 }
 
 function formatBoardCount(count: number) {
   if (count === 1) {
-    return "1 nastenka";
+    return "1 nástěnka";
   }
 
   if (count >= 2 && count <= 4) {
-    return count + " nastenky";
+    return count + " nástěnky";
   }
 
-  return count + " nastenek";
+  return count + " nástěnek";
 }
