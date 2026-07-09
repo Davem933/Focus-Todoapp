@@ -18,4 +18,5 @@ export type AppLayoutState = {
 
 export type UseAppLayoutOptions = {
   selectedTaskId: string | null;
+  isListSlotOverlayOpen: boolean;
 };

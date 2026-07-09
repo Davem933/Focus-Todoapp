@@ -5,6 +5,7 @@ import type {
   KeyboardEvent,
   TouchEvent,
 } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   CalendarDays,
   Clock3,
@@ -17,6 +18,7 @@ import {
   Star,
   Sun,
   Trash2,
+  User,
   Users,
   UserPlus,
 } from "lucide-react";
@@ -45,6 +47,18 @@ const LIST_SWIPE_ACTION_WIDTH = 64;
 const ANDROID_APP_DOWNLOAD_URL =
   "https://drive.google.com/file/d/14TDMGTXAIU3jNxzFbyHB73vfux9VL8XI/view?usp=sharing";
 const RESERVED_LIST_NAMES = new Set(["doporučeno", "doporuceno"]);
+const dialogBackdropMotion = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+  transition: { duration: 0.15, ease: "easeOut" as const },
+};
+const dialogCardMotion = {
+  initial: { opacity: 0, scale: 0.94, x: "-50%", y: "-46%" },
+  animate: { opacity: 1, scale: 1, x: "-50%", y: "-50%" },
+  exit: { opacity: 0, scale: 0.96, x: "-50%", y: "-48%" },
+  transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] as const },
+};
 const CREATE_LIST_COLORS = [
   "#6d5dfc",
   "#22c55e",
@@ -78,9 +92,11 @@ type SidebarPanelProps = {
   onOpenWorkspaceHome: () => void;
   onOpenTeamsOverview: () => void;
   onOpenProjectsOverview: () => void;
+  onOpenProfile: () => void;
   isWorkspaceHomeOpen: boolean;
   isTeamsOverviewOpen: boolean;
   isProjectsOverviewOpen: boolean;
+  isProfileOpen: boolean;
   isMobileDrawer?: boolean;
   useTouchListActions?: boolean;
 };
@@ -137,9 +153,11 @@ export function SidebarPanel({
   onOpenWorkspaceHome,
   onOpenTeamsOverview,
   onOpenProjectsOverview,
+  onOpenProfile,
   isWorkspaceHomeOpen,
   isTeamsOverviewOpen,
   isProjectsOverviewOpen,
+  isProfileOpen,
   isMobileDrawer = false,
   useTouchListActions = isMobileDrawer,
 }: SidebarPanelProps) {
@@ -713,7 +731,7 @@ export function SidebarPanel({
         </div>
         <div className="sidebar-actions">
           <div className="sidebar-actions__tools">
-            <button
+            <motion.button
               className="sidebar-theme-toggle"
               type="button"
               title={themeMode === "dark" ? "Světlý režim" : "Tmavý režim"}
@@ -722,6 +740,8 @@ export function SidebarPanel({
                   ? "Přepnout na světlý režim"
                   : "Přepnout na tmavý režim"
               }
+              whileTap={{ scale: 0.9, rotate: -12 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
               onClick={onToggleTheme}
             >
               {themeMode === "dark" ? (
@@ -732,7 +752,7 @@ export function SidebarPanel({
               <span className="sr-only">
                 {themeMode === "dark" ? "Světlý režim" : "Tmavý režim"}
               </span>
-            </button>
+            </motion.button>
             <a
               className="sidebar-android-download"
               href={ANDROID_APP_DOWNLOAD_URL}
@@ -744,6 +764,17 @@ export function SidebarPanel({
               <Download aria-hidden="true" size={16} />
               <span className="sr-only">Android</span>
             </a>
+            <button
+              className="sidebar-profile-button"
+              type="button"
+              data-active={isProfileOpen ? "true" : "false"}
+              title="Profil"
+              aria-label="Otevřít profil"
+              onClick={onOpenProfile}
+            >
+              <User aria-hidden="true" size={16} />
+              <span className="sr-only">Profil</span>
+            </button>
           </div>
 {!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen ? (
             <button
@@ -757,14 +788,17 @@ export function SidebarPanel({
         </div>
       </aside>
 
+      <AnimatePresence>
       {isCreateTeamDialogOpen ? (
         <div className="list-create-dialog" role="presentation">
-          <button
+          <motion.button
+            {...dialogBackdropMotion}
             className="list-create-dialog__backdrop"
             aria-label="Zavřít vytváření týmu"
             onClick={closeCreateTeamDialog}
           />
-          <div
+          <motion.div
+            {...dialogCardMotion}
             className="list-create-dialog__card"
             role="dialog"
             aria-modal="true"
@@ -800,18 +834,22 @@ export function SidebarPanel({
                 </button>
               </div>
             </form>
-          </div>
+          </motion.div>
         </div>
       ) : null}
+      </AnimatePresence>
+      <AnimatePresence>
       {isTeamMembersDialogOpen && activeTeam ? (
         <div className="list-create-dialog" role="presentation">
-          <button
+          <motion.button
+            {...dialogBackdropMotion}
             className="list-create-dialog__backdrop"
             aria-label="Zavřít cleny týmů"
             type="button"
             onClick={closeTeamMembersDialog}
           />
-          <div
+          <motion.div
+            {...dialogCardMotion}
             className="list-create-dialog__card team-members-dialog"
             role="dialog"
             aria-modal="true"
@@ -908,18 +946,22 @@ export function SidebarPanel({
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       ) : null}
+      </AnimatePresence>
+      <AnimatePresence>
       {isCreateDialogOpen ? (
         <div className="list-create-dialog" role="presentation">
-          <button
+          <motion.button
+            {...dialogBackdropMotion}
             className="list-create-dialog__backdrop"
             aria-label="Zavřít vytvoření seznamu"
             type="button"
             onClick={closeCreateDialog}
           />
-          <div
+          <motion.div
+            {...dialogCardMotion}
             className="list-create-dialog__card"
             role="dialog"
             aria-modal="true"
@@ -981,9 +1023,10 @@ export function SidebarPanel({
                 </button>
               </div>
             </form>
-          </div>
+          </motion.div>
         </div>
       ) : null}
+      </AnimatePresence>
     </>
   );
 }
@@ -1235,7 +1278,7 @@ function ListNavRow({
 
         </div>
       ) : null}
-      <button
+      <motion.button
         className="list-nav__item"
         data-selected={list.id === activeListId}
         style={
@@ -1246,6 +1289,8 @@ function ListNavRow({
         }
         title={list.name}
         type="button"
+        whileTap={{ scale: 0.985 }}
+        transition={{ duration: 0.12, ease: "easeOut" }}
         onClick={handleSelectList}
       >
         <span className="list-nav__main">
@@ -1261,7 +1306,7 @@ function ListNavRow({
         <span className="list-nav__meta" aria-label={`${count} aktivních úkolů`}>
           {count}
         </span>
-      </button>
+      </motion.button>
       {!list.isSystem && list.id !== DEFAULT_TASK_LIST_ID ? (
         <div className="list-menu">
           {!useTouchListActions ? (

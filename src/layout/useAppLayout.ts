@@ -37,6 +37,7 @@ function getWindowWidth() {
 
 export function useAppLayout({
   selectedTaskId,
+  isListSlotOverlayOpen,
 }: UseAppLayoutOptions): AppLayoutState {
   const [windowWidth, setWindowWidth] = useState(getWindowWidth);
 
@@ -55,7 +56,7 @@ export function useAppLayout({
 
   return useMemo(() => {
     const viewport = getViewport(windowWidth);
-    const hasSelectedTask = Boolean(selectedTaskId);
+    const hasSelectedTask = !isListSlotOverlayOpen && Boolean(selectedTaskId);
 
     if (!hasSelectedTask) {
       if (windowWidth < SIDEBAR_LIST_MIN) {
@@ -102,5 +103,5 @@ export function useAppLayout({
       mode: "desktop-sidebar-list-detail",
       visiblePanels: ["sidebar", "list", "detail"],
     };
-  }, [selectedTaskId, windowWidth]);
+  }, [selectedTaskId, isListSlotOverlayOpen, windowWidth]);
 }

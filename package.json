@@ -19,6 +19,7 @@
     "@capacitor/local-notifications": "^8.0.2",
     "@supabase/supabase-js": "^2.105.4",
     "@vitejs/plugin-react": "^5.0.0",
+    "framer-motion": "^12.42.2",
     "lucide-react": "^1.9.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

@@ -8,6 +8,7 @@ import { DetailPanel } from "./panels/DetailPanel";
 import { ListPanel } from "./panels/ListPanel";
 import { SidebarPanel } from "./panels/SidebarPanel";
 import { WorkspaceHomePanel } from "./panels/WorkspaceHomePanel";
+import { ProfilePanel } from "./panels/ProfilePanel";
 import type { LayoutMode } from "./layoutTypes";
 import { buildCountsByListId } from "../tasks/taskCounts";
 import { buildCountsByTeamId } from "../teams/teamCounts";
@@ -108,6 +109,14 @@ type AppShellProps = {
   onStartFocus: (taskId: string) => void;
   onClearTaskSelection: () => void;
   onToggleTheme: () => void;
+  userEmail: string | null;
+  userCreatedAt: string | null;
+  nickname: string | null;
+  authError: string | null;
+  authMessage: string | null;
+  isAuthActionLoading: boolean;
+  onUpdateNickname: (nickname: string) => Promise<void>;
+  onSignOut: () => Promise<void>;
 };
 
 export function AppShell(props: AppShellProps) {
@@ -148,10 +157,15 @@ export function AppShell(props: AppShellProps) {
     onStartFocus,
     onClearTaskSelection,
     onToggleTheme,
+    userEmail,
+    userCreatedAt,
+    nickname,
+    authError,
+    authMessage,
+    isAuthActionLoading,
+    onUpdateNickname,
+    onSignOut,
   } = props;
-  const layout = useAppLayout({
-    selectedTaskId,
-  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isFocusAssistantOpen, setIsFocusAssistantOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
@@ -159,6 +173,12 @@ export function AppShell(props: AppShellProps) {
   const [isWorkspaceHomeOpen, setIsWorkspaceHomeOpen] = useState(false);
   const [isTeamsOverviewOpen, setIsTeamsOverviewOpen] = useState(false);
   const [isProjectsOverviewOpen, setIsProjectsOverviewOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const layout = useAppLayout({
+    selectedTaskId,
+    isListSlotOverlayOpen:
+      isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen || isProfileOpen,
+  });
   const [teamCreateRequestToken, setTeamCreateRequestToken] = useState(0);
   const [projectCreateRequestToken, setProjectCreateRequestToken] = useState(0);
   const drawerTouchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -253,6 +273,7 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(false);
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
+    setIsProfileOpen(false);
     onSelectList(listId);
     clearRecommendation();
 
@@ -265,6 +286,7 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(teamId !== null);
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
+    setIsProfileOpen(false);
     onSelectWorkspace(teamId);
     clearRecommendation();
 
@@ -329,6 +351,7 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(true);
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
+    setIsProfileOpen(false);
 
     if (isMobileLayout) {
       setIsSidebarOpen(false);
@@ -340,6 +363,7 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(false);
     setIsTeamsOverviewOpen(true);
     setIsProjectsOverviewOpen(false);
+    setIsProfileOpen(false);
 
     if (isMobileLayout) {
       setIsSidebarOpen(false);
@@ -351,6 +375,19 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(false);
     setIsProjectsOverviewOpen(true);
     setIsTeamsOverviewOpen(false);
+    setIsProfileOpen(false);
+
+    if (isMobileLayout) {
+      setIsSidebarOpen(false);
+    }
+  }
+
+  function handleOpenProfile() {
+    onClearTaskSelection();
+    setIsWorkspaceHomeOpen(false);
+    setIsTeamsOverviewOpen(false);
+    setIsProjectsOverviewOpen(false);
+    setIsProfileOpen(true);
 
     if (isMobileLayout) {
       setIsSidebarOpen(false);
@@ -361,6 +398,7 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsTeamsOverviewOpen(true);
+    setIsProfileOpen(false);
     setTeamCreateRequestToken((currentValue) => currentValue + 1);
 
     if (isMobileLayout) {
@@ -372,6 +410,7 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(false);
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(true);
+    setIsProfileOpen(false);
     setProjectCreateRequestToken((currentValue) => currentValue + 1);
 
     if (isMobileLayout) {
@@ -457,9 +496,11 @@ export function AppShell(props: AppShellProps) {
         onOpenWorkspaceHome={handleOpenWorkspaceHome}
         onOpenTeamsOverview={handleOpenTeamsOverview}
         onOpenProjectsOverview={handleOpenProjectsOverview}
+        onOpenProfile={handleOpenProfile}
         isWorkspaceHomeOpen={isWorkspaceHomeOpen}
         isTeamsOverviewOpen={isTeamsOverviewOpen}
         isProjectsOverviewOpen={isProjectsOverviewOpen}
+        isProfileOpen={isProfileOpen}
         isMobileDrawer={isMobileDrawer}
         useTouchListActions={useTouchListActions}
       />
@@ -548,7 +589,20 @@ export function AppShell(props: AppShellProps) {
           ? renderSidebarPanel()
           : null}
         {isPanelVisible(layout.visiblePanels, "list") ? (
-          isWorkspaceHomeOpen && activeTeamId ? (
+          isProfileOpen ? (
+            <ProfilePanel
+              userEmail={userEmail}
+              userCreatedAt={userCreatedAt}
+              nickname={nickname}
+              themeMode={themeMode}
+              authError={authError}
+              authMessage={authMessage}
+              isAuthActionLoading={isAuthActionLoading}
+              onToggleTheme={onToggleTheme}
+              onUpdateNickname={onUpdateNickname}
+              onSignOut={onSignOut}
+            />
+          ) : isWorkspaceHomeOpen && activeTeamId ? (
             <WorkspaceHomePanel
               activeTeam={teams.find((team) => team.id === activeTeamId) ?? null}
               currentUserId={currentUserId}
@@ -620,7 +674,7 @@ export function AppShell(props: AppShellProps) {
           />
           )
         ) : null}
-        {!isWorkspaceHomeOpen && !isTeamsOverviewOpen && !isProjectsOverviewOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
+        {!isWorkspaceHomeOpen && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isProfileOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
           <DetailPanel
             task={selectedTask}
             lists={lists}

@@ -1,7 +1,16 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, MouseEvent as ReactMouseEvent } from "react";
 import type { User } from "@supabase/supabase-js";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useTransform,
+} from "framer-motion";
+import { ArrowRight, Eye, EyeClosed, Lock, Mail } from "lucide-react";
 import { isSupabaseConfigured } from "./supabaseClient";
+
+type AuthScreenFocusField = "email" | "password" | null;
 
 type AuthWidgetProps = {
   authError: string | null;
@@ -36,6 +45,24 @@ export function AuthWidget({
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState<AuthScreenFocusField>(null);
+
+  const cardMouseX = useMotionValue(0);
+  const cardMouseY = useMotionValue(0);
+  const cardRotateX = useTransform(cardMouseY, [-300, 300], [10, -10]);
+  const cardRotateY = useTransform(cardMouseX, [-300, 300], [-10, 10]);
+
+  function handleCardMouseMove(event: ReactMouseEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    cardMouseX.set(event.clientX - rect.left - rect.width / 2);
+    cardMouseY.set(event.clientY - rect.top - rect.height / 2);
+  }
+
+  function handleCardMouseLeave() {
+    cardMouseX.set(0);
+    cardMouseY.set(0);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -50,13 +77,13 @@ export function AuthWidget({
 
   const form = (
     <form className="auth-widget__form" onSubmit={handleSubmit}>
-      <div className="auth-widget__tabs" role="tablist" aria-label="Rezim">
+      <div className="auth-widget__tabs" role="tablist" aria-label="Režim">
         <button
           type="button"
           data-active={mode === "sign-in" ? "true" : "false"}
           onClick={() => setMode("sign-in")}
         >
-          Prihlasit
+          Přihlásit
         </button>
         <button
           type="button"
@@ -92,8 +119,8 @@ export function AuthWidget({
         {isAuthLoading
           ? "Pracuji..."
           : mode === "sign-in"
-            ? "Prihlasit se"
-            : "Vytvorit ucet"}
+            ? "Přihlásit se"
+            : "Vytvořit účet"}
       </button>
     </form>
   );
@@ -115,54 +142,263 @@ export function AuthWidget({
 
   if (variant === "screen") {
     return (
-      <main className="auth-screen" aria-label="Prihlaseni do DoNext">
+      <main className="auth-screen" aria-label="Přihlášení do DoNext">
+        <div className="auth-screen__glow auth-screen__glow--top" aria-hidden="true" />
+        <div className="auth-screen__glow auth-screen__glow--bottom" aria-hidden="true" />
+        <div className="auth-screen__noise" aria-hidden="true" />
+
         <section className="auth-screen__hero">
           <div className="auth-screen__brand">
             <span aria-hidden="true">Do</span>
             <strong>DoNext</strong>
           </div>
           <div className="auth-screen__copy">
-            <span>Osobni i tymove ukoly</span>
-            <h1>Jeden ucet. Vsechny ukoly pod kontrolou.</h1>
+            <span>Osobní i týmové úkoly</span>
+            <h1>Jeden účet. Všechny úkoly pod kontrolou.</h1>
             <p>
-              Prihlas se a DoNext ti nacte osobni prostor, tymy, pozvanky i sync
+              Přihlas se a DoNext ti načte osobní prostor, týmy, pozvánky i sync
               mezi webem a Androidem.
             </p>
           </div>
-          <div className="auth-screen__points" aria-label="Co ziskas">
-            <span>Automaticky sync</span>
+          <div className="auth-screen__points" aria-label="Co získáš">
+            <span>Automatický sync</span>
             <span>Team work</span>
             <span>Focus asistent</span>
           </div>
         </section>
 
-        <section
-          className="auth-screen__card"
-          aria-labelledby="auth-screen-title"
+        <motion.div
+          className="auth-screen-card-wrap"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          style={{ perspective: 1500 }}
         >
-          <div className="auth-widget__header auth-screen__header">
-            <div>
-              <strong id="auth-screen-title">
-                {mode === "sign-in" ? "Vitej zpet" : "Vytvor ucet"}
-              </strong>
-              <span>
-                {mode === "sign-in"
-                  ? "Pokracuj do sveho osobniho a tymoveho prostoru."
-                  : "Po registraci potvrdis e-mail a muzes prijimat tymove pozvanky."}
-              </span>
+          <motion.div
+            className="auth-screen-card-tilt"
+            style={{ rotateX: cardRotateX, rotateY: cardRotateY }}
+            onMouseMove={handleCardMouseMove}
+            onMouseLeave={handleCardMouseLeave}
+          >
+            <div className="auth-screen-card">
+              <motion.div
+                className="auth-screen-card__outer-glow"
+                aria-hidden="true"
+                animate={{
+                  boxShadow: [
+                    "0 0 14px 3px rgba(139, 92, 246, 0.18)",
+                    "0 0 26px 7px rgba(139, 92, 246, 0.32)",
+                    "0 0 14px 3px rgba(139, 92, 246, 0.18)",
+                  ],
+                  opacity: [0.5, 0.85, 0.5],
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", repeatType: "mirror" }}
+              />
+
+              <div className="auth-screen-card__border-glow" aria-hidden="true" />
+
+              <div className="auth-screen-card__beams" aria-hidden="true">
+                <motion.div
+                  className="auth-screen-card__beam auth-screen-card__beam--top"
+                  animate={{
+                    left: ["-50%", "100%"],
+                    opacity: [0.3, 0.7, 0.3],
+                  }}
+                  transition={{
+                    left: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1 },
+                    opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror" },
+                  }}
+                />
+                <motion.div
+                  className="auth-screen-card__beam auth-screen-card__beam--right"
+                  animate={{
+                    top: ["-50%", "100%"],
+                    opacity: [0.3, 0.7, 0.3],
+                  }}
+                  transition={{
+                    top: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 0.6 },
+                    opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror", delay: 0.6 },
+                  }}
+                />
+                <motion.div
+                  className="auth-screen-card__beam auth-screen-card__beam--bottom"
+                  animate={{
+                    right: ["-50%", "100%"],
+                    opacity: [0.3, 0.7, 0.3],
+                  }}
+                  transition={{
+                    right: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 1.2 },
+                    opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror", delay: 1.2 },
+                  }}
+                />
+                <motion.div
+                  className="auth-screen-card__beam auth-screen-card__beam--left"
+                  animate={{
+                    bottom: ["-50%", "100%"],
+                    opacity: [0.3, 0.7, 0.3],
+                  }}
+                  transition={{
+                    bottom: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 1.8 },
+                    opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror", delay: 1.8 },
+                  }}
+                />
+                <motion.div
+                  className="auth-screen-card__corner auth-screen-card__corner--tl"
+                  animate={{ opacity: [0.25, 0.55, 0.25] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatType: "mirror" }}
+                />
+                <motion.div
+                  className="auth-screen-card__corner auth-screen-card__corner--tr"
+                  animate={{ opacity: [0.3, 0.65, 0.3] }}
+                  transition={{ duration: 2.4, repeat: Infinity, repeatType: "mirror", delay: 0.5 }}
+                />
+                <motion.div
+                  className="auth-screen-card__corner auth-screen-card__corner--br"
+                  animate={{ opacity: [0.3, 0.65, 0.3] }}
+                  transition={{ duration: 2.2, repeat: Infinity, repeatType: "mirror", delay: 1 }}
+                />
+                <motion.div
+                  className="auth-screen-card__corner auth-screen-card__corner--bl"
+                  animate={{ opacity: [0.25, 0.55, 0.25] }}
+                  transition={{ duration: 2.3, repeat: Infinity, repeatType: "mirror", delay: 1.5 }}
+                />
+              </div>
+
+              <div className="auth-screen-card__inner">
+                <div className="auth-screen-card__header">
+                  <motion.div
+                    className="auth-screen-card__logo"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", duration: 0.8 }}
+                  >
+                    D
+                  </motion.div>
+                  <motion.h1
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    {mode === "sign-in" ? "Vítej zpět" : "Vytvoř účet"}
+                  </motion.h1>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    {mode === "sign-in"
+                      ? "Přihlas se do DoNext"
+                      : "Zaregistruj se a začni synchronizovat úkoly"}
+                  </motion.p>
+                </div>
+
+                {!isSupabaseConfigured ? (
+                  <p className="auth-widget__message" data-tone="danger">
+                    Supabase není nakonfigurovaný.
+                  </p>
+                ) : (
+                  <form className="auth-screen-card__form" onSubmit={handleSubmit}>
+                    <motion.div
+                      className="auth-screen-card__field"
+                      data-focused={focusedField === "email"}
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    >
+                      <Mail aria-hidden="true" size={16} />
+                      <input
+                        autoComplete="email"
+                        inputMode="email"
+                        placeholder="E-mailová adresa"
+                        type="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.currentTarget.value)}
+                        onFocus={() => setFocusedField("email")}
+                        onBlur={() => setFocusedField(null)}
+                        required
+                      />
+                    </motion.div>
+
+                    <motion.div
+                      className="auth-screen-card__field"
+                      data-focused={focusedField === "password"}
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    >
+                      <Lock aria-hidden="true" size={16} />
+                      <input
+                        autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+                        minLength={6}
+                        placeholder="Heslo"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(event) => setPassword(event.currentTarget.value)}
+                        onFocus={() => setFocusedField("password")}
+                        onBlur={() => setFocusedField(null)}
+                        required
+                      />
+                      <button
+                        aria-label={showPassword ? "Skrýt heslo" : "Zobrazit heslo"}
+                        className="auth-screen-card__password-toggle"
+                        type="button"
+                        onClick={() => setShowPassword((current) => !current)}
+                      >
+                        {showPassword ? <Eye aria-hidden="true" size={16} /> : <EyeClosed aria-hidden="true" size={16} />}
+                      </button>
+                    </motion.div>
+
+                    <motion.button
+                      className="auth-screen-card__submit"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      disabled={isAuthLoading}
+                    >
+                      <AnimatePresence mode="wait">
+                        {isAuthLoading ? (
+                          <motion.span
+                            key="loading"
+                            className="auth-screen-card__spinner"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <motion.span
+                            key="label"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                          >
+                            {mode === "sign-in" ? "Přihlásit se" : "Vytvořit účet"}
+                            <ArrowRight aria-hidden="true" size={14} />
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
+
+                    <motion.p
+                      className="auth-screen-card__switch"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      {mode === "sign-in" ? "Nemáš účet? " : "Už máš účet? "}
+                      <button
+                        type="button"
+                        onClick={() => setMode(mode === "sign-in" ? "sign-up" : "sign-in")}
+                      >
+                        {mode === "sign-in" ? "Zaregistruj se" : "Přihlas se"}
+                      </button>
+                    </motion.p>
+                  </form>
+                )}
+
+                {messages}
+              </div>
             </div>
-          </div>
-
-          {!isSupabaseConfigured ? (
-            <p className="auth-widget__message" data-tone="danger">
-              Supabase neni nakonfigurovany.
-            </p>
-          ) : (
-            form
-          )}
-
-          {messages}
-        </section>
+          </motion.div>
+        </motion.div>
       </main>
     );
   }
@@ -179,47 +415,56 @@ export function AuthWidget({
         <span>
           {user
             ? isAutoSyncing
-              ? "Sync uklada"
+              ? "Sync ukládá"
               : isCloudReady
-                ? "Sync zapnuty"
-                : "Sync nacita"
-            : "Prihlasit"}
+                ? "Sync zapnutý"
+                : "Sync načítá"
+            : "Přihlásit"}
         </span>
       </button>
+      <AnimatePresence>
       {isOpen ? (
         <div className="auth-widget" role="presentation">
-          <button
+          <motion.button
             className="auth-widget__backdrop"
-            aria-label="Zavrit prihlaseni"
+            aria-label="Zavřít přihlášení"
             type="button"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" as const }}
             onClick={() => setIsOpen(false)}
           />
-          <section
+          <motion.section
             className="auth-widget__dialog"
             role="dialog"
             aria-modal="true"
             aria-labelledby="auth-widget-title"
+            initial={{ opacity: 0, scale: 0.95, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 6 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] as const }}
           >
             <div className="auth-widget__header">
               <div>
-                <strong id="auth-widget-title">Ucet a sync</strong>
+                <strong id="auth-widget-title">Účet a sync</strong>
                 <span>
                   {user
                     ? user.email
-                    : "Prihlaseni je pripravene pro synchronizaci a tymy."}
+                    : "Přihlášení je připravené pro synchronizaci a týmy."}
                 </span>
                 {user ? (
                   <span>
                     {isAutoSyncing
-                      ? "Automaticky ukladam zmeny."
+                      ? "Automaticky ukládám změny."
                       : isCloudReady
-                        ? "Automaticky nacitam i ukladam zmeny."
-                        : "Nacitam cloudova data."}
+                        ? "Automaticky načítám i ukládám změny."
+                        : "Načítám cloudová data."}
                   </span>
                 ) : null}
               </div>
               <button
-                aria-label="Zavrit"
+                aria-label="Zavřít"
                 className="auth-widget__close"
                 type="button"
                 onClick={() => setIsOpen(false)}
@@ -230,16 +475,16 @@ export function AuthWidget({
 
             {!isSupabaseConfigured ? (
               <p className="auth-widget__message" data-tone="danger">
-                Supabase neni nakonfigurovany.
+                Supabase není nakonfigurovaný.
               </p>
             ) : user ? (
               <div className="auth-widget__signed-in">
                 <p>
-                  Sync bezi automaticky. Zmeny se ukladaji na pozadi a po
-                  prihlaseni se data sama nactou z cloudu.
+                  Sync běží automaticky. Změny se ukládají na pozadí a po
+                  přihlášení se data sama načtou z cloudu.
                 </p>
                 <button type="button" onClick={onSignOut} disabled={isAuthLoading}>
-                  Odhlasit
+                  Odhlásit
                 </button>
               </div>
             ) : (
@@ -247,9 +492,10 @@ export function AuthWidget({
             )}
 
             {messages}
-          </section>
+          </motion.section>
         </div>
       ) : null}
+      </AnimatePresence>
     </>
   );
 }

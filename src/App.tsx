@@ -78,6 +78,7 @@ type ThemeMode = "dark" | "light";
 type GlobalRole = "user" | "admin";
 type UserProfile = {
   role: GlobalRole;
+  nickname: string | null;
 };
 
 const THEME_STORAGE_KEY = "donext-theme-mode";
@@ -119,6 +120,7 @@ export function App() {
     useState<Task | null>(null);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [authRole, setAuthRole] = useState<GlobalRole | null>(null);
+  const [authNickname, setAuthNickname] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authMessage, setAuthMessage] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
@@ -180,6 +182,7 @@ export function App() {
   useEffect(() => {
     if (!authUser) {
       setAuthRole(null);
+      setAuthNickname(null);
       return;
     }
 
@@ -192,11 +195,12 @@ export function App() {
 
         if (!isCancelled) {
           setAuthRole(profile.role);
+          setAuthNickname(profile.nickname);
         }
       } catch (error) {
         if (!isCancelled) {
           setAuthError(
-            error instanceof Error ? error.message : "Nepodaøilo se naèíst profil uivatele.",
+            error instanceof Error ? error.message : "NepodaÅ™ilo se naÄÃ­st profil uÅ¾ivatele.",
           );
         }
       }
@@ -263,7 +267,7 @@ export function App() {
             cloudState.lists,
             cloudState.tasks,
           );
-          setAuthMessage("Cloudová synchronizace je aktivní.");
+          setAuthMessage("CloudovÃ¡ synchronizace je aktivnÃ­.");
           window.setTimeout(() => {
             isApplyingCloudStateRef.current = false;
           }, 0);
@@ -282,7 +286,7 @@ export function App() {
             cleanLists,
             cleanTasks,
           );
-          setAuthMessage("Cloud je prázdnı. Zaèínáš s èistım úètem.");
+          setAuthMessage("Cloud je prÃ¡zdnÃ½. ZaÄÃ­nÃ¡Å¡ s ÄistÃ½m ÃºÄtem.");
           window.setTimeout(() => {
             isApplyingCloudStateRef.current = false;
           }, 0);
@@ -292,7 +296,7 @@ export function App() {
       } catch (error) {
         if (!isCancelled) {
           setAuthError(
-            error instanceof Error ? error.message : "Automatické naètení cloudu selhalo.",
+            error instanceof Error ? error.message : "AutomatickÃ© naÄtenÃ­ dat z cloudu selhalo.",
           );
         }
       } finally {
@@ -377,7 +381,7 @@ export function App() {
 
           if (!sessionUser) {
             setAuthUser(null);
-            throw new Error("Relace není aktivní. Pøihlas se prosím znovu.");
+            throw new Error("Relace nenÃ­ aktivnÃ­. PÅ™ihlas se prosÃ­m znovu.");
           }
 
           await replaceSupabaseData({
@@ -389,7 +393,7 @@ export function App() {
           lastSyncedSnapshotRef.current = snapshot;
         } catch (error) {
           setAuthError(
-            error instanceof Error ? error.message : "Automatické uloení do cloudu selhalo.",
+            error instanceof Error ? error.message : "AutomatickÃ© uloÅ¾enÃ­ dat do cloudu selhalo.",
           );
         } finally {
           setIsAutoSyncing(false);
@@ -925,7 +929,7 @@ export function App() {
 
   async function handleSignIn(email: string, password: string) {
     if (!supabase) {
-      setAuthError("Supabase není nakonfigurovanı.");
+      setAuthError("Supabase nenÃ­ nakonfigurovanÃ½.");
       return;
     }
 
@@ -947,7 +951,7 @@ export function App() {
         await ensureUserProfile(data.session.user.id);
       }
 
-      setAuthMessage("Pøihlášení probìhlo.");
+      setAuthMessage("PÅ™ihlÃ¡Å¡enÃ­ probÄ›hlo.");
     }
 
     setIsAuthLoading(false);
@@ -955,7 +959,7 @@ export function App() {
 
   async function handleSignUp(email: string, password: string) {
     if (!supabase) {
-      setAuthError("Supabase není nakonfigurovanı.");
+      setAuthError("Supabase nenÃ­ nakonfigurovanÃ½.");
       return;
     }
 
@@ -980,8 +984,8 @@ export function App() {
 
       setAuthMessage(
         data.session
-          ? "Úèet je vytvoøenı a pøihlášenı."
-          : "Úèet je vytvoøenı. Pokud Supabase vyaduje potvrzení, zkontroluj e-mail.",
+          ? "ÃšÄet je vytvoÅ™enÃ½ a pÅ™ihlÃ¡Å¡enÃ½."
+          : "ÃšÄet je vytvoÅ™enÃ½. Pokud Supabase vyÅ¾aduje potvrzenÃ­, zkontroluj e-mail.",
       );
     }
 
@@ -1003,7 +1007,33 @@ export function App() {
       setAuthError(error.message);
     } else {
       setAuthUser(null);
-      setAuthMessage("Odhlášeno.");
+      setAuthMessage("OdhlÃ¡Å¡eno.");
+    }
+
+    setIsAuthLoading(false);
+  }
+
+  async function handleUpdateNickname(nickname: string) {
+    if (!supabase || !authUser) {
+      setAuthError("Pro ulozeni prezdivky se nejdriv prihlas.");
+      return;
+    }
+
+    const trimmedNickname = nickname.trim();
+    setIsAuthLoading(true);
+    setAuthError(null);
+    setAuthMessage(null);
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ nickname: trimmedNickname.length > 0 ? trimmedNickname : null })
+      .eq("id", authUser.id);
+
+    if (error) {
+      setAuthError(error.message);
+    } else {
+      setAuthNickname(trimmedNickname.length > 0 ? trimmedNickname : null);
+      setAuthMessage("Prezdivka je ulozena.");
     }
 
     setIsAuthLoading(false);
@@ -1011,7 +1041,7 @@ export function App() {
 
   async function handleCreateTeam(name: string, color?: string | null, description?: string | null) {
     if (!supabase || !authUser) {
-      setAuthError("Pro vytvoøení tımu se nejdøív pøihlas.");
+      setAuthError("Pro vytvoÅ™enÃ­ tÃ½mu se nejdÅ™Ã­v pÅ™ihlas.");
       return null;
     }
 
@@ -1035,10 +1065,10 @@ export function App() {
 
       setTeams((currentTeams) => [team, ...currentTeams]);
       setActiveTeamId(team.id);
-      setAuthMessage(`Tım ${team.name} je pøipravenı.`);
+      setAuthMessage(`TÃ½m ${team.name} je pÅ™ipravenÃ½.`);
       return team;
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : "Vytvoøení tımu selhalo.");
+      setAuthError(error instanceof Error ? error.message : "VytvoÅ™enÃ­ tÃ½mu selhalo.");
       return null;
     } finally {
       setIsAuthLoading(false);
@@ -1047,7 +1077,7 @@ export function App() {
 
   async function handleDeleteTeam(teamId: string) {
     if (!supabase || !authUser) {
-      const error = new Error("Pro smazání tımu se nejdøív pøihlas.");
+      const error = new Error("Pro smazÃ¡nÃ­ tÃ½mu se nejdÅ™Ã­v pÅ™ihlas.");
       setAuthError(error.message);
       throw error;
     }
@@ -1112,10 +1142,10 @@ export function App() {
       setMissedNotificationTask((currentTask) =>
         currentTask && (currentTask.teamId ?? null) === teamId ? null : currentTask,
       );
-      setAuthMessage(`Tım ${teamToDelete.name} byl smazán.`);
+      setAuthMessage(`TÃ½m ${teamToDelete.name} byl smazÃ¡n.`);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Smazání tımu selhalo.";
+        error instanceof Error ? error.message : "SmazÃ¡nÃ­ tÃ½mu selhalo.";
 
       setAuthError(message);
       throw new Error(message);
@@ -1131,7 +1161,7 @@ export function App() {
 
   async function handleUploadLocalDataToCloud() {
     if (!supabase) {
-      setAuthError("Supabase není nakonfigurovanı.");
+      setAuthError("Supabase nenÃ­ nakonfigurovanÃ½.");
       return;
     }
 
@@ -1150,7 +1180,7 @@ export function App() {
 
       if (!sessionUser) {
         setAuthUser(null);
-        throw new Error("Relace není aktivní. Pøihlas se prosím znovu.");
+        throw new Error("Relace nenÃ­ aktivnÃ­. PÅ™ihlas se prosÃ­m znovu.");
       }
 
       setAuthUser(sessionUser);
@@ -1165,10 +1195,10 @@ export function App() {
       lastSyncedSnapshotRef.current = createCloudSyncSnapshot(lists, tasks);
       setIsCloudReady(true);
       setAuthMessage(
-        `Nahráno: ${result.lists} seznamù, ${result.tasks} úkolù, ${result.subtasks} podúkolù, ${result.labels} štítkù.`,
+        `NahrÃ¡no: ${result.lists} seznamÅ¯, ${result.tasks} ÃºkolÅ¯, ${result.subtasks} podÃºkolÅ¯, ${result.labels} Å¡tÃ­tkÅ¯.`,
       );
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : "Nahrání do cloudu selhalo.");
+      setAuthError(error instanceof Error ? error.message : "NahrÃ¡nÃ­ do cloudu selhalo.");
     } finally {
       setIsCloudUploadLoading(false);
     }
@@ -1176,7 +1206,7 @@ export function App() {
 
   async function handleDownloadCloudData() {
     if (!supabase) {
-      setAuthError("Supabase není nakonfigurovanı.");
+      setAuthError("Supabase nenÃ­ nakonfigurovanÃ½.");
       return;
     }
 
@@ -1195,7 +1225,7 @@ export function App() {
 
       if (!sessionUser) {
         setAuthUser(null);
-        throw new Error("Relace není aktivní. Pøihlas se prosím znovu.");
+        throw new Error("Relace nenÃ­ aktivnÃ­. PÅ™ihlas se prosÃ­m znovu.");
       }
 
       const cloudState = await downloadSupabaseData(sessionUser.id);
@@ -1216,10 +1246,10 @@ export function App() {
         isApplyingCloudStateRef.current = false;
       }, 0);
       setAuthMessage(
-        `Naèteno z cloudu: ${cloudState.lists.filter((list) => !list.isSystem).length} seznamù a ${cloudState.tasks.length} úkolù.`,
+        `NaÄteno z cloudu: ${cloudState.lists.filter((list) => !list.isSystem).length} seznamÅ¯ a ${cloudState.tasks.length} ÃºkolÅ¯.`,
       );
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : "Naètení z cloudu selhalo.");
+      setAuthError(error instanceof Error ? error.message : "NaÄtenÃ­ z cloudu selhalo.");
     } finally {
       setIsCloudUploadLoading(false);
     }
@@ -1227,12 +1257,12 @@ export function App() {
 
   async function handleSaveLocalChangesToCloud() {
     if (!supabase) {
-      setAuthError("Supabase není nakonfigurovanı.");
+      setAuthError("Supabase nenÃ­ nakonfigurovanÃ½.");
       return;
     }
 
     const shouldContinue = window.confirm(
-      "Tímto pøepíšeš cloud aktuální lokální verzí. Pokraèovat?",
+      "TÃ­mto pÅ™epÃ­Å¡eÅ¡ cloud aktuÃ¡lnÃ­ lokÃ¡lnÃ­ verzÃ­. PokraÄovat?",
     );
 
     if (!shouldContinue) {
@@ -1254,7 +1284,7 @@ export function App() {
 
       if (!sessionUser) {
         setAuthUser(null);
-        throw new Error("Relace není aktivní. Pøihlas se prosím znovu.");
+        throw new Error("Relace nenÃ­ aktivnÃ­. PÅ™ihlas se prosÃ­m znovu.");
       }
 
       setAuthUser(sessionUser);
@@ -1269,10 +1299,10 @@ export function App() {
       lastSyncedSnapshotRef.current = createCloudSyncSnapshot(lists, tasks);
       setIsCloudReady(true);
       setAuthMessage(
-        `Cloud uloen: ${result.lists} seznamù, ${result.tasks} úkolù, ${result.subtasks} podúkolù, ${result.labels} štítkù.`,
+        `Cloud uloÅ¾en: ${result.lists} seznamÅ¯, ${result.tasks} ÃºkolÅ¯, ${result.subtasks} podÃºkolÅ¯, ${result.labels} Å¡tÃ­tkÅ¯.`,
       );
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : "Uloení do cloudu selhalo.");
+      setAuthError(error instanceof Error ? error.message : "UloÅ¾enÃ­ do cloudu selhalo.");
     } finally {
       setIsCloudUploadLoading(false);
     }
@@ -1299,13 +1329,13 @@ export function App() {
 
   if (!isAuthSessionChecked) {
     return (
-      <main className="auth-screen auth-screen--loading" aria-label="Naèítání DoNext">
+      <main className="auth-screen auth-screen--loading" aria-label="NaÄÃ­tÃ¡nÃ­ DoNext">
         <section className="auth-screen__card">
           <div className="auth-screen__brand">
             <span aria-hidden="true">Do</span>
             <strong>DoNext</strong>
           </div>
-          <p className="auth-screen__loading-copy">Naèítám úèet...</p>
+          <p className="auth-screen__loading-copy">NaÄÃ­tÃ¡m ÃºÄet...</p>
         </section>
       </main>
     );
@@ -1390,21 +1420,14 @@ export function App() {
             currentThemeMode === "dark" ? "light" : "dark",
           )
         }
-      />
-      <AuthWidget
+        userEmail={authUser?.email ?? null}
+        userCreatedAt={authUser?.created_at ?? null}
+        nickname={authNickname}
         authError={authError}
         authMessage={authMessage}
-        isAuthLoading={isAuthLoading}
-        isAutoSyncing={isAutoSyncing}
-        isCloudReady={isCloudReady}
-        isCloudUploadLoading={isCloudUploadLoading}
-        user={authUser}
-        onSignIn={handleSignIn}
+        isAuthActionLoading={isAuthLoading}
+        onUpdateNickname={handleUpdateNickname}
         onSignOut={handleSignOut}
-        onSignUp={handleSignUp}
-        onDownloadCloudData={handleDownloadCloudData}
-        onSaveLocalChanges={handleSaveLocalChangesToCloud}
-        onUploadLocalData={handleUploadLocalDataToCloud}
       />
     </>
   );
@@ -1452,13 +1475,13 @@ function createCloudSyncSnapshot(lists: TaskList[], tasks: Task[]) {
 
 async function ensureUserProfile(userId: string): Promise<UserProfile> {
   if (!supabase) {
-    throw new Error("Supabase není nakonfigurovanı.");
+    throw new Error("Supabase nenÃ­ nakonfigurovanÃ½.");
   }
 
   const { data, error } = await supabase
     .from("profiles")
     .upsert({ id: userId }, { onConflict: "id" })
-    .select("role")
+    .select("role, nickname")
     .single();
 
   if (error) {
@@ -1467,6 +1490,7 @@ async function ensureUserProfile(userId: string): Promise<UserProfile> {
 
   return {
     role: data.role === "admin" ? "admin" : "user",
+    nickname: data.nickname ?? null,
   };
 }
 
