@@ -9307,7 +9307,8 @@ input[type="checkbox"]:focus-visible {
 }
 
 .teams-overview__table-row [data-role="admin"],
-.teams-overview__table-row [data-role="member"] {
+.teams-overview__table-row [data-role="member"],
+.teams-overview__table-row [data-role="owner"] {
   border: 1px solid rgba(148, 163, 184, 0.13);
   border-radius: 999px;
   color: var(--color-text-secondary);
@@ -9326,7 +9327,14 @@ input[type="checkbox"]:focus-visible {
   color: #c4b5fd;
 }
 
-.teams-overview__table-row [data-status="active"] {
+.teams-overview__table-row [data-role="owner"] {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+.teams-overview__table-row [data-status="active"],
+.teams-overview__table-row [data-status="pending"] {
   align-items: center;
   color: var(--color-text-primary);
   display: inline-flex;
@@ -9335,13 +9343,29 @@ input[type="checkbox"]:focus-visible {
   font-weight: 800;
 }
 
-.teams-overview__table-row [data-status="active"]::before {
-  background: #a78bfa;
+.teams-overview__table-row [data-status="active"]::before,
+.teams-overview__table-row [data-status="pending"]::before {
   border-radius: 999px;
   content: "";
   display: inline-block;
   height: 0.38rem;
   width: 0.38rem;
+}
+
+.teams-overview__table-row [data-status="active"]::before {
+  background: #a78bfa;
+}
+
+.teams-overview__table-row [data-status="pending"] {
+  color: var(--color-text-muted);
+}
+
+.teams-overview__table-row [data-status="pending"]::before {
+  background: #94a3b8;
+}
+
+.teams-overview__table-row[data-pending="true"] {
+  opacity: 0.82;
 }
 
 .teams-overview__row-actions {
@@ -9369,8 +9393,7 @@ input[type="checkbox"]:focus-visible {
   color: #f87171;
 }
 
-.teams-overview__team-list,
-.teams-overview__invite-list {
+.teams-overview__team-list {
   display: grid;
   gap: 0.55rem;
 }
@@ -9452,48 +9475,6 @@ input[type="checkbox"]:focus-visible {
 }
 
 
-.teams-overview__invite-row {
-  align-items: center;
-  background: rgba(0, 0, 0, 0.14);
-  border: 1px solid rgba(148, 163, 184, 0.11);
-  border-radius: var(--radius-sm);
-  display: grid;
-  gap: 0.65rem;
-  grid-template-columns: auto minmax(0, 1fr);
-  min-width: 0;
-  padding: 0.68rem;
-  transition: border-color 0.15s ease;
-}
-
-.teams-overview__invite-row:hover {
-  border-color: rgba(139, 124, 255, 0.28);
-}
-
-.teams-overview__invite-row > span:last-child {
-  min-width: 0;
-}
-
-.teams-overview__invite-row strong,
-.teams-overview__invite-row small {
-  display: block;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.teams-overview__invite-icon {
-  align-items: center;
-  background: rgba(109, 93, 252, 0.16);
-  border-radius: 7px;
-  color: #c4b5fd;
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 30px;
-  justify-content: center;
-  width: 30px;
-}
-
 .teams-overview__error,
 .teams-overview__empty {
   color: var(--color-text-secondary);
@@ -9506,8 +9487,7 @@ input[type="checkbox"]:focus-visible {
   font-weight: 750;
 }
 
-.teams-overview__team-list .teams-overview__empty,
-.teams-overview__invite-list .teams-overview__empty {
+.teams-overview__team-list .teams-overview__empty {
   border: 1px dashed rgba(148, 163, 184, 0.22);
   border-radius: var(--radius-sm);
   font-size: 0.82rem;
@@ -9517,8 +9497,7 @@ input[type="checkbox"]:focus-visible {
 
 [data-theme="light"] .teams-overview__inline-form,
 [data-theme="light"] .teams-overview__metric-card,
-[data-theme="light"] .teams-overview__team-card:not([data-selected="true"]),
-[data-theme="light"] .teams-overview__invite-row {
+[data-theme="light"] .teams-overview__team-card:not([data-selected="true"]) {
   background: rgba(248, 250, 252, 0.84);
 }
 
@@ -10527,9 +10506,7 @@ input[type="checkbox"]:focus-visible {
 .team-create-flow__field input,
 .team-create-flow__field textarea,
 .team-create-flow__field select,
-.team-create-flow__member-add input,
-.team-create-flow__member-add select,
-.team-create-flow__draft-row select {
+.team-create-flow__member-add input {
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid var(--color-border);
   border-radius: 9px;
@@ -10549,8 +10526,7 @@ input[type="checkbox"]:focus-visible {
 .team-create-flow__field input:focus-visible,
 .team-create-flow__field textarea:focus-visible,
 .team-create-flow__field select:focus-visible,
-.team-create-flow__member-add input:focus-visible,
-.team-create-flow__member-add select:focus-visible {
+.team-create-flow__member-add input:focus-visible {
   background: rgba(0, 0, 0, 0.28);
   border-color: rgba(167, 139, 250, 0.6);
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.22);
@@ -10569,9 +10545,7 @@ input[type="checkbox"]:focus-visible {
 [data-theme="light"] .team-create-flow__field input,
 [data-theme="light"] .team-create-flow__field textarea,
 [data-theme="light"] .team-create-flow__field select,
-[data-theme="light"] .team-create-flow__member-add input,
-[data-theme="light"] .team-create-flow__member-add select,
-[data-theme="light"] .team-create-flow__draft-row select {
+[data-theme="light"] .team-create-flow__member-add input {
   background: rgba(255, 255, 255, 0.9);
 }
 
@@ -10582,7 +10556,7 @@ input[type="checkbox"]:focus-visible {
 .team-create-flow__member-add {
   display: grid;
   gap: 0.55rem;
-  grid-template-columns: minmax(0, 1fr) minmax(6.5rem, auto) 42px;
+  grid-template-columns: minmax(0, 1fr) 42px;
 }
 
 .team-create-flow__member-add button {
@@ -10643,11 +10617,10 @@ input[type="checkbox"]:focus-visible {
   white-space: nowrap;
 }
 
-.team-create-flow__draft-row select {
+.team-create-flow__draft-row small {
+  color: var(--color-text-muted);
+  display: block;
   font-size: 0.75rem;
-  margin-top: 0.35rem;
-  min-height: 30px;
-  padding-block: 0.25rem;
 }
 
 .team-create-flow__draft-row > button {

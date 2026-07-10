@@ -292,6 +292,27 @@ export async function acceptPendingTeamInvites(): Promise<number> {
   return typeof data === 'number' ? data : 0;
 }
 
+export async function cancelTeamInvite({
+  teamId,
+  inviteId,
+}: {
+  teamId: string;
+  inviteId: string;
+}): Promise<void> {
+  if (!supabase) {
+    throw new Error('Supabase neni nakonfigurovany.');
+  }
+
+  const { error } = await supabase.rpc('cancel_team_invite', {
+    check_team_id: teamId,
+    target_invite_id: inviteId,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function updateTeamMemberRole({
   role,
   teamId,

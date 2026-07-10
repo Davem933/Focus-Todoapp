@@ -16,6 +16,7 @@ import { buildCountsByTeamId } from "../teams/teamCounts";
 import type { Team, TeamInvite, TeamMember } from "../teams/teamTypes";
 import type { Project, ProjectColumn } from "../projects/projectTypes";
 import {
+  cancelTeamInvite,
   inviteTeamMemberByEmail,
   loadTeamInvites,
   loadTeamMembers,
@@ -767,7 +768,6 @@ export function AppShell(props: AppShellProps) {
 type CreateTeamDraftMember = {
   email: string;
   id: string;
-  role: "admin" | "member";
 };
 
 type TeamsOverviewPanelProps = {
@@ -807,7 +807,6 @@ function TeamsOverviewPanel({
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamMission, setNewTeamMission] = useState("");
   const [newTeamMemberEmail, setNewTeamMemberEmail] = useState("");
-  const [newTeamMemberRole, setNewTeamMemberRole] = useState<"admin" | "member">("member");
   const [newTeamMembers, setNewTeamMembers] = useState<CreateTeamDraftMember[]>([]);
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [isTeamMenuOpen, setIsTeamMenuOpen] = useState(false);
@@ -924,7 +923,6 @@ function TeamsOverviewPanel({
     setNewTeamName("");
     setNewTeamMission("");
     setNewTeamMemberEmail("");
-    setNewTeamMemberRole("member");
     setNewTeamMembers([]);
   }
 
@@ -945,7 +943,6 @@ function TeamsOverviewPanel({
     setNewTeamName(selectedTeam.name);
     setNewTeamMission(selectedTeam.description ?? "");
     setNewTeamMemberEmail("");
-    setNewTeamMemberRole("member");
     setNewTeamMembers([]);
     setError(null);
     setIsCreateTeamOpen(true);
@@ -973,25 +970,15 @@ function TeamsOverviewPanel({
         {
           email: trimmedNewTeamMemberEmail,
           id: crypto.randomUUID(),
-          role: newTeamMemberRole,
         },
       ];
     });
     setNewTeamMemberEmail("");
-    setNewTeamMemberRole("member");
   }
 
   function handleRemoveDraftTeamMember(memberId: string) {
     setNewTeamMembers((currentMembers) =>
       currentMembers.filter((member) => member.id !== memberId),
-    );
-  }
-
-  function handleChangeDraftTeamMemberRole(memberId: string, role: "admin" | "member") {
-    setNewTeamMembers((currentMembers) =>
-      currentMembers.map((member) =>
-        member.id === memberId ? { ...member, role } : member,
-      ),
     );
   }
 
@@ -1023,18 +1010,10 @@ function TeamsOverviewPanel({
       }
 
       for (const draftMember of newTeamMembers) {
-        const result = await inviteTeamMemberByEmail({
+        await inviteTeamMemberByEmail({
           email: draftMember.email,
           teamId: targetTeam.id,
         });
-
-        if (result.kind === "member" && draftMember.role === "admin") {
-          await updateTeamMemberRole({
-            role: "admin",
-            teamId: targetTeam.id,
-            userId: result.member.userId,
-          });
-        }
       }
 
       const [nextMembers, nextInvites] = await Promise.all([
@@ -1172,6 +1151,36 @@ function TeamsOverviewPanel({
     }
   }
 
+  async function handleCancelInvite(invite: TeamInvite) {
+    if (!selectedTeamId || !canManageSelectedTeam) {
+      return;
+    }
+
+    const shouldCancel = window.confirm("Zrušit pozvánku pro " + invite.email + "?");
+
+    if (!shouldCancel) {
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await cancelTeamInvite({ teamId: selectedTeamId, inviteId: invite.id });
+      setInvites((currentInvites) =>
+        currentInvites.filter((currentInvite) => currentInvite.id !== invite.id),
+      );
+    } catch (cancelError) {
+      setError(
+        cancelError instanceof Error
+          ? cancelError.message
+          : "Pozvánku se nepodařilo zrušit.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function handleDeleteTeamAction() {
     if (!selectedTeam || !canManageSelectedTeam || isLoading) {
       return;
@@ -1239,6 +1248,7 @@ function TeamsOverviewPanel({
   const openInviteCount = invites.length;
   const totalWorkspacePeople = members.length + openInviteCount;
   const selectedTeamMemberCount = members.length;
+  const overviewRows = buildTeamOverviewRows(members, invites, selectedTeam?.ownerId);
 
   return (
     <section className="app-panel teams-overview teams-page" aria-label="Přehled týmů">
@@ -1369,63 +1379,128 @@ function TeamsOverviewPanel({
               <span role="columnheader">Status</span>
               <span role="columnheader">Akce</span>
             </div>
-            {isLoading && members.length === 0 && invites.length === 0 ? (
+            {isLoading && overviewRows.length === 0 ? (
               <p className="teams-overview__empty">Načítám členy...</p>
             ) : null}
-            {!isLoading && members.length === 0 && invites.length === 0 ? (
+            {!isLoading && overviewRows.length === 0 ? (
               <p className="teams-overview__empty">Vybraný tým zatím nemá žádné členy ani pozvánky.</p>
             ) : null}
             <AnimatePresence initial={false}>
-              {members.map((member, memberIndex) => {
+              {overviewRows.map((row, rowIndex) => {
+                if (row.kind === "invite") {
+                  const invite = row.invite;
+
+                  return (
+                    <motion.div
+                      className="teams-overview__table-row"
+                      data-pending="true"
+                      key={"invite-" + invite.id}
+                      role="row"
+                      layout={prefersReducedMotion ? undefined : true}
+                      initial={prefersReducedMotion ? false : { opacity: 0 }}
+                      animate={{
+                        opacity: 1,
+                        transition: { duration: 0.2, delay: prefersReducedMotion ? 0 : rowIndex * 0.03 },
+                      }}
+                      exit={prefersReducedMotion ? undefined : { opacity: 0, transition: { duration: 0.15 } }}
+                    >
+                      <span className="teams-overview__member-cell" role="cell">
+                        <span className="teams-overview__avatar" aria-hidden="true">
+                          {getMemberInitials(invite.email)}
+                        </span>
+                        <span>
+                          <strong>{getMemberDisplayName(invite.email)}</strong>
+                          <small>{invite.email}</small>
+                        </span>
+                      </span>
+                      <span role="cell" data-role="member">Člen</span>
+                      <span role="cell" data-status="pending">Čeká na přijetí</span>
+                      <span className="teams-overview__row-actions" role="cell">
+                        {canManageSelectedTeam ? (
+                          <button
+                            className="teams-overview__row-actions-danger"
+                            type="button"
+                            disabled={isLoading}
+                            onClick={() => void handleCancelInvite(invite)}
+                          >
+                            Zrušit pozvánku
+                          </button>
+                        ) : (
+                          <small>Jen správce</small>
+                        )}
+                      </span>
+                    </motion.div>
+                  );
+                }
+
+                const member = row.member;
                 const memberIsAdmin = isTeamAdminRole(member.role);
+                const isOwnerRow = Boolean(selectedTeam && member.userId === selectedTeam.ownerId);
+                const isSelfRow = Boolean(currentUserId && member.userId === currentUserId);
                 const nextRole = memberIsAdmin ? "member" : "admin";
+                const isLastAdmin = memberIsAdmin && adminCount <= 1;
                 const memberInitials = getMemberInitials(member.email);
+                const roleLabel = isOwnerRow ? "Vlastník" : getTeamRoleLabel(member.role);
+                const roleDataAttr = isOwnerRow ? "owner" : memberIsAdmin ? "admin" : "member";
+
+                let actionsContent: ReactNode;
+
+                if (isSelfRow) {
+                  actionsContent = <small>Tvůj řádek</small>;
+                } else if (isOwnerRow && !isGlobalAdmin) {
+                  actionsContent = <small>Chráněno vlastníkem</small>;
+                } else if (!canManageSelectedTeam) {
+                  actionsContent = <small>Jen správce</small>;
+                } else {
+                  actionsContent = (
+                    <>
+                      <button
+                        type="button"
+                        disabled={isLoading || (memberIsAdmin && isLastAdmin)}
+                        title={memberIsAdmin && isLastAdmin ? "Tým musí mít alespoň jednoho admina." : undefined}
+                        onClick={() => void handleChangeMemberRole(member, nextRole)}
+                      >
+                        {memberIsAdmin ? "Člen" : "Admin"}
+                      </button>
+                      <button
+                        className="teams-overview__row-actions-danger"
+                        type="button"
+                        disabled={isLoading || isLastAdmin}
+                        title={isLastAdmin ? "Tým musí mít alespoň jednoho admina." : undefined}
+                        onClick={() => void handleRemoveMember(member)}
+                      >
+                        Odebrat
+                      </button>
+                    </>
+                  );
+                }
 
                 return (
                   <motion.div
                     className="teams-overview__table-row"
                     key={member.userId}
                     role="row"
-                    initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={prefersReducedMotion ? undefined : { opacity: 0 }}
-                    transition={{ duration: 0.2, delay: prefersReducedMotion ? 0 : memberIndex * 0.03 }}
+                    layout={prefersReducedMotion ? undefined : true}
+                    initial={prefersReducedMotion ? false : { opacity: 0 }}
+                    animate={{
+                      opacity: 1,
+                      transition: { duration: 0.2, delay: prefersReducedMotion ? 0 : rowIndex * 0.03 },
+                    }}
+                    exit={prefersReducedMotion ? undefined : { opacity: 0, transition: { duration: 0.15 } }}
                   >
                     <span className="teams-overview__member-cell" role="cell">
                       <span className="teams-overview__avatar" aria-hidden="true">{memberInitials}</span>
                       <span>
-                        <strong>{getMemberDisplayName(member.email)}</strong>
+                        <strong>{getMemberDisplayName(member.email)}{isSelfRow ? " (Ty)" : ""}</strong>
                         <small>{member.email}</small>
                       </span>
                     </span>
-                    <span role="cell" data-role={memberIsAdmin ? "admin" : "member"}>
-                      {getTeamRoleLabel(member.role)}
+                    <span role="cell" data-role={roleDataAttr}>
+                      {roleLabel}
                     </span>
                     <span role="cell" data-status="active">Aktivní</span>
                     <span className="teams-overview__row-actions" role="cell">
-                      {canManageSelectedTeam ? (
-                        <>
-                          {!memberIsAdmin ? (
-                            <button
-                              type="button"
-                              disabled={isLoading}
-                              onClick={() => void handleChangeMemberRole(member, nextRole)}
-                            >
-                              Admin
-                            </button>
-                          ) : null}
-                          <button
-                            className="teams-overview__row-actions-danger"
-                            type="button"
-                            disabled={isLoading}
-                            onClick={() => void handleRemoveMember(member)}
-                          >
-                            Odebrat
-                          </button>
-                        </>
-                      ) : (
-                        <small>Jen správce</small>
-                      )}
+                      {actionsContent}
                     </span>
                   </motion.div>
                 );
@@ -1471,32 +1546,6 @@ function TeamsOverviewPanel({
                 ))
               ) : (
                 <p className="teams-overview__empty">Zatím nemáš žádné týmy.</p>
-              )}
-            </div>
-          </section>
-
-          <section className="teams-overview__side-card">
-            <div className="teams-overview__card-head">
-              <div>
-                <h3>Čekající pozvánky</h3>
-                <p>{openInviteCount === 1 ? "1 čekající pozvánka" : `${openInviteCount} čekajících pozvánek`}</p>
-              </div>
-            </div>
-            <div className="teams-overview__invite-list">
-              {invites.length > 0 ? (
-                invites.slice(0, 4).map((invite) => (
-                  <div className="teams-overview__invite-row" key={invite.id}>
-                    <span className="teams-overview__invite-icon" aria-hidden="true">
-                      <MailPlus size={14} />
-                    </span>
-                    <span>
-                      <strong>{invite.email}</strong>
-                      <small>Čeká na registraci</small>
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="teams-overview__empty">Žádné otevřené pozvánky.</p>
               )}
             </div>
           </section>
@@ -1592,16 +1641,6 @@ function TeamsOverviewPanel({
                     value={newTeamMemberEmail}
                     onChange={(event) => setNewTeamMemberEmail(event.currentTarget.value)}
                   />
-                  <select
-                    aria-label="Role člena"
-                    value={newTeamMemberRole}
-                    onChange={(event) =>
-                      setNewTeamMemberRole(event.currentTarget.value as "admin" | "member")
-                    }
-                  >
-                    <option value="member">Člen</option>
-                    <option value="admin">Admin</option>
-                  </select>
                   <motion.button
                     type="button"
                     onClick={handleAddDraftTeamMember}
@@ -1631,19 +1670,7 @@ function TeamsOverviewPanel({
                           </span>
                           <span>
                             <strong>{member.email}</strong>
-                            <select
-                              aria-label={"Role pro " + member.email}
-                              value={member.role}
-                              onChange={(event) =>
-                                handleChangeDraftTeamMemberRole(
-                                  member.id,
-                                  event.currentTarget.value as "admin" | "member",
-                                )
-                              }
-                            >
-                              <option value="member">Člen</option>
-                              <option value="admin">Admin</option>
-                            </select>
+                            <small>Člen</small>
                           </span>
                           <button
                             aria-label={"Odebrat " + member.email}
@@ -3405,6 +3432,43 @@ function sortTeamMembers(left: TeamMember, right: TeamMember) {
 
 function sortTeamInvites(left: TeamInvite, right: TeamInvite) {
   return left.email.localeCompare(right.email, "cs-CZ");
+}
+
+type TeamOverviewRow =
+  | { kind: "member"; email: string; member: TeamMember }
+  | { kind: "invite"; email: string; invite: TeamInvite };
+
+function getTeamOverviewRowRank(row: TeamOverviewRow, ownerId: string | undefined) {
+  if (row.kind === "invite") {
+    return 3;
+  }
+
+  if (ownerId && row.member.userId === ownerId) {
+    return 0;
+  }
+
+  return isTeamAdminRole(row.member.role) ? 1 : 2;
+}
+
+function buildTeamOverviewRows(
+  members: TeamMember[],
+  invites: TeamInvite[],
+  ownerId: string | undefined,
+): TeamOverviewRow[] {
+  const rows: TeamOverviewRow[] = [
+    ...members.map((member): TeamOverviewRow => ({ kind: "member", email: member.email, member })),
+    ...invites.map((invite): TeamOverviewRow => ({ kind: "invite", email: invite.email, invite })),
+  ];
+
+  return rows.sort((left, right) => {
+    const rankDiff = getTeamOverviewRowRank(left, ownerId) - getTeamOverviewRowRank(right, ownerId);
+
+    if (rankDiff !== 0) {
+      return rankDiff;
+    }
+
+    return left.email.localeCompare(right.email, "cs-CZ");
+  });
 }
 
 type DashboardOverlayProps = {
