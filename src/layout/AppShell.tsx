@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, DragEvent, FormEvent, TouchEvent } from "react";
-import { BarChart3, Bell, FolderKanban, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Trash2, UserPlus, Users, X } from "lucide-react";
+import type { CSSProperties, DragEvent, FormEvent, ReactNode, TouchEvent } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { BarChart3, Bell, CheckCircle2, FolderKanban, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Trash2, UserPlus, Users, X } from "lucide-react";
 import { useAppLayout } from "./useAppLayout";
 import type { VisiblePanel } from "./layoutTypes";
 import { getTodayDateValue } from "../tasks/dateUtils";
@@ -606,6 +607,8 @@ export function AppShell(props: AppShellProps) {
             <WorkspaceHomePanel
               activeTeam={teams.find((team) => team.id === activeTeamId) ?? null}
               currentUserId={currentUserId}
+              currentUserEmail={userEmail}
+              currentUserNickname={nickname}
               tasks={tasks}
               onCreateBoard={handleOpenProjectCreateFlow}
               onCreateTeam={handleOpenTeamCreateFlow}
@@ -787,6 +790,7 @@ function TeamsOverviewPanel({
   onOpenTeamWorkspace,
   onTeamUpdated,
 }: TeamsOverviewPanelProps) {
+  const prefersReducedMotion = useReducedMotion();
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(
     activeTeamId ?? teams[0]?.id ?? null,
   );
@@ -1205,13 +1209,13 @@ function TeamsOverviewPanel({
   const selectedTeamMemberCount = members.length;
 
   return (
-    <section className="app-panel teams-overview" aria-label="Přehled týmů">
+    <section className="app-panel teams-overview teams-page" aria-label="Přehled týmů">
       <div className="teams-overview__header">
         <div>
           <h2>Správa týmů</h2>
           <p>Spravuj role, pozvánky a členy pracovního prostoru.</p>
         </div>
-        <div className="teams-overview__actions">
+        <div className="teams-overview__actions teams-page__actions">
           <button type="button" onClick={openCreateTeamFlow}>
             <UserPlus aria-hidden="true" size={16} />
             <span>Vytvořit tým</span>
@@ -1227,11 +1231,35 @@ function TeamsOverviewPanel({
         </div>
       </div>
 
-      <div className="teams-overview__metrics" aria-label="Metriky týmu">
-        <TeamMetricCard label="Celkem členů" value={totalWorkspacePeople} tone="purple" />
-        <TeamMetricCard label="Aktivní členové" value={selectedTeamMemberCount} tone="mint" />
-        <TeamMetricCard label="Správci" value={adminCount} tone="slate" />
-        <TeamMetricCard label="Otevřené pozvánky" value={openInviteCount} tone="slate" />
+      <div className="teams-metrics" aria-label="Metriky týmu">
+        <TeamsMetricCard
+          index={0}
+          icon={<Users aria-hidden="true" size={16} />}
+          label="Celkem členů"
+          tone="purple"
+          value={totalWorkspacePeople}
+        />
+        <TeamsMetricCard
+          index={1}
+          icon={<CheckCircle2 aria-hidden="true" size={16} />}
+          label="Aktivní členové"
+          tone="mint"
+          value={selectedTeamMemberCount}
+        />
+        <TeamsMetricCard
+          index={2}
+          icon={<ShieldCheck aria-hidden="true" size={16} />}
+          label="Správci"
+          tone="slate"
+          value={adminCount}
+        />
+        <TeamsMetricCard
+          index={3}
+          icon={<MailPlus aria-hidden="true" size={16} />}
+          label="Otevřené pozvánky"
+          tone="amber"
+          value={openInviteCount}
+        />
       </div>
 
 
@@ -1293,51 +1321,62 @@ function TeamsOverviewPanel({
             {!isLoading && members.length === 0 && invites.length === 0 ? (
               <p className="teams-overview__empty">Vybraný tým zatím nemá žádné členy ani pozvánky.</p>
             ) : null}
-            {members.map((member) => {
-              const memberIsAdmin = isTeamAdminRole(member.role);
-              const nextRole = memberIsAdmin ? "member" : "admin";
-              const memberInitials = getMemberInitials(member.email);
+            <AnimatePresence initial={false}>
+              {members.map((member, memberIndex) => {
+                const memberIsAdmin = isTeamAdminRole(member.role);
+                const nextRole = memberIsAdmin ? "member" : "admin";
+                const memberInitials = getMemberInitials(member.email);
 
-              return (
-                <div className="teams-overview__table-row" key={member.userId} role="row">
-                  <span className="teams-overview__member-cell" role="cell">
-                    <span className="teams-overview__avatar" aria-hidden="true">{memberInitials}</span>
-                    <span>
-                      <strong>{getMemberDisplayName(member.email)}</strong>
-                      <small>{member.email}</small>
+                return (
+                  <motion.div
+                    className="teams-overview__table-row"
+                    key={member.userId}
+                    role="row"
+                    initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={prefersReducedMotion ? undefined : { opacity: 0 }}
+                    transition={{ duration: 0.2, delay: prefersReducedMotion ? 0 : memberIndex * 0.03 }}
+                  >
+                    <span className="teams-overview__member-cell" role="cell">
+                      <span className="teams-overview__avatar" aria-hidden="true">{memberInitials}</span>
+                      <span>
+                        <strong>{getMemberDisplayName(member.email)}</strong>
+                        <small>{member.email}</small>
+                      </span>
                     </span>
-                  </span>
-                  <span role="cell" data-role={memberIsAdmin ? "admin" : "member"}>
-                    {getTeamRoleLabel(member.role)}
-                  </span>
-                  <span role="cell" data-status="active">Aktivní</span>
-                  <span className="teams-overview__row-actions" role="cell">
-                    {canManageSelectedTeam ? (
-                      <>
-                        {!memberIsAdmin ? (
+                    <span role="cell" data-role={memberIsAdmin ? "admin" : "member"}>
+                      {getTeamRoleLabel(member.role)}
+                    </span>
+                    <span role="cell" data-status="active">Aktivní</span>
+                    <span className="teams-overview__row-actions" role="cell">
+                      {canManageSelectedTeam ? (
+                        <>
+                          {!memberIsAdmin ? (
+                            <button
+                              type="button"
+                              disabled={isLoading}
+                              onClick={() => void handleChangeMemberRole(member, nextRole)}
+                            >
+                              Admin
+                            </button>
+                          ) : null}
                           <button
+                            className="teams-overview__row-actions-danger"
                             type="button"
                             disabled={isLoading}
-                            onClick={() => void handleChangeMemberRole(member, nextRole)}
+                            onClick={() => void handleRemoveMember(member)}
                           >
-                            Admin
+                            Odebrat
                           </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          disabled={isLoading}
-                          onClick={() => void handleRemoveMember(member)}
-                        >
-                          Odebrat
-                        </button>
-                      </>
-                    ) : (
-                      <small>Jen správce</small>
-                    )}
-                  </span>
-                </div>
-              );
-            })}
+                        </>
+                      ) : (
+                        <small>Jen správce</small>
+                      )}
+                    </span>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         </div>
 
@@ -1410,20 +1449,29 @@ function TeamsOverviewPanel({
         </aside>
       </div>
 
-      {isCreateTeamOpen ? (
+      <AnimatePresence>
+        {isCreateTeamOpen ? (
         <div className="team-create-flow" role="presentation">
-          <button
+          <motion.button
             className="team-create-flow__backdrop"
             aria-label="Zavřít vytváření týmu"
             type="button"
             onClick={closeCreateTeamFlow}
+            initial={prefersReducedMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={prefersReducedMotion ? undefined : { opacity: 0 }}
+            transition={{ duration: 0.18 }}
           />
-          <form
+          <motion.form
             className="team-create-flow__panel"
             role="dialog"
             aria-modal="true"
             aria-labelledby="team-create-title"
             onSubmit={handleCreateTeam}
+            initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.97, y: 8 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="team-create-flow__header">
               <div>
@@ -1534,9 +1582,10 @@ function TeamsOverviewPanel({
                 </button>
               </section>
             </div>
-          </form>
+          </motion.form>
         </div>
-      ) : null}
+        ) : null}
+      </AnimatePresence>
     </section>
   );
 }
@@ -3180,6 +3229,40 @@ function TeamMetricCard({
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
+  );
+}
+
+function TeamsMetricCard({
+  index,
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  index: number;
+  icon: ReactNode;
+  label: string;
+  value: number;
+  tone: "purple" | "mint" | "slate" | "amber";
+}) {
+  const prefersReducedMotion = useReducedMotion();
+
+  return (
+    <motion.div
+      className="teams-metric-card"
+      data-tone={tone}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+      whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
+    >
+      <div className="teams-metric-card__head">
+        <span>{label}</span>
+        <i>{icon}</i>
+      </div>
+      <strong>{value}</strong>
+    </motion.div>
   );
 }
 

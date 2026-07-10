@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Activity,
   ArrowRight,
@@ -17,6 +18,8 @@ import type { Team, TeamMember } from "../../teams/teamTypes";
 type WorkspaceHomePanelProps = {
   activeTeam: Team | null;
   currentUserId: string | null;
+  currentUserEmail: string | null;
+  currentUserNickname: string | null;
   tasks: Task[];
   onCreateBoard: () => void;
   onCreateTeam: () => void;
@@ -36,6 +39,8 @@ type WorkspaceActivityItem = {
 export function WorkspaceHomePanel({
   activeTeam,
   currentUserId,
+  currentUserEmail,
+  currentUserNickname,
   tasks,
   onCreateBoard,
   onCreateTeam,
@@ -109,9 +114,9 @@ export function WorkspaceHomePanel({
   const currentMember = currentUserId
     ? members.find((member) => member.userId === currentUserId) ?? null
     : null;
-  const welcomeName = currentMember
-    ? formatWorkspaceUserName(currentMember.email)
-    : "tam";
+  const welcomeEmail = currentMember?.email ?? currentUserEmail ?? "";
+  const welcomeName =
+    currentUserNickname?.trim() || formatWorkspaceUserName(welcomeEmail);
   const memberById = new Map(members.map((member) => [member.userId, member]));
   const projectById = new Map(projects.map((project) => [project.id, project]));
   const activity = buildWorkspaceActivityItems(tasks, memberById, projectById, today).slice(0, 5);
@@ -127,7 +132,7 @@ export function WorkspaceHomePanel({
       <div className="workspace-home__hero">
         <div>
           <span className="workspace-home__eyebrow">Přehled pracovního prostoru</span>
-          <h2>Vítej zpět, {welcomeName}</h2>
+          <h2>Vítej zpět{welcomeName ? `, ${welcomeName}` : ""}</h2>
           <p>{welcomeSummary}</p>
         </div>
       </div>
@@ -140,6 +145,7 @@ export function WorkspaceHomePanel({
             </div>
             <div className="workspace-home__metrics">
               <MetricCard
+                index={0}
                 icon={<Users aria-hidden="true" size={16} />}
                 label="Členové týmu"
                 tone="purple"
@@ -148,6 +154,7 @@ export function WorkspaceHomePanel({
                 avatars={members.slice(0, 4).map((member) => getMemberInitials(member.email))}
               />
               <MetricCard
+                index={1}
                 icon={<FolderKanban aria-hidden="true" size={16} />}
                 label="Běžící nástěnky"
                 tone="blue"
@@ -155,6 +162,7 @@ export function WorkspaceHomePanel({
                 detail={projects.length > 0 ? projects.length + " celkem" : "Zatím žádná"}
               />
               <MetricCard
+                index={2}
                 icon={<Clock3 aria-hidden="true" size={16} />}
                 label="Termíny dnes"
                 tone={overdueCount > 0 ? "danger" : "orange"}
@@ -222,11 +230,11 @@ export function WorkspaceHomePanel({
             </div>
             <div className="workspace-home__action-grid">
               <button type="button" onClick={onCreateTeam}>
-                <Users aria-hidden="true" size={17} />
+                <Users aria-hidden="true" size={15} />
                 <span>Nový tým</span>
               </button>
               <button type="button" onClick={onCreateBoard}>
-                <FolderKanban aria-hidden="true" size={17} />
+                <FolderKanban aria-hidden="true" size={15} />
                 <span>Nová nástěnka</span>
               </button>
             </div>
@@ -280,6 +288,7 @@ export function WorkspaceHomePanel({
 }
 
 function MetricCard({
+  index,
   icon,
   label,
   value,
@@ -287,6 +296,7 @@ function MetricCard({
   tone,
   avatars = [],
 }: {
+  index: number;
   icon: ReactNode;
   label: string;
   value: number;
@@ -294,8 +304,18 @@ function MetricCard({
   tone: "purple" | "blue" | "orange" | "danger";
   avatars?: string[];
 }) {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
-    <article className="workspace-home__metric-card" data-tone={tone}>
+    <motion.article
+      className="workspace-home__metric-card"
+      data-tone={tone}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+      whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
+    >
       <div className="workspace-home__metric-head">
         <span>{label}</span>
         <i>{icon}</i>
@@ -309,7 +329,7 @@ function MetricCard({
           ))}
         </div>
       ) : null}
-    </article>
+    </motion.article>
   );
 }
 
@@ -471,7 +491,7 @@ function formatWorkspaceUserName(email: string) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1));
 
-  return parts.join(" ") || "tam";
+  return parts.join(" ");
 }
 
 function getMemberInitials(email: string) {
