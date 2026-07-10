@@ -1474,23 +1474,31 @@ function TeamsOverviewPanel({
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="team-create-flow__header">
-              <div>
-                <span>{editingTeamId ? "Nastavení týmu" : "Vytvořit nový tým"}</span>
-                <h2 id="team-create-title">{editingTeamId ? "Upravit tým" : "Vytvořit tým"}</h2>
-                <p>{editingTeamId ? "Uprav zaměření týmu a doplň členy kdykoliv později." : "Definuj tým, nastav základní kontext a rovnou přidej registrované členy."}</p>
+              <div className="team-create-flow__heading">
+                <div>
+                  <h2 id="team-create-title">{editingTeamId ? "Upravit tým" : "Vytvořit tým"}</h2>
+                  <p>{editingTeamId ? "Uprav zaměření týmu a doplň členy kdykoliv později." : "Definuj tým, nastav základní kontext a rovnou přidej registrované členy."}</p>
+                </div>
               </div>
-              <button
+              <motion.button
                 className="team-create-flow__close"
                 aria-label="Zavřít"
                 type="button"
                 onClick={closeCreateTeamFlow}
+                whileHover={prefersReducedMotion ? undefined : { scale: 1.06 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
               >
                 <X size={18} />
-              </button>
+              </motion.button>
             </div>
 
             <div className="team-create-flow__grid">
-              <section className="team-create-flow__card">
+              <motion.section
+                className="team-create-flow__card"
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22, delay: 0.04, ease: [0.16, 1, 0.3, 1] }}
+              >
                 <h3>Identita týmu</h3>
                 <label className="team-create-flow__field">
                   <span>Název týmu</span>
@@ -1511,9 +1519,14 @@ function TeamsOverviewPanel({
                     onChange={(event) => setNewTeamMission(event.currentTarget.value)}
                   />
                 </label>
-              </section>
+              </motion.section>
 
-              <section className="team-create-flow__card team-create-flow__deploy">
+              <motion.section
+                className="team-create-flow__card team-create-flow__deploy"
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22, delay: 0.09, ease: [0.16, 1, 0.3, 1] }}
+              >
                 <h3>Přidat členy</h3>
                 <div className="team-create-flow__member-add">
                   <input
@@ -1535,52 +1548,88 @@ function TeamsOverviewPanel({
                     <option value="member">Člen</option>
                     <option value="admin">Admin</option>
                   </select>
-                  <button type="button" onClick={handleAddDraftTeamMember} disabled={!trimmedNewTeamMemberEmail}>
+                  <motion.button
+                    type="button"
+                    onClick={handleAddDraftTeamMember}
+                    disabled={!trimmedNewTeamMemberEmail}
+                    whileHover={prefersReducedMotion || !trimmedNewTeamMemberEmail ? undefined : { scale: 1.05 }}
+                    whileTap={prefersReducedMotion || !trimmedNewTeamMemberEmail ? undefined : { scale: 0.95 }}
+                  >
                     +
-                  </button>
+                  </motion.button>
                 </div>
                 <div className="team-create-flow__staging-title">Připravené pozvánky</div>
                 <div className="team-create-flow__draft-list">
-                  {newTeamMembers.length > 0 ? (
-                    newTeamMembers.map((member) => (
-                      <div className="team-create-flow__draft-row" key={member.id}>
-                        <span className="teams-overview__avatar" aria-hidden="true">
-                          {getMemberInitials(member.email)}
-                        </span>
-                        <span>
-                          <strong>{member.email}</strong>
-                          <select
-                            aria-label={"Role pro " + member.email}
-                            value={member.role}
-                            onChange={(event) =>
-                              handleChangeDraftTeamMemberRole(
-                                member.id,
-                                event.currentTarget.value as "admin" | "member",
-                              )
-                            }
-                          >
-                            <option value="member">Člen</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                        </span>
-                        <button
-                          aria-label={"Odebrat " + member.email}
-                          type="button"
-                          onClick={() => handleRemoveDraftTeamMember(member.id)}
-                        >x</button>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="team-create-flow__empty">Členy můžeš přidat hned, nebo později v týmu.</p>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {newTeamMembers.length > 0 ? (
+                      newTeamMembers.map((member) => (
+                        <motion.div
+                          className="team-create-flow__draft-row"
+                          key={member.id}
+                          layout={prefersReducedMotion ? undefined : true}
+                          initial={prefersReducedMotion ? false : { opacity: 0, y: -6, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={prefersReducedMotion ? undefined : { opacity: 0, x: 12, scale: 0.98 }}
+                          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                          <span className="teams-overview__avatar" aria-hidden="true">
+                            {getMemberInitials(member.email)}
+                          </span>
+                          <span>
+                            <strong>{member.email}</strong>
+                            <select
+                              aria-label={"Role pro " + member.email}
+                              value={member.role}
+                              onChange={(event) =>
+                                handleChangeDraftTeamMemberRole(
+                                  member.id,
+                                  event.currentTarget.value as "admin" | "member",
+                                )
+                              }
+                            >
+                              <option value="member">Člen</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          </span>
+                          <button
+                            aria-label={"Odebrat " + member.email}
+                            type="button"
+                            onClick={() => handleRemoveDraftTeamMember(member.id)}
+                          >x</button>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <motion.p
+                        className="team-create-flow__empty"
+                        key="empty"
+                        initial={prefersReducedMotion ? false : { opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={prefersReducedMotion ? undefined : { opacity: 0 }}
+                      >
+                        Členy můžeš přidat hned, nebo později v týmu.
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <button className="team-create-flow__submit" type="submit" disabled={!trimmedNewTeamName || isLoading}>
+                <motion.button
+                  className="team-create-flow__submit"
+                  type="submit"
+                  disabled={!trimmedNewTeamName || isLoading}
+                  whileHover={prefersReducedMotion || !trimmedNewTeamName || isLoading ? undefined : { scale: 1.015 }}
+                  whileTap={prefersReducedMotion || !trimmedNewTeamName || isLoading ? undefined : { scale: 0.985 }}
+                >
                   {editingTeamId ? "Uložit tým" : "Vytvořit tým"}
-                </button>
-                <button className="team-create-flow__cancel" type="button" onClick={closeCreateTeamFlow}>
+                </motion.button>
+                <motion.button
+                  className="team-create-flow__cancel"
+                  type="button"
+                  onClick={closeCreateTeamFlow}
+                  whileHover={prefersReducedMotion ? undefined : { opacity: 0.75 }}
+                  whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
+                >
                   Zrušit
-                </button>
-              </section>
+                </motion.button>
+              </motion.section>
             </div>
           </motion.form>
         </div>

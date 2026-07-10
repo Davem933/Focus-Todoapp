@@ -10317,14 +10317,19 @@ input[type="checkbox"]:focus-visible {
 }
 
 .team-create-flow {
+  align-items: center;
+  display: flex;
   inset: 0;
+  justify-content: center;
+  padding: 1rem;
   position: fixed;
   z-index: 32;
 }
 
 .team-create-flow__backdrop {
-  background: rgba(2, 6, 23, 0.72);
-  backdrop-filter: blur(10px);
+  background: rgba(2, 6, 23, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 0;
   border-radius: 0;
   inset: 0;
@@ -10336,28 +10341,28 @@ input[type="checkbox"]:focus-visible {
 .team-create-flow__backdrop:hover,
 .team-create-flow__backdrop:focus-visible,
 .team-create-flow__backdrop:active {
-  background: rgba(2, 6, 23, 0.72);
+  background: rgba(2, 6, 23, 0.6);
   border-color: transparent;
   transform: none;
 }
 
 .team-create-flow__panel {
   background:
-    radial-gradient(circle at 18% 0%, rgba(109, 93, 252, 0.16), transparent 34%),
-    var(--color-background);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 14px;
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+    radial-gradient(circle at 18% 0%, rgba(139, 92, 246, 0.22), transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(109, 93, 252, 0.12), transparent 45%),
+    rgba(15, 23, 42, 0.68);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   display: grid;
   gap: 1.15rem;
-  left: 50%;
   max-height: min(86dvh, 48rem);
   max-width: min(68rem, calc(100vw - 2rem));
   overflow-y: auto;
-  padding: 1.15rem;
-  position: fixed;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  padding: 1.35rem;
+  position: relative;
   width: 100%;
   z-index: 1;
 }
@@ -10369,7 +10374,6 @@ input[type="checkbox"]:focus-visible {
   justify-content: space-between;
 }
 
-.team-create-flow__header span,
 .team-create-flow__staging-title,
 .team-create-flow__field > span {
   color: var(--color-text-muted);
@@ -10383,7 +10387,7 @@ input[type="checkbox"]:focus-visible {
 .team-create-flow__header h2 {
   font-size: clamp(1.55rem, 3vw, 2.3rem);
   letter-spacing: -0.02em;
-  margin: 0.25rem 0 0;
+  margin: 0;
 }
 
 .team-create-flow__header p {
@@ -10394,15 +10398,24 @@ input[type="checkbox"]:focus-visible {
 
 .team-create-flow__close {
   align-items: center;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 10px;
   color: var(--color-text-muted);
+  cursor: pointer;
   display: inline-flex;
-  height: 36px;
+  height: 38px;
   justify-content: center;
   padding: 0;
-  width: 36px;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  width: 38px;
+}
+
+.team-create-flow__close:hover,
+.team-create-flow__close:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(196, 181, 253, 0.4);
+  color: var(--color-text-primary);
 }
 
 .team-create-flow__grid {
@@ -10412,12 +10425,12 @@ input[type="checkbox"]:focus-visible {
 }
 
 .team-create-flow__card {
-  background: var(--color-background-card);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   display: grid;
   gap: 0.9rem;
-  padding: 1rem;
+  padding: 1.1rem;
 }
 
 .team-create-flow__card h3 {
@@ -10436,18 +10449,49 @@ input[type="checkbox"]:focus-visible {
 .team-create-flow__member-add input,
 .team-create-flow__member-add select,
 .team-create-flow__draft-row select {
-  background: var(--color-background-input);
+  background: rgba(0, 0, 0, 0.18);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 9px;
   color: var(--color-text-primary);
   font: inherit;
   min-height: 42px;
   padding: 0.6rem 0.7rem;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.team-create-flow__field input:hover,
+.team-create-flow__field textarea:hover,
+.team-create-flow__member-add input:hover {
+  border-color: rgba(196, 181, 253, 0.3);
+}
+
+.team-create-flow__field input:focus-visible,
+.team-create-flow__field textarea:focus-visible,
+.team-create-flow__field select:focus-visible,
+.team-create-flow__member-add input:focus-visible,
+.team-create-flow__member-add select:focus-visible {
+  background: rgba(0, 0, 0, 0.28);
+  border-color: rgba(167, 139, 250, 0.6);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.22);
+  outline: none;
 }
 
 .team-create-flow__field textarea {
   min-height: 8rem;
   resize: vertical;
+}
+
+[data-theme="light"] .team-create-flow__card {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+[data-theme="light"] .team-create-flow__field input,
+[data-theme="light"] .team-create-flow__field textarea,
+[data-theme="light"] .team-create-flow__field select,
+[data-theme="light"] .team-create-flow__member-add input,
+[data-theme="light"] .team-create-flow__member-add select,
+[data-theme="light"] .team-create-flow__draft-row select {
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .team-create-flow__deploy {
@@ -10464,18 +10508,26 @@ input[type="checkbox"]:focus-visible {
   align-items: center;
   background: linear-gradient(135deg, #8b5cf6, #a78bfa);
   border-color: rgba(196, 181, 253, 0.3);
-  border-radius: 8px;
+  border-radius: 9px;
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.28);
   color: var(--color-text-primary);
+  cursor: pointer;
   display: inline-flex;
   font-size: 1.35rem;
   font-weight: 900;
   justify-content: center;
   min-height: 42px;
   padding: 0;
+  transition: box-shadow 0.18s ease;
+}
+
+.team-create-flow__member-add button:hover:not(:disabled) {
+  box-shadow: 0 8px 22px rgba(139, 92, 246, 0.4);
 }
 
 .team-create-flow__member-add button:disabled,
 .team-create-flow__submit:disabled {
+  box-shadow: none;
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -10488,9 +10540,9 @@ input[type="checkbox"]:focus-visible {
 
 .team-create-flow__draft-row {
   align-items: center;
-  background: rgba(0, 0, 0, 0.14);
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 10px;
   display: grid;
   gap: 0.6rem;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -10521,13 +10573,21 @@ input[type="checkbox"]:focus-visible {
   align-items: center;
   background: transparent;
   border: 0;
+  border-radius: 8px;
   color: var(--color-text-muted);
+  cursor: pointer;
   display: inline-flex;
   font-size: 1.15rem;
   height: 32px;
   justify-content: center;
   padding: 0;
+  transition: background-color 0.16s ease, color 0.16s ease;
   width: 32px;
+}
+
+.team-create-flow__draft-row > button:hover {
+  background: rgba(248, 113, 113, 0.14);
+  color: #fca5a5;
 }
 
 .team-create-flow__empty {
@@ -10539,25 +10599,41 @@ input[type="checkbox"]:focus-visible {
 .team-create-flow__submit {
   background: linear-gradient(135deg, #8b5cf6, #a78bfa);
   border-color: rgba(196, 181, 253, 0.3);
-  border-radius: 8px;
+  border-radius: 10px;
+  box-shadow: 0 10px 26px rgba(139, 92, 246, 0.32);
   color: var(--color-text-primary);
+  cursor: pointer;
   font-weight: 900;
   min-height: 46px;
   margin-top: 0.3rem;
+  transition: box-shadow 0.18s ease;
+}
+
+.team-create-flow__submit:hover:not(:disabled) {
+  box-shadow: 0 12px 32px rgba(139, 92, 246, 0.44);
 }
 
 .team-create-flow__cancel {
   background: transparent;
   border: 0;
   color: var(--color-text-muted);
+  cursor: pointer;
   font-weight: 750;
   min-height: 36px;
+  transition: color 0.16s ease;
+}
+
+.team-create-flow__cancel:hover {
+  color: var(--color-text-primary);
 }
 
 [data-theme="light"] .team-create-flow__panel {
   background:
-    radial-gradient(circle at 18% 0%, rgba(109, 93, 252, 0.12), transparent 34%),
-    var(--color-background);
+    radial-gradient(circle at 18% 0%, rgba(109, 93, 252, 0.14), transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(109, 93, 252, 0.08), transparent 45%),
+    rgba(244, 247, 251, 0.86);
+  border-color: rgba(15, 23, 42, 0.09);
+  box-shadow: 0 32px 90px rgba(15, 23, 42, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 [data-theme="light"] .team-create-flow__draft-row {
