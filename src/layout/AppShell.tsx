@@ -623,6 +623,7 @@ export function AppShell(props: AppShellProps) {
               activeTeamId={activeTeamId}
               createRequestToken={teamCreateRequestToken}
               currentUserId={currentUserId}
+              isGlobalAdmin={isGlobalAdmin}
               teams={teams}
               onCreateTeam={onCreateTeam}
               onDeleteTeam={onDeleteTeam}
@@ -773,6 +774,7 @@ type TeamsOverviewPanelProps = {
   activeTeamId: string | null;
   createRequestToken?: number;
   currentUserId: string | null;
+  isGlobalAdmin: boolean;
   teams: Team[];
   onCreateTeam: (name: string, color?: string | null, description?: string | null) => Promise<Team | null | void>;
   onDeleteTeam: (teamId: string) => Promise<void>;
@@ -784,6 +786,7 @@ function TeamsOverviewPanel({
   activeTeamId,
   createRequestToken = 0,
   currentUserId,
+  isGlobalAdmin,
   teams,
   onCreateTeam,
   onDeleteTeam,
@@ -807,6 +810,8 @@ function TeamsOverviewPanel({
   const [newTeamMemberRole, setNewTeamMemberRole] = useState<"admin" | "member">("member");
   const [newTeamMembers, setNewTeamMembers] = useState<CreateTeamDraftMember[]>([]);
   const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [isTeamMenuOpen, setIsTeamMenuOpen] = useState(false);
+  const teamMenuRef = useRef<HTMLDivElement | null>(null);
   const selectedTeam = teams.find((team) => team.id === selectedTeamId) ?? null;
   const currentMember = currentUserId
     ? members.find((member) => member.userId === currentUserId) ?? null
@@ -814,7 +819,8 @@ function TeamsOverviewPanel({
   const canManageSelectedTeam = Boolean(
     selectedTeam &&
       currentUserId &&
-      (isTeamAdminRole(currentMember?.role) ||
+      (isGlobalAdmin ||
+        isTeamAdminRole(currentMember?.role) ||
         (members.length === 0 && selectedTeam.ownerId === currentUserId)),
   );
   const trimmedNewTeamName = newTeamName.trim();
@@ -839,6 +845,32 @@ function TeamsOverviewPanel({
       setIsCreateTeamOpen(true);
     }
   }, [createRequestToken]);
+
+  useEffect(() => {
+    if (!isTeamMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (teamMenuRef.current?.contains(target)) {
+        return;
+      }
+
+      setIsTeamMenuOpen(false);
+    }
+
+    window.addEventListener("mousedown", handlePointerDown);
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [isTeamMenuOpen]);
 
   useEffect(() => {
     if (!selectedTeamId) {
@@ -1288,24 +1320,46 @@ function TeamsOverviewPanel({
             <div>
               <h3>Členové týmu</h3>
             </div>
-            <button
-              className="teams-overview__icon-button"
-              type="button"
-              aria-label="Upravit tým"
-              disabled={!selectedTeam || !canManageSelectedTeam}
-              onClick={openEditTeamFlow}
-            >
-              <Pencil aria-hidden="true" size={16} />
-            </button>
-            <button
-              className="teams-overview__icon-button"
-              type="button"
-              aria-label="Smazat tým"
-              disabled={!selectedTeam || !canManageSelectedTeam || isLoading}
-              onClick={() => void handleDeleteTeamAction()}
-            >
-              <Trash2 aria-hidden="true" size={16} />
-            </button>
+            <div className="teams-overview__menu" ref={isTeamMenuOpen ? teamMenuRef : null}>
+              <button
+                className="teams-overview__menu-button"
+                type="button"
+                aria-label="Akce týmu"
+                aria-expanded={isTeamMenuOpen}
+                disabled={!selectedTeam || !canManageSelectedTeam}
+                onClick={() => setIsTeamMenuOpen((isOpen) => !isOpen)}
+              >
+                <MoreVertical aria-hidden="true" size={16} />
+              </button>
+              {isTeamMenuOpen ? (
+                <div className="teams-overview__menu-content" role="menu">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsTeamMenuOpen(false);
+                      openEditTeamFlow();
+                    }}
+                  >
+                    <Pencil aria-hidden="true" size={15} />
+                    Upravit tým
+                  </button>
+                  <button
+                    className="teams-overview__menu-danger"
+                    type="button"
+                    role="menuitem"
+                    disabled={isLoading}
+                    onClick={() => {
+                      setIsTeamMenuOpen(false);
+                      void handleDeleteTeamAction();
+                    }}
+                  >
+                    <Trash2 aria-hidden="true" size={15} />
+                    Smazat tým
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="teams-overview__table" role="table" aria-label="Členové týmu">

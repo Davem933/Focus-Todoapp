@@ -9151,6 +9151,87 @@ input[type="checkbox"]:focus-visible {
   color: var(--color-text-primary);
 }
 
+.teams-overview__menu {
+  position: relative;
+}
+
+.teams-overview__menu-button {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  width: 32px;
+}
+
+.teams-overview__menu-button:hover,
+.teams-overview__menu-button:focus-visible,
+.teams-overview__menu-button[aria-expanded="true"] {
+  background: var(--color-accent-soft);
+  border-color: rgba(139, 124, 255, 0.3);
+  color: var(--color-text-primary);
+}
+
+.teams-overview__menu-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.teams-overview__menu-content {
+  background: rgba(9, 12, 28, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 10px;
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.45);
+  display: grid;
+  gap: 0.2rem;
+  min-width: 11rem;
+  padding: 0.35rem;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 3;
+}
+
+.teams-overview__menu-content button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  display: flex;
+  gap: 0.55rem;
+  min-height: 2.15rem;
+  padding: 0.42rem 0.6rem;
+  text-align: left;
+}
+
+.teams-overview__menu-content button:hover,
+.teams-overview__menu-content button:focus-visible {
+  background: rgba(109, 93, 252, 0.14);
+}
+
+.teams-overview__menu-content button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.teams-overview__menu-danger {
+  color: #fca5a5;
+}
+
+[data-theme="light"] .teams-overview__menu-content {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16);
+}
+
 .teams-overview__table {
   overflow: hidden;
 }
