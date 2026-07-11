@@ -1446,7 +1446,7 @@ function TeamsOverviewPanel({
                 let actionsContent: ReactNode;
 
                 if (isSelfRow) {
-                  actionsContent = <small>Tvůj řádek</small>;
+                  actionsContent = null;
                 } else if (isOwnerRow && !isGlobalAdmin) {
                   actionsContent = <small>Chráněno vlastníkem</small>;
                 } else if (!canManageSelectedTeam) {
