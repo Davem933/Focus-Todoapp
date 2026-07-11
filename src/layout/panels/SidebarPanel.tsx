@@ -103,6 +103,7 @@ type SidebarPanelProps = {
 
 type ListNavRowProps = {
   activeListId: string;
+  canEdit: boolean;
   editingListId: string | null;
   editingListName: string;
   isArchivedSection: boolean;
@@ -189,6 +190,7 @@ export function SidebarPanel({
         isTeamAdminRole(currentTeamMember?.role) ||
         (teamMembers.length === 0 && activeTeam.ownerId === currentUserId)),
   );
+  const canEditLists = !activeTeamId || canManageActiveTeam;
   const isReservedNewListName = isReservedListName(trimmedNewListName);
 
   useEffect(() => {
@@ -454,7 +456,7 @@ export function SidebarPanel({
   }
 
   function startRename(list: TaskList) {
-    if (list.isSystem) {
+    if (list.isSystem || !canEditLists) {
       return;
     }
 
@@ -472,7 +474,7 @@ export function SidebarPanel({
   function commitRename(list: TaskList) {
     const trimmedName = editingListName.trim();
 
-    if (trimmedName && trimmedName !== list.name) {
+    if (canEditLists && trimmedName && trimmedName !== list.name) {
       onRenameList(list.id, trimmedName);
     }
 
@@ -502,16 +504,28 @@ export function SidebarPanel({
   }
 
   function archiveList(listId: string) {
+    if (!canEditLists) {
+      return;
+    }
+
     onArchiveList(listId);
     setOpenMenuListId(null);
   }
 
   function restoreList(listId: string) {
+    if (!canEditLists) {
+      return;
+    }
+
     onRestoreList(listId);
     setOpenMenuListId(null);
   }
 
   function deleteList(listId: string) {
+    if (!canEditLists) {
+      return;
+    }
+
     onDeleteList(listId);
     setOpenMenuListId(null);
   }
@@ -640,6 +654,7 @@ export function SidebarPanel({
                 {systemLists.map((list) => (
                   <ListNavRow
                     activeListId={activeListId}
+                    canEdit={canEditLists}
                     count={countsByListId[list.id] ?? 0}
                     editingListId={editingListId}
                     editingListName={editingListName}
@@ -673,6 +688,7 @@ export function SidebarPanel({
                   {userLists.map((list) => (
                     <ListNavRow
                       activeListId={activeListId}
+                      canEdit={canEditLists}
                       count={countsByListId[list.id] ?? 0}
                       editingListId={editingListId}
                       editingListName={editingListName}
@@ -703,6 +719,7 @@ export function SidebarPanel({
                   {archivedLists.map((list) => (
                     <ListNavRow
                       activeListId={activeListId}
+                      canEdit={canEditLists}
                       count={countsByListId[list.id] ?? 0}
                       editingListId={editingListId}
                       editingListName={editingListName}
@@ -1033,6 +1050,7 @@ export function SidebarPanel({
 
 function ListNavRow({
   activeListId,
+  canEdit,
   editingListId,
   editingListName,
   isArchivedSection,
@@ -1062,6 +1080,7 @@ function ListNavRow({
   const isSwipingRef = useRef(false);
   const listColor = list.color ?? DEFAULT_LIST_COLOR;
   const canSwipeEdit =
+    canEdit &&
     useTouchListActions &&
     !list.isSystem &&
     !isArchivedSection &&
@@ -1085,7 +1104,12 @@ function ListNavRow({
   }
 
   function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
-    if (!useTouchListActions || list.isSystem || list.id === DEFAULT_TASK_LIST_ID) {
+    if (
+      !canEdit ||
+      !useTouchListActions ||
+      list.isSystem ||
+      list.id === DEFAULT_TASK_LIST_ID
+    ) {
       return;
     }
 
@@ -1307,7 +1331,7 @@ function ListNavRow({
           {count}
         </span>
       </motion.button>
-      {!list.isSystem && list.id !== DEFAULT_TASK_LIST_ID ? (
+      {canEdit && !list.isSystem && list.id !== DEFAULT_TASK_LIST_ID ? (
         <div className="list-menu">
           {!useTouchListActions ? (
             <button

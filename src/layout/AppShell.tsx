@@ -15,6 +15,7 @@ import { buildCountsByListId } from "../tasks/taskCounts";
 import { buildCountsByTeamId } from "../teams/teamCounts";
 import type { Team, TeamInvite, TeamMember } from "../teams/teamTypes";
 import type { Project, ProjectColumn } from "../projects/projectTypes";
+import { ProjectBoardGrid } from "../projects/ProjectBoardGrid";
 import {
   cancelTeamInvite,
   inviteTeamMemberByEmail,
@@ -636,6 +637,7 @@ export function AppShell(props: AppShellProps) {
               activeTeamId={activeTeamId}
               createRequestToken={projectCreateRequestToken}
               currentUserId={currentUserId}
+              isGlobalAdmin={isGlobalAdmin}
               tasks={allTasks}
               teams={teams}
               onCreateTask={onCreateTask}
@@ -1725,6 +1727,7 @@ type ProjectsOverviewPanelProps = {
   activeTeamId: string | null;
   createRequestToken?: number;
   currentUserId: string | null;
+  isGlobalAdmin: boolean;
   tasks: Task[];
   teams: Team[];
   onCreateTask: (title: string, options?: CreateTaskOptions) => string | null;
@@ -1736,6 +1739,7 @@ function ProjectsOverviewPanel({
   activeTeamId,
   createRequestToken = 0,
   currentUserId,
+  isGlobalAdmin,
   tasks,
   teams,
   onCreateTask,
@@ -1772,9 +1776,56 @@ function ProjectsOverviewPanel({
   const [cardComposerAssigneeId, setCardComposerAssigneeId] = useState("");
   const [cardComposerSubtaskTitle, setCardComposerSubtaskTitle] = useState("");
   const [cardComposerSubtasks, setCardComposerSubtasks] = useState<TaskSubtask[]>([]);
+  const [manageableTeamIds, setManageableTeamIds] = useState<Set<string>>(new Set());
   const teamById = new Map(teams.map((team) => [team.id, team]));
   const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
   const trimmedProjectName = projectName.trim();
+
+  function canManageProject(project: Project) {
+    return isGlobalAdmin || manageableTeamIds.has(project.teamId);
+  }
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadManageableTeams() {
+      if (teams.length === 0 || !currentUserId) {
+        setManageableTeamIds(new Set());
+        return;
+      }
+
+      try {
+        const results = await Promise.all(
+          teams.map(async (team) => {
+            const members = await loadTeamMembers(team.id);
+            const currentMember =
+              members.find((member) => member.userId === currentUserId) ?? null;
+            const canManage =
+              isTeamAdminRole(currentMember?.role) ||
+              (members.length === 0 && team.ownerId === currentUserId);
+
+            return canManage ? team.id : null;
+          }),
+        );
+
+        if (!isCancelled) {
+          setManageableTeamIds(
+            new Set(results.filter((id): id is string => id !== null)),
+          );
+        }
+      } catch {
+        if (!isCancelled) {
+          setManageableTeamIds(new Set());
+        }
+      }
+    }
+
+    void loadManageableTeams();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [teams, currentUserId]);
 
   useEffect(() => {
     setProjectTeamId((currentTeamId) =>
@@ -1915,16 +1966,28 @@ function ProjectsOverviewPanel({
     setProjectStartDate("");
     setProjectEndDate("");
     setProjectStatus("active");
-    setProjectTeamId(activeTeamId ?? teams[0]?.id ?? "");
+    setProjectTeamId(
+      activeTeamId && manageableTeamIds.has(activeTeamId)
+        ? activeTeamId
+        : teams.find((team) => manageableTeamIds.has(team.id))?.id ?? "",
+    );
   }
 
   function openCreateProject() {
+    if (manageableTeamIds.size === 0) {
+      return;
+    }
+
     resetProjectForm();
     setError(null);
     setIsCreateOpen(true);
   }
 
   function openEditProject(project: Project) {
+    if (!canManageProject(project)) {
+      return;
+    }
+
     setEditingProjectId(project.id);
     setProjectName(project.name);
     setProjectDescription(project.description ?? "");
@@ -2236,6 +2299,10 @@ function ProjectsOverviewPanel({
       return;
     }
 
+    if (!editingProjectId && !manageableTeamIds.has(projectTeamId)) {
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -2281,6 +2348,10 @@ function ProjectsOverviewPanel({
   }
 
   async function handleDeleteProject(project: Project) {
+    if (!canManageProject(project)) {
+      return;
+    }
+
     const shouldDelete = window.confirm("Smazat nastenku " + project.name + "?");
 
     if (!shouldDelete || isLoading) {
@@ -2312,6 +2383,7 @@ function ProjectsOverviewPanel({
     return (
       <>
         <ProjectDetailView
+          canManage={canManageProject(selectedProject)}
           columns={projectColumns}
           editingColumnId={editingColumnId}
           editingColumnTitle={editingColumnTitle}
@@ -2380,16 +2452,17 @@ function ProjectsOverviewPanel({
           <h2>Nástěnky</h2>
           <p>Vytvoř týmové nástěnky a posouvej práci ve sloupcích.</p>
         </div>
-        <div className="teams-overview__actions">
-          <button
-            type="button"
-            disabled={teams.length === 0}
-            onClick={openCreateProject}
-          >
-            <FolderKanban aria-hidden="true" size={16} />
-            <span>Vytvořit nástěnku</span>
-          </button>
-        </div>
+        {manageableTeamIds.size > 0 ? (
+          <div className="teams-overview__actions">
+            <button
+              type="button"
+              onClick={openCreateProject}
+            >
+              <FolderKanban aria-hidden="true" size={16} />
+              <span>Vytvořit nástěnku</span>
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="teams-overview__metrics" aria-label="Metriky nástěnek">
@@ -2401,63 +2474,16 @@ function ProjectsOverviewPanel({
 
       {error ? <p className="teams-overview__error" role="alert">{error}</p> : null}
 
-      <div className="projects-overview__grid">
-        {isLoading && projects.length === 0 ? (
-          <p className="teams-overview__empty projects-overview__empty">Načítám nástěnky...</p>
-        ) : null}
-        {!isLoading && projects.length === 0 ? (
-          <div className="projects-overview__empty-card">
-            <strong>Zatím nemáš žádnou nástěnku</strong>
-            <span>Vytvoř nástěnku, přiřaď ji týmu a dej práci jasný tok.</span>
-          </div>
-        ) : null}
-        {projects.map((project) => {
-          const projectTeam = teamById.get(project.teamId);
-          const dateRange = formatProjectDateRange(project.startDate, project.endDate);
-
-          return (
-            <article
-              className="projects-overview__card"
-              key={project.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => openProjectDetail(project)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  openProjectDetail(project);
-                }
-              }}
-            >
-              <div className="projects-overview__card-header">
-                <span className="projects-overview__team-pill">{projectTeam?.name ?? "Tým"}</span>
-                <span className="projects-overview__status">{getProjectStatusLabel(project.status)}</span>
-              </div>
-              <h3>{project.name}</h3>
-              {project.description ? <p>{project.description}</p> : <p>Bez popisu mise.</p>}
-              <div className="projects-overview__meta">
-                <span>{dateRange}</span>
-                <span className="projects-overview__card-actions">
-                  <button
-                    aria-label={"Upravit nástěnku " + project.name}
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); openEditProject(project); }}
-                  >
-                    <Pencil aria-hidden="true" size={14} />
-                  </button>
-                  <button
-                    aria-label={"Smazat nástěnku " + project.name}
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); void handleDeleteProject(project); }}
-                  >
-                    <Trash2 aria-hidden="true" size={14} />
-                  </button>
-                </span>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+      <ProjectBoardGrid
+        canManageProject={canManageProject}
+        projects={projects}
+        teamById={teamById}
+        tasks={tasks}
+        isLoading={isLoading}
+        onOpenProject={openProjectDetail}
+        onEditProject={openEditProject}
+        onDeleteProject={(project) => { void handleDeleteProject(project); }}
+      />
 
       {isCreateOpen ? (
         <div className="team-create-flow" role="presentation">
@@ -2522,11 +2548,17 @@ function ProjectsOverviewPanel({
                     value={projectTeamId}
                     onChange={(event) => setProjectTeamId(event.currentTarget.value)}
                   >
-                    {teams.map((team) => (
-                      <option key={team.id} value={team.id}>
-                        {team.name}
-                      </option>
-                    ))}
+                    {teams
+                      .filter((team) =>
+                        editingProjectId
+                          ? team.id === projectTeamId
+                          : manageableTeamIds.has(team.id),
+                      )
+                      .map((team) => (
+                        <option key={team.id} value={team.id}>
+                          {team.name}
+                        </option>
+                      ))}
                   </select>
                 </label>
 
@@ -2822,6 +2854,7 @@ function ProjectCardComposerModal({
   );
 }
 function ProjectDetailView({
+  canManage,
   columns,
   editingColumnId,
   editingColumnTitle,
@@ -2848,6 +2881,7 @@ function ProjectDetailView({
   onStartRenameColumn,
   onUpdateTask,
 }: {
+  canManage: boolean;
   columns: ProjectColumn[];
   editingColumnId: string | null;
   editingColumnTitle: string;
@@ -3006,9 +3040,11 @@ function ProjectDetailView({
               <i style={{ width: progress + "%" }} />
             </div>
           </div>
-          <button className="project-detail__edit" type="button" onClick={onEditProject}>
-            Upravit nástěnku
-          </button>
+          {canManage ? (
+            <button className="project-detail__edit" type="button" onClick={onEditProject}>
+              Upravit nástěnku
+            </button>
+          ) : null}
         </header>
 
         <div className="project-detail__board" aria-label="Kanban board">
