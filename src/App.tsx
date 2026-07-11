@@ -240,7 +240,7 @@ export function App() {
         const acceptedInviteCount = await acceptPendingTeamInvites();
 
         if (acceptedInviteCount > 0) {
-          const userTeams = await loadUserTeams(currentAuthUser.id, authRole === "admin");
+          const userTeams = await loadUserTeams(currentAuthUser.id);
 
           if (!isCancelled) {
             setTeams(userTeams);
@@ -323,7 +323,7 @@ export function App() {
 
     async function hydrateTeams() {
       try {
-        const userTeams = await loadUserTeams(currentAuthUser.id, authRole === "admin");
+        const userTeams = await loadUserTeams(currentAuthUser.id);
 
         if (!isCancelled) {
           setTeams(userTeams);

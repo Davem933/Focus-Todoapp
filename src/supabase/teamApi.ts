@@ -42,7 +42,7 @@ export type TeamInviteResult =
   | { kind: "member"; member: TeamMember }
   | { kind: "invite"; invite: TeamInvite };
 
-export async function loadUserTeams(userId: string, includeAll = false): Promise<Team[]> {
+export async function loadUserTeams(userId: string): Promise<Team[]> {
   if (!supabase) {
     return [];
   }
@@ -66,14 +66,12 @@ export async function loadUserTeams(userId: string, includeAll = false): Promise
 
   let teamsQuery = supabase.from('teams').select('id,name,color,description,owner_id');
 
-  if (!includeAll) {
-    if (memberTeamIds.length > 0) {
-      teamsQuery = teamsQuery.or(
-        `owner_id.eq.${userId},id.in.(${memberTeamIds.join(',')})`,
-      );
-    } else {
-      teamsQuery = teamsQuery.eq('owner_id', userId);
-    }
+  if (memberTeamIds.length > 0) {
+    teamsQuery = teamsQuery.or(
+      `owner_id.eq.${userId},id.in.(${memberTeamIds.join(',')})`,
+    );
+  } else {
+    teamsQuery = teamsQuery.eq('owner_id', userId);
   }
 
   const teamsResult = await teamsQuery.order('created_at', { ascending: true });
