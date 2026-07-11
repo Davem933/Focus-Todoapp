@@ -179,34 +179,41 @@ export async function downloadSupabaseData(userId: string): Promise<StoredTaskSt
     throw new Error("Supabase neni nakonfigurovany.");
   }
 
-  const [listsResult, tasksResult, subtasksResult, labelsResult, taskLabelsResult] =
-    await Promise.all([
-      supabase
-        .from("task_lists")
-        .select("id,name,color,is_archived,team_id")
-        .eq("owner_id", userId)
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("tasks")
-        .select(
-          "id,list_id,title,completed,due_date,due_time,is_archived,note,priority,recurrence,team_id,assignee_id,project_id,board_column_key",
-        )
-        .eq("owner_id", userId)
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("subtasks")
-        .select("id,task_id,title,completed,position")
-        .eq("owner_id", userId)
-        .order("position", { ascending: true }),
-      supabase
-        .from("labels")
-        .select("id,name,color")
-        .eq("owner_id", userId),
-      supabase
-        .from("task_labels")
-        .select("task_id,label_id")
-        .eq("owner_id", userId),
-    ]);
+  const membershipResult = await supabase
+    .from("team_members")
+    .select("team_id")
+    .eq("user_id", userId);
+
+  if (membershipResult.error) {
+    throw membershipResult.error;
+  }
+
+  const memberTeamIds = Array.from(
+    new Set((membershipResult.data ?? []).map((row) => row.team_id as string)),
+  );
+  const ownedOrTeamFilter =
+    memberTeamIds.length > 0
+      ? `owner_id.eq.${userId},team_id.in.(${memberTeamIds.join(",")})`
+      : `owner_id.eq.${userId}`;
+  const ownedOrAssignedOrTeamFilter =
+    memberTeamIds.length > 0
+      ? `owner_id.eq.${userId},assignee_id.eq.${userId},team_id.in.(${memberTeamIds.join(",")})`
+      : `owner_id.eq.${userId},assignee_id.eq.${userId}`;
+
+  const [listsResult, tasksResult] = await Promise.all([
+    supabase
+      .from("task_lists")
+      .select("id,name,color,is_archived,team_id")
+      .or(ownedOrTeamFilter)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("tasks")
+      .select(
+        "id,list_id,title,completed,due_date,due_time,is_archived,note,priority,recurrence,team_id,assignee_id,project_id,board_column_key",
+      )
+      .or(ownedOrAssignedOrTeamFilter)
+      .order("created_at", { ascending: true }),
+  ]);
 
   if (listsResult.error) {
     throw listsResult.error;
@@ -216,23 +223,52 @@ export async function downloadSupabaseData(userId: string): Promise<StoredTaskSt
     throw tasksResult.error;
   }
 
+  const remoteLists = (listsResult.data ?? []) as CloudTaskListRow[];
+  const remoteTasks = (tasksResult.data ?? []) as CloudTaskRow[];
+  const taskIds = remoteTasks.map((task) => task.id);
+
+  const [subtasksResult, taskLabelsResult] = await Promise.all([
+    taskIds.length > 0
+      ? supabase
+          .from("subtasks")
+          .select("id,task_id,title,completed,position")
+          .in("task_id", taskIds)
+          .order("position", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    taskIds.length > 0
+      ? supabase
+          .from("task_labels")
+          .select("task_id,label_id")
+          .in("task_id", taskIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
   if (subtasksResult.error) {
     throw subtasksResult.error;
-  }
-
-  if (labelsResult.error) {
-    throw labelsResult.error;
   }
 
   if (taskLabelsResult.error) {
     throw taskLabelsResult.error;
   }
 
-  const remoteLists = (listsResult.data ?? []) as CloudTaskListRow[];
-  const remoteTasks = (tasksResult.data ?? []) as CloudTaskRow[];
   const remoteSubtasks = (subtasksResult.data ?? []) as CloudSubtaskRow[];
-  const remoteLabels = (labelsResult.data ?? []) as CloudLabelRow[];
   const remoteTaskLabels = (taskLabelsResult.data ?? []) as CloudTaskLabelRow[];
+  const labelIds = Array.from(new Set(remoteTaskLabels.map((row) => row.label_id)));
+  const labelFilter =
+    labelIds.length > 0
+      ? `owner_id.eq.${userId},id.in.(${labelIds.join(",")})`
+      : `owner_id.eq.${userId}`;
+
+  const labelsResult = await supabase
+    .from("labels")
+    .select("id,name,color")
+    .or(labelFilter);
+
+  if (labelsResult.error) {
+    throw labelsResult.error;
+  }
+
+  const remoteLabels = (labelsResult.data ?? []) as CloudLabelRow[];
   const labelsById = new Map(
     remoteLabels.map((label): [string, TaskLabel] => [
       label.id,
