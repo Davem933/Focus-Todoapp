@@ -71,6 +71,7 @@ type ListPanelProps = {
   onUpdateTask: (taskId: string, update: TaskUpdate) => void;
   onArchiveTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  canDeleteTask: (task: Task) => boolean;
   onMoveTask: (taskId: string, listId: string) => void;
 };
 
@@ -100,6 +101,7 @@ export function ListPanel({
   onUpdateTask,
   onArchiveTask,
   onDeleteTask,
+  canDeleteTask,
   onMoveTask,
 }: ListPanelProps) {
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -327,6 +329,7 @@ export function ListPanel({
             onUpdateTask={onUpdateTask}
             onArchiveTask={onArchiveTask}
             onDeleteTask={onDeleteTask}
+            canDeleteTask={canDeleteTask}
             onMoveTask={onMoveTask}
             lists={lists}
           />
@@ -354,6 +357,7 @@ export function ListPanel({
                 onUpdateTask={onUpdateTask}
                 onArchiveTask={onArchiveTask}
                 onDeleteTask={onDeleteTask}
+                canDeleteTask={canDeleteTask}
                 onMoveTask={onMoveTask}
                 lists={lists}
               />
@@ -1367,6 +1371,7 @@ type TaskSectionProps = {
   onUpdateTask: (taskId: string, update: TaskUpdate) => void;
   onArchiveTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
+  canDeleteTask: (task: Task) => boolean;
   onMoveTask: (taskId: string, listId: string) => void;
 };
 
@@ -1383,6 +1388,7 @@ function TaskSection({
   onUpdateTask,
   onArchiveTask,
   onDeleteTask,
+  canDeleteTask,
   onMoveTask,
 }: TaskSectionProps) {
   const [openMenu, setOpenMenu] = useState<{
@@ -1828,14 +1834,16 @@ function TaskSection({
               </button>
             ))}
           </div>
-          <button
-            className="task-context-menu__danger"
-            type="button"
-            role="menuitem"
-            onClick={() => handleMenuAction(() => onDeleteTask(openMenu.task.id))}
-          >
-            Smazat
-          </button>
+          {canDeleteTask(openMenu.task) ? (
+            <button
+              className="task-context-menu__danger"
+              type="button"
+              role="menuitem"
+              onClick={() => handleMenuAction(() => onDeleteTask(openMenu.task.id))}
+            >
+              Smazat
+            </button>
+          ) : null}
         </div>
       ) : null}
     </section>

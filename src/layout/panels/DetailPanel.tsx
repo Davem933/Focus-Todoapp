@@ -27,6 +27,7 @@ import { loadTeamMembers } from "../../supabase/teamApi";
 type DetailPanelProps = {
   task: Task | null;
   lists: TaskList[];
+  canDeleteTask: boolean;
   onClose: () => void;
   onUpdateTask: (taskId: string, update: TaskUpdate) => void;
   onArchiveTask: (taskId: string) => void;
@@ -189,6 +190,7 @@ function CustomDropdown({
 export function DetailPanel({
   task,
   lists,
+  canDeleteTask,
   onClose,
   onUpdateTask,
   onArchiveTask,
@@ -690,16 +692,18 @@ export function DetailPanel({
                     Archivovat
                   </button>
                 ) : null}
-                <button
-                  className="detail-panel__mobile-menu-danger"
-                  type="button"
-                  role="menuitem"
-                  onClick={() =>
-                    handleMenuAction(() => onDeleteTask(task.id))
-                  }
-                >
-                  Smazat
-                </button>
+                {canDeleteTask ? (
+                  <button
+                    className="detail-panel__mobile-menu-danger"
+                    type="button"
+                    role="menuitem"
+                    onClick={() =>
+                      handleMenuAction(() => onDeleteTask(task.id))
+                    }
+                  >
+                    Smazat
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -787,14 +791,16 @@ export function DetailPanel({
                     Archivovat
                   </button>
                 ) : null}
-                <button
-                  className="detail-panel__menu-danger"
-                  type="button"
-                  role="menuitem"
-                  onClick={() => handleMenuAction(() => onDeleteTask(task.id))}
-                >
-                  Smazat
-                </button>
+                {canDeleteTask ? (
+                  <button
+                    className="detail-panel__menu-danger"
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleMenuAction(() => onDeleteTask(task.id))}
+                  >
+                    Smazat
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </div>

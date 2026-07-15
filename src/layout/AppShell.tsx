@@ -192,8 +192,69 @@ export function AppShell(props: AppShellProps) {
   const isMobileLayout =
     layout.mode === "mobile-list-only" || layout.mode === "mobile-detail-only";
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
+  const [manageableTeamIds, setManageableTeamIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadManageableTeams() {
+      if (teams.length === 0 || !currentUserId) {
+        setManageableTeamIds(new Set());
+        return;
+      }
+
+      try {
+        const results = await Promise.all(
+          teams.map(async (team) => {
+            const members = await loadTeamMembers(team.id);
+            const currentMember =
+              members.find((member) => member.userId === currentUserId) ?? null;
+            const canManage =
+              isTeamAdminRole(currentMember?.role) ||
+              (members.length === 0 && team.ownerId === currentUserId);
+
+            return canManage ? team.id : null;
+          }),
+        );
+
+        if (!isCancelled) {
+          setManageableTeamIds(
+            new Set(results.filter((id): id is string => id !== null)),
+          );
+        }
+      } catch {
+        if (!isCancelled) {
+          setManageableTeamIds(new Set());
+        }
+      }
+    }
+
+    void loadManageableTeams();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [teams, currentUserId]);
+
+  function canDeleteTask(task: Task | undefined | null) {
+    if (!task) {
+      return false;
+    }
+
+    if (!task.teamId) {
+      return true;
+    }
+
+    return isGlobalAdmin || manageableTeamIds.has(task.teamId);
+  }
 
   function handleDeleteTaskAction(taskId: string) {
+    const task = tasks.find((currentTask) => currentTask.id === taskId) ?? allTasks.find((currentTask) => currentTask.id === taskId);
+
+    if (!canDeleteTask(task)) {
+      return;
+    }
+
     onDeleteTask(taskId);
   }
   const globalFocusScope = getFocusScope(lists, activeListId, "global");
@@ -642,7 +703,7 @@ export function AppShell(props: AppShellProps) {
               teams={teams}
               onCreateTask={onCreateTask}
               onUpdateTask={onUpdateTask}
-              onDeleteTask={onDeleteTask}
+              onDeleteTask={handleDeleteTaskAction}
               onOpenTask={(taskId) => {
                 setIsProjectsOverviewOpen(false);
                 handleSelectTask(taskId);
@@ -677,6 +738,7 @@ export function AppShell(props: AppShellProps) {
             onUpdateTask={onUpdateTask}
             onArchiveTask={onArchiveTask}
             onDeleteTask={handleDeleteTaskAction}
+            canDeleteTask={canDeleteTask}
             onMoveTask={(taskId, listId) => onUpdateTask(taskId, { listId })}
           />
           )
@@ -685,6 +747,7 @@ export function AppShell(props: AppShellProps) {
           <DetailPanel
             task={selectedTask}
             lists={lists}
+            canDeleteTask={canDeleteTask(selectedTask)}
             onClose={onClearTaskSelection}
             onUpdateTask={onUpdateTask}
             onArchiveTask={onArchiveTask}
@@ -2162,6 +2225,10 @@ function ProjectsOverviewPanel({
   }
 
   function handleStartRenameProjectColumn(column: ProjectColumn) {
+    if (!selectedProject || !canManageProject(selectedProject)) {
+      return;
+    }
+
     setEditingColumnId(column.id);
     setEditingColumnTitle(column.title);
   }
@@ -2175,7 +2242,7 @@ function ProjectsOverviewPanel({
     const trimmedTitle = title.trim();
     const currentColumn = projectColumns.find((column) => column.id === columnId);
 
-    if (!currentColumn || isLoading) {
+    if (!currentColumn || isLoading || !selectedProject || !canManageProject(selectedProject)) {
       return;
     }
 
@@ -2224,7 +2291,7 @@ function ProjectsOverviewPanel({
   }
 
   async function handleArchiveProjectColumn(column: ProjectColumn) {
-    if (projectColumns.length <= 1 || isLoading) {
+    if (projectColumns.length <= 1 || isLoading || !selectedProject || !canManageProject(selectedProject)) {
       return;
     }
 
@@ -2259,7 +2326,7 @@ function ProjectsOverviewPanel({
   }
 
   async function handleDeleteProjectColumn(column: ProjectColumn) {
-    if (projectColumns.length <= 1 || isLoading) {
+    if (projectColumns.length <= 1 || isLoading || !selectedProject || !canManageProject(selectedProject)) {
       return;
     }
 
@@ -3085,7 +3152,7 @@ function ProjectDetailView({
                           }}
                         />
                       </form>
-                    ) : (
+                    ) : canManage ? (
                       <button
                         className="project-detail__column-title"
                         type="button"
@@ -3094,50 +3161,54 @@ function ProjectDetailView({
                       >
                         <strong>{column.title}</strong>
                       </button>
+                    ) : (
+                      <strong className="project-detail__column-title">{column.title}</strong>
                     )}
                     <span>{columnTasks.length === 1 ? "1 karta" : columnTasks.length + " karet"}</span>
                   </div>
                   <div className="project-detail__column-actions">
                     <small>{columnTasks.length}</small>
-                    <div
-                      className="project-detail__column-menu"
-                      ref={onOpenColumnMenuId === column.id ? openColumnMenuRef : null}
-                    >
-                      <button
-                        className="project-detail__column-menu-button"
-                        type="button"
-                        aria-label={"Upravit sloupec " + column.title}
-                        aria-expanded={onOpenColumnMenuId === column.id}
-                        onClick={() =>
-                          onChangeOpenColumnMenuId(
-                            onOpenColumnMenuId === column.id ? null : column.id,
-                          )
-                        }
+                    {canManage ? (
+                      <div
+                        className="project-detail__column-menu"
+                        ref={onOpenColumnMenuId === column.id ? openColumnMenuRef : null}
                       >
-                        <MoreVertical aria-hidden="true" size={16} />
-                      </button>
-                      {onOpenColumnMenuId === column.id ? (
-                        <div className="project-detail__column-menu-content" role="menu">
-                          <button
-                            type="button"
-                            role="menuitem"
-                            disabled={isBusy || columns.length <= 1}
-                            onClick={() => onArchiveColumn(column)}
-                          >
-                            Archivovat
-                          </button>
-                          <button
-                            className="project-detail__column-menu-danger"
-                            type="button"
-                            role="menuitem"
-                            disabled={isBusy || columns.length <= 1}
-                            onClick={() => onDeleteColumn(column)}
-                          >
-                            Smazat
-                          </button>
-                        </div>
-                      ) : null}
-                    </div>
+                        <button
+                          className="project-detail__column-menu-button"
+                          type="button"
+                          aria-label={"Upravit sloupec " + column.title}
+                          aria-expanded={onOpenColumnMenuId === column.id}
+                          onClick={() =>
+                            onChangeOpenColumnMenuId(
+                              onOpenColumnMenuId === column.id ? null : column.id,
+                            )
+                          }
+                        >
+                          <MoreVertical aria-hidden="true" size={16} />
+                        </button>
+                        {onOpenColumnMenuId === column.id ? (
+                          <div className="project-detail__column-menu-content" role="menu">
+                            <button
+                              type="button"
+                              role="menuitem"
+                              disabled={isBusy || columns.length <= 1}
+                              onClick={() => onArchiveColumn(column)}
+                            >
+                              Archivovat
+                            </button>
+                            <button
+                              className="project-detail__column-menu-danger"
+                              type="button"
+                              role="menuitem"
+                              disabled={isBusy || columns.length <= 1}
+                              onClick={() => onDeleteColumn(column)}
+                            >
+                              Smazat
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 </header>
                 <div className="project-detail__column-list">
@@ -3145,6 +3216,7 @@ function ProjectDetailView({
                     columnTasks.map((task) => (
                       <ProjectTaskMiniRow
                         assignee={task.assigneeId ? memberById.get(task.assigneeId) ?? null : null}
+                        canDelete={canManage}
                         isDragging={draggedTaskId === task.id}
                         isSettling={droppedTaskId === task.id}
                         key={task.id}
@@ -3189,6 +3261,7 @@ function ProjectDetailView({
 }
 function ProjectTaskMiniRow({
   assignee,
+  canDelete,
   isDragging,
   isSettling,
   task,
@@ -3198,6 +3271,7 @@ function ProjectTaskMiniRow({
   onOpenTask,
 }: {
   assignee: TeamMember | null;
+  canDelete: boolean;
   isDragging: boolean;
   isSettling: boolean;
   task: Task;
@@ -3247,52 +3321,53 @@ function ProjectTaskMiniRow({
       data-dragging={isDragging}
       data-settling={isSettling}
       draggable
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpenTask(task.id)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpenTask(task.id);
+        }
+      }}
       onDragEnd={onDragEnd}
       onDragStart={(event) => onDragStart(event, task)}
     >
-      <button className="project-detail__task-open" type="button" onClick={() => onOpenTask(task.id)}>
+      <div className="project-detail__task-open">
         <span>{task.title}</span>
         <small>{assignee ? getMemberDisplayName(assignee.email) : "Bez přiřazení"}</small>
-      </button>
-      <div className="project-detail__task-menu" ref={menuRef}>
-        <button
-          className="project-detail__task-menu-button"
-          type="button"
-          aria-label={"Další akce pro kartu " + task.title}
-          aria-expanded={isMenuOpen}
-          onClick={(event) => {
-            event.stopPropagation();
-            setIsMenuOpen((currentValue) => !currentValue);
-          }}
-        >
-          <MoreVertical aria-hidden="true" size={15} />
-        </button>
-        {isMenuOpen ? (
-          <div className="project-detail__task-menu-content" role="menu">
-            <button
-              type="button"
-              role="menuitem"
-              onClick={(event) => {
-                event.stopPropagation();
-                handleMenuAction(() => onOpenTask(task.id));
-              }}
-            >
-              Upravit
-            </button>
-            <button
-              className="project-detail__task-menu-danger"
-              type="button"
-              role="menuitem"
-              onClick={(event) => {
-                event.stopPropagation();
-                handleMenuAction(() => onDeleteTask(task.id));
-              }}
-            >
-              Smazat
-            </button>
-          </div>
-        ) : null}
       </div>
+      {canDelete ? (
+        <div className="project-detail__task-menu" ref={menuRef}>
+          <button
+            className="project-detail__task-menu-button"
+            type="button"
+            aria-label={"Další akce pro kartu " + task.title}
+            aria-expanded={isMenuOpen}
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsMenuOpen((currentValue) => !currentValue);
+            }}
+          >
+            <MoreVertical aria-hidden="true" size={15} />
+          </button>
+          {isMenuOpen ? (
+            <div className="project-detail__task-menu-content" role="menu">
+              <button
+                className="project-detail__task-menu-danger"
+                type="button"
+                role="menuitem"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleMenuAction(() => onDeleteTask(task.id));
+                }}
+              >
+                Smazat
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   );
 }
