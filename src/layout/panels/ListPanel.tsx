@@ -1,6 +1,10 @@
 ﻿import { useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, MouseEvent, TouchEvent } from "react";
-import { BarChart3, Bell, ChevronDown, ChevronRight, Sparkle } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ArrowRight, BarChart3, Bell, ChevronDown, ChevronRight, Plus, Sparkle } from "lucide-react";
+import { AnimatedCheckbox } from "../AnimatedCheckbox";
+import { CustomDropdown } from "../CustomDropdown";
+import type { DropdownOption } from "../CustomDropdown";
 import type { LayoutMode } from "../layoutTypes";
 import { getTodayDateValue } from "../../tasks/dateUtils";
 import {
@@ -20,15 +24,30 @@ import {
   type RecommendedTask,
 } from "../../tasks/taskRecommendation";
 import { parseTaskInput } from "../../tasks/naturalLanguageTaskParser";
-import type { Task, TaskList, TaskUpdate } from "../../tasks/taskTypes";
+import type { Task, TaskList, TaskPriority, TaskUpdate } from "../../tasks/taskTypes";
 
 type CreateTaskOptions = {
   dueDate?: string | null;
   dueTime?: string | null;
   note?: string;
+  priority?: TaskPriority;
 };
 
 type TaskVisibilityFilter = "all" | "active" | "completed";
+
+const PRIORITY_OPTIONS: TaskPriority[] = ["none", "low", "medium", "high"];
+const PRIORITY_LABELS: Record<TaskPriority, string> = {
+  none: "Bez priority",
+  low: "Nízká",
+  medium: "Střední",
+  high: "Vysoká",
+};
+const PRIORITY_COLORS: Record<TaskPriority, string> = {
+  none: "#7c8aa8",
+  low: "#38bdf8",
+  medium: "#f59e0b",
+  high: "#f43f5e",
+};
 
 const MIN_TASKS_FOR_WEEK_PRESSURE = 2;
 const LONG_PRESS_DELAY_MS = 520;
@@ -105,6 +124,7 @@ export function ListPanel({
   onMoveTask,
 }: ListPanelProps) {
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>("none");
   const [selectedWeekDate, setSelectedWeekDate] = useState<string | null>(null);
   const [isArchiveVisible, setIsArchiveVisible] = useState(false);
   const [isMobileComposerOpen, setIsMobileComposerOpen] = useState(false);
@@ -114,6 +134,7 @@ export function ListPanel({
   const [composerMessageTone, setComposerMessageTone] = useState<
     "info" | "warning"
   >("info");
+  const prefersReducedMotion = useReducedMotion();
   const isDetailMode = selectedTaskId !== null;
   const activeList = lists.find((list) => list.id === activeListId);
   const title = activeList ? activeList.name : "Úkoly";
@@ -147,6 +168,9 @@ export function ListPanel({
     ? "Pro vybraný den tu nejsou žádné úkoly"
     : getEmptyStateMessage(activeList);
   const taskComposerInputRef = useRef<HTMLInputElement>(null);
+  const priorityDropdownOptions: DropdownOption[] = PRIORITY_OPTIONS.map(
+    (priority) => ({ value: priority, label: PRIORITY_LABELS[priority] }),
+  );
 
   useEffect(() => {
     if (isMobileComposerOpen) {
@@ -188,18 +212,21 @@ export function ListPanel({
       onCreateTask(parsedTaskInput.title, {
         dueDate: createTaskDueDate,
         dueTime: null,
+        priority: newTaskPriority,
       });
       setComposerMessage(
         getConflictCreateMessage(parsedTaskInput.message, selectedWeekDate),
       );
       setComposerMessageTone("warning");
       setNewTaskTitle("");
+      setNewTaskPriority("none");
       return;
     }
 
     onCreateTask(parsedTaskInput.title, {
       dueDate: createTaskDueDate,
       dueTime: createTaskDueTime,
+      priority: newTaskPriority,
     });
     setComposerMessage(
       parsedTaskInput.message ??
@@ -207,6 +234,7 @@ export function ListPanel({
     );
     setComposerMessageTone("info");
     setNewTaskTitle("");
+    setNewTaskPriority("none");
   }
 
   return (
@@ -282,22 +310,69 @@ export function ListPanel({
             data-mobile-open={isMobileComposerOpen}
             onSubmit={handleSubmit}
           >
-            <input
-              aria-label="Nový úkol"
-              placeholder="Nový úkol"
-              ref={taskComposerInputRef}
-              value={newTaskTitle}
-              onChange={(event) => {
-                setNewTaskTitle(event.currentTarget.value);
-                setComposerMessage(null);
-              }}
+            <div className="task-composer__field">
+              <Plus className="task-composer__field-icon" aria-hidden="true" size={18} />
+              <input
+                aria-label="Nový úkol"
+                placeholder="Přidat úkol..."
+                ref={taskComposerInputRef}
+                value={newTaskTitle}
+                onChange={(event) => {
+                  setNewTaskTitle(event.currentTarget.value);
+                  setComposerMessage(null);
+                }}
+              />
+            </div>
+            <CustomDropdown
+              ariaLabel="Priorita nového úkolu"
+              className="task-composer__priority"
+              value={newTaskPriority}
+              options={priorityDropdownOptions}
+              onChange={(value) => setNewTaskPriority(value as TaskPriority)}
+              renderTriggerContent={(option) => (
+                <span className="task-composer__priority-value">
+                  <span
+                    className="task-composer__priority-dot"
+                    aria-hidden="true"
+                    style={{ "--priority-color": PRIORITY_COLORS[newTaskPriority] } as CSSProperties}
+                  />
+                  <span>{option?.label ?? PRIORITY_LABELS.none}</span>
+                </span>
+              )}
+              renderOptionContent={(option) => (
+                <span className="task-composer__priority-value">
+                  <span
+                    className="task-composer__priority-dot"
+                    aria-hidden="true"
+                    style={{ "--priority-color": PRIORITY_COLORS[option.value as TaskPriority] } as CSSProperties}
+                  />
+                  <span>{option.label}</span>
+                </span>
+              )}
             />
-            <button type="submit">Přidat</button>
-            {composerMessage ? (
-              <small className="task-composer__hint" data-tone={composerMessageTone}>
-                {composerMessage}
-              </small>
-            ) : null}
+            <motion.button
+              aria-label="Přidat úkol"
+              className="task-composer__submit"
+              disabled={newTaskTitle.trim().length === 0}
+              type="submit"
+              whileTap={prefersReducedMotion ? undefined : { scale: 0.88 }}
+            >
+              <ArrowRight aria-hidden="true" size={16} />
+            </motion.button>
+            <AnimatePresence>
+              {composerMessage ? (
+                <motion.small
+                  className="task-composer__hint"
+                  data-tone={composerMessageTone}
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={prefersReducedMotion ? undefined : { opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {composerMessage}
+                </motion.small>
+              ) : null}
+            </AnimatePresence>
             {selectedWeekDate ? (
               <small className="task-composer__filter-hint">
                 Přidáš na vybraný den
@@ -1668,17 +1743,13 @@ function TaskSection({
                   data-selected={isSelected ? "true" : "false"}
                   data-responsive-compact={isResponsiveCompact ? "true" : "false"}
                 >
-                  <input
-                    aria-label={`Označit úkol ${task.title} jako ${
+                  <AnimatedCheckbox
+                    ariaLabel={`Označit úkol ${task.title} jako ${
                       task.completed ? "otevřený" : "dokončený"
                     }`}
                     checked={task.completed}
                     disabled={isArchivedSection}
-                    type="checkbox"
-                    onClick={(event) => event.stopPropagation()}
-                    onChange={(event) =>
-                      onToggleTaskCompleted(task.id, event.currentTarget.checked)
-                    }
+                    onChange={(checked) => onToggleTaskCompleted(task.id, checked)}
                   />
                   <div className="task-list__content">
                     <button
@@ -1769,19 +1840,14 @@ function TaskSection({
                             data-completed={subtask.completed ? "true" : "false"}
                             key={subtask.id}
                           >
-                            <input
-                              aria-label={`Označit podúkol ${subtask.title} jako ${
+                            <AnimatedCheckbox
+                              ariaLabel={`Označit podúkol ${subtask.title} jako ${
                                 subtask.completed ? "nedokončený" : "dokončený"
                               }`}
                               checked={subtask.completed}
-                              type="checkbox"
-                              onClick={(event) => event.stopPropagation()}
-                              onChange={(event) =>
-                                handleToggleSubtask(
-                                  task,
-                                  subtask.id,
-                                  event.currentTarget.checked,
-                                )
+                              size="sm"
+                              onChange={(checked) =>
+                                handleToggleSubtask(task, subtask.id, checked)
                               }
                             />
                             <span>{subtask.title}</span>

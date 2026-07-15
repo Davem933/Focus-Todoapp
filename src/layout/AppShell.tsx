@@ -3,6 +3,8 @@ import type { CSSProperties, DragEvent, FormEvent, ReactNode, TouchEvent } from 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { BarChart3, Bell, CheckCircle2, FolderKanban, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Trash2, UserPlus, Users, X } from "lucide-react";
 import { useAppLayout } from "./useAppLayout";
+import { CustomDropdown } from "./CustomDropdown";
+import type { DropdownOption } from "./CustomDropdown";
 import type { VisiblePanel } from "./layoutTypes";
 import { getTodayDateValue } from "../tasks/dateUtils";
 import { DetailPanel } from "./panels/DetailPanel";
@@ -74,6 +76,16 @@ const BOARD_CARD_PRIORITY_LABELS: Record<TaskPriority, string> = {
   medium: "Medium",
   high: "High",
 };
+const BOARD_CARD_PRIORITY_COLORS: Record<TaskPriority, string> = {
+  none: "#7c8aa8",
+  low: "#38bdf8",
+  medium: "#f59e0b",
+  high: "#f43f5e",
+};
+const BOARD_CARD_PRIORITY_DROPDOWN_OPTIONS: DropdownOption[] = BOARD_CARD_PRIORITY_OPTIONS.map((option) => ({
+  value: option,
+  label: BOARD_CARD_PRIORITY_LABELS[option],
+}));
 const BOARD_CARD_LABEL_COLORS = ["#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
 type AppShellProps = {
   tasks: Task[];
@@ -2477,6 +2489,7 @@ function ProjectsOverviewPanel({
           onStartRenameColumn={handleStartRenameProjectColumn}
           onUpdateTask={onUpdateTask}
         />
+        <AnimatePresence>
         {cardComposerColumnKey ? (
           <ProjectCardComposerModal
             actionLabel={cardComposerTaskId ? "Ulo?it kartu" : "Add Card"}
@@ -2508,6 +2521,7 @@ function ProjectsOverviewPanel({
             onTitleChange={setCardComposerTitle}
           />
         ) : null}
+        </AnimatePresence>
       </>
     );
   }
@@ -2731,21 +2745,42 @@ function ProjectCardComposerModal({
   onToggleSubtask: (subtaskId: string) => void;
 }) {
   const previewLabels = createCardLabels(labels);
+  const prefersReducedMotion = useReducedMotion();
+
+  function fieldMotion(index: number) {
+    if (prefersReducedMotion) {
+      return {};
+    }
+
+    return {
+      initial: { opacity: 0, y: 10 },
+      animate: { opacity: 1, y: 0 },
+      transition: { duration: 0.28, delay: 0.045 * index, ease: [0.16, 1, 0.3, 1] as const },
+    };
+  }
 
   return (
     <div className="board-card-modal" role="presentation">
-      <button
+      <motion.button
         className="board-card-modal__backdrop"
         type="button"
         aria-label="Zavřít vytváření karty"
         onClick={onClose}
+        initial={prefersReducedMotion ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={prefersReducedMotion ? undefined : { opacity: 0 }}
+        transition={{ duration: 0.18 }}
       />
-      <form
+      <motion.form
         className="board-card-modal__panel"
         role="dialog"
         aria-modal="true"
         aria-labelledby="board-card-modal-title"
         onSubmit={onSubmit}
+        initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.96, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.97, y: 10 }}
+        transition={{ type: "spring", stiffness: 340, damping: 30 }}
         onKeyDown={(event) => {
           if (event.key !== "Enter") {
             return;
@@ -2768,13 +2803,21 @@ function ProjectCardComposerModal({
             <h2 id="board-card-modal-title">{isEditing ? "Upravit kartu" : "Vytvořit kartu"}</h2>
             <p>{isEditing ? "Uprav kartu na nástěnce " + projectName + "." : "Přidej novou kartu do nástěnky " + projectName + "."}</p>
           </div>
-          <button className="board-card-modal__close" type="button" aria-label="Zavřít" onClick={onClose}>
+          <motion.button
+            className="board-card-modal__close"
+            type="button"
+            aria-label="Zavřít"
+            onClick={onClose}
+            whileHover={prefersReducedMotion ? undefined : { scale: 1.06, rotate: 90 }}
+            whileTap={prefersReducedMotion ? undefined : { scale: 0.92 }}
+            transition={{ duration: 0.18 }}
+          >
             <X size={18} />
-          </button>
+          </motion.button>
         </header>
 
         <div className="board-card-modal__body">
-          <label className="board-card-modal__field board-card-modal__field--full">
+          <motion.label className="board-card-modal__field board-card-modal__field--full" {...fieldMotion(0)}>
             <span>Název karty</span>
             <input
               autoFocus
@@ -2783,9 +2826,9 @@ function ProjectCardComposerModal({
               value={title}
               onChange={(event) => onTitleChange(event.currentTarget.value)}
             />
-          </label>
+          </motion.label>
 
-          <label className="board-card-modal__field board-card-modal__field--full">
+          <motion.label className="board-card-modal__field board-card-modal__field--full" {...fieldMotion(1)}>
             <span>Description</span>
             <textarea
               rows={4}
@@ -2793,31 +2836,46 @@ function ProjectCardComposerModal({
               value={note}
               onChange={(event) => onNoteChange(event.currentTarget.value)}
             />
-          </label>
+          </motion.label>
 
-          <div className="board-card-modal__grid">
+          <motion.div className="board-card-modal__grid" {...fieldMotion(2)}>
             <div className="board-card-modal__field">
               <span>Priority</span>
-              <div className="board-card-modal__priority" role="group" aria-label="Priorita">
-                {BOARD_CARD_PRIORITY_OPTIONS.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    data-selected={priority === option}
-                    onClick={() => onPriorityChange(option)}
-                  >
-                    {BOARD_CARD_PRIORITY_LABELS[option]}
-                  </button>
-                ))}
-              </div>
+              <CustomDropdown
+                ariaLabel="Priorita"
+                className="board-card-modal__priority-dropdown"
+                value={priority}
+                options={BOARD_CARD_PRIORITY_DROPDOWN_OPTIONS}
+                onChange={(value) => onPriorityChange(value as TaskPriority)}
+                renderTriggerContent={(option) => (
+                  <span className="board-card-modal__priority-value">
+                    <span
+                      className="board-card-modal__priority-dot"
+                      aria-hidden="true"
+                      style={{ "--priority-color": BOARD_CARD_PRIORITY_COLORS[priority] } as CSSProperties}
+                    />
+                    <span>{option?.label ?? BOARD_CARD_PRIORITY_LABELS.none}</span>
+                  </span>
+                )}
+                renderOptionContent={(option) => (
+                  <span className="board-card-modal__priority-value">
+                    <span
+                      className="board-card-modal__priority-dot"
+                      aria-hidden="true"
+                      style={{ "--priority-color": BOARD_CARD_PRIORITY_COLORS[option.value as TaskPriority] } as CSSProperties}
+                    />
+                    <span>{option.label}</span>
+                  </span>
+                )}
+              />
             </div>
             <label className="board-card-modal__field">
               <span>Due date</span>
               <input type="date" value={dueDate} onChange={(event) => onDueDateChange(event.currentTarget.value)} />
             </label>
-          </div>
+          </motion.div>
 
-          <label className="board-card-modal__field board-card-modal__field--full">
+          <motion.label className="board-card-modal__field board-card-modal__field--full" {...fieldMotion(3)}>
             <span>Labels</span>
             <input
               data-allow-enter="true"
@@ -2838,18 +2896,28 @@ function ProjectCardComposerModal({
                 onAddLabel(event.currentTarget.value);
               }}
             />
-          </label>
+          </motion.label>
           {previewLabels.length > 0 ? (
             <div className="board-card-modal__labels" aria-label="Nahled stitku">
-              {previewLabels.map((label) => (
-                <span key={label.id} style={{ "--label-color": label.color } as CSSProperties}>
-                  {label.name}
-                </span>
-              ))}
+              <AnimatePresence initial={false}>
+                {previewLabels.map((label) => (
+                  <motion.span
+                    key={label.id}
+                    style={{ "--label-color": label.color } as CSSProperties}
+                    layout
+                    initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.16 }}
+                  >
+                    {label.name}
+                  </motion.span>
+                ))}
+              </AnimatePresence>
             </div>
           ) : null}
 
-          <div className="board-card-modal__field board-card-modal__field--full">
+          <motion.div className="board-card-modal__field board-card-modal__field--full" {...fieldMotion(4)}>
             <span>Subtasks</span>
             <div className="board-card-modal__subtask-input">
               <input
@@ -2864,28 +2932,43 @@ function ProjectCardComposerModal({
                   }
                 }}
               />
-              <button type="button" onClick={onAddSubtask} disabled={!subtaskTitle.trim()}>
+              <motion.button
+                type="button"
+                onClick={onAddSubtask}
+                disabled={!subtaskTitle.trim()}
+                whileTap={prefersReducedMotion || !subtaskTitle.trim() ? undefined : { scale: 0.94 }}
+              >
                 Add
-              </button>
+              </motion.button>
             </div>
             {subtasks.length > 0 ? (
               <div className="board-card-modal__subtasks">
-                {subtasks.map((subtask) => (
-                  <label key={subtask.id} data-completed={subtask.completed ? "true" : "false"}>
-                    <input
-                      type="checkbox"
-                      checked={subtask.completed}
-                      onChange={() => onToggleSubtask(subtask.id)}
-                      aria-label={"Oznacit podukol " + subtask.title}
-                    />
-                    <span>{subtask.title}</span>
-                  </label>
-                ))}
+                <AnimatePresence initial={false}>
+                  {subtasks.map((subtask) => (
+                    <motion.label
+                      key={subtask.id}
+                      data-completed={subtask.completed ? "true" : "false"}
+                      layout
+                      initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.16 }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={subtask.completed}
+                        onChange={() => onToggleSubtask(subtask.id)}
+                        aria-label={"Oznacit podukol " + subtask.title}
+                      />
+                      <span>{subtask.title}</span>
+                    </motion.label>
+                  ))}
+                </AnimatePresence>
               </div>
             ) : null}
-          </div>
+          </motion.div>
 
-          <label className="board-card-modal__field board-card-modal__field--full">
+          <motion.label className="board-card-modal__field board-card-modal__field--full" {...fieldMotion(5)}>
             <span>Assign member</span>
             <select value={assigneeId} onChange={(event) => onAssigneeChange(event.currentTarget.value)}>
               <option value="">Neprirazeno</option>
@@ -2895,28 +2978,43 @@ function ProjectCardComposerModal({
                 </option>
               ))}
             </select>
-          </label>
-          <div className="board-card-modal__assignees" aria-label="Clenove tymu">
+          </motion.label>
+          <motion.div className="board-card-modal__assignees" aria-label="Clenove tymu" {...fieldMotion(6)}>
             {members.slice(0, 5).map((member) => (
-              <button
+              <motion.button
                 key={member.userId}
                 type="button"
                 title={member.email}
                 data-selected={assigneeId === member.userId}
                 onClick={() => onAssigneeChange(assigneeId === member.userId ? "" : member.userId)}
+                whileHover={prefersReducedMotion ? undefined : { scale: 1.08 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
               >
                 {getMemberInitials(member.email)}
-              </button>
+              </motion.button>
             ))}
             <small>{columnTitle}</small>
-          </div>
+          </motion.div>
         </div>
 
         <footer className="board-card-modal__footer">
-          <button type="button" onClick={onClose}>Cancel</button>
-          <button type="submit" disabled={!title.trim()}>{actionLabel}</button>
+          <motion.button
+            type="button"
+            onClick={onClose}
+            whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
+          >
+            Cancel
+          </motion.button>
+          <motion.button
+            type="submit"
+            disabled={!title.trim()}
+            whileHover={prefersReducedMotion || !title.trim() ? undefined : { scale: 1.02 }}
+            whileTap={prefersReducedMotion || !title.trim() ? undefined : { scale: 0.97 }}
+          >
+            {actionLabel}
+          </motion.button>
         </footer>
-      </form>
+      </motion.form>
     </div>
   );
 }
@@ -3216,13 +3314,11 @@ function ProjectDetailView({
                     columnTasks.map((task) => (
                       <ProjectTaskMiniRow
                         assignee={task.assigneeId ? memberById.get(task.assigneeId) ?? null : null}
-                        canDelete={canManage}
                         isDragging={draggedTaskId === task.id}
                         isSettling={droppedTaskId === task.id}
                         key={task.id}
                         task={task}
                         onDragEnd={handleTaskDragEnd}
-                        onDeleteTask={onDeleteTask}
                         onDragStart={handleTaskDragStart}
                         onOpenTask={onOpenTask}
                       />
@@ -3261,59 +3357,21 @@ function ProjectDetailView({
 }
 function ProjectTaskMiniRow({
   assignee,
-  canDelete,
   isDragging,
   isSettling,
   task,
   onDragEnd,
-  onDeleteTask,
   onDragStart,
   onOpenTask,
 }: {
   assignee: TeamMember | null;
-  canDelete: boolean;
   isDragging: boolean;
   isSettling: boolean;
   task: Task;
   onDragEnd: () => void;
-  onDeleteTask: (taskId: string) => void;
   onDragStart: (event: DragEvent<HTMLElement>, task: Task) => void;
   onOpenTask: (taskId: string) => void;
 }) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!isMenuOpen) {
-      return;
-    }
-
-    function handlePointerDown(event: MouseEvent) {
-      const target = event.target;
-
-      if (!(target instanceof Node)) {
-        return;
-      }
-
-      if (menuRef.current?.contains(target)) {
-        return;
-      }
-
-      setIsMenuOpen(false);
-    }
-
-    window.addEventListener("mousedown", handlePointerDown);
-
-    return () => {
-      window.removeEventListener("mousedown", handlePointerDown);
-    };
-  }, [isMenuOpen]);
-
-  function handleMenuAction(action: () => void) {
-    setIsMenuOpen(false);
-    action();
-  }
-
   return (
     <article
       className="project-detail__task-row"
@@ -3337,37 +3395,6 @@ function ProjectTaskMiniRow({
         <span>{task.title}</span>
         <small>{assignee ? getMemberDisplayName(assignee.email) : "Bez přiřazení"}</small>
       </div>
-      {canDelete ? (
-        <div className="project-detail__task-menu" ref={menuRef}>
-          <button
-            className="project-detail__task-menu-button"
-            type="button"
-            aria-label={"Další akce pro kartu " + task.title}
-            aria-expanded={isMenuOpen}
-            onClick={(event) => {
-              event.stopPropagation();
-              setIsMenuOpen((currentValue) => !currentValue);
-            }}
-          >
-            <MoreVertical aria-hidden="true" size={15} />
-          </button>
-          {isMenuOpen ? (
-            <div className="project-detail__task-menu-content" role="menu">
-              <button
-                className="project-detail__task-menu-danger"
-                type="button"
-                role="menuitem"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleMenuAction(() => onDeleteTask(task.id));
-                }}
-              >
-                Smazat
-              </button>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
     </article>
   );
 }
@@ -3375,7 +3402,7 @@ function createCardLabels(value: string): TaskLabel[] {
   const names = normalizeCardLabelNames(value);
 
   return names.map((name, index) => ({
-    id: "label-" + Date.now() + "-" + index + "-" + Math.random().toString(36).slice(2, 6),
+    id: "label-" + index + "-" + name.toLowerCase().replace(/\s+/g, "-"),
     name,
     color: getCardLabelColor(name),
   }));
