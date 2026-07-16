@@ -42,6 +42,11 @@ export function NotesPanel({
   const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] = useState(false);
   const [isGraphOpen, setIsGraphOpen] = useState(false);
   const [graphMode, setGraphMode] = useState<"global" | "local">("global");
+  const [backlinksCount, setBacklinksCount] = useState(0);
+
+  useEffect(() => {
+    setBacklinksCount(0);
+  }, [workspace.selectedNoteId]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -64,6 +69,7 @@ export function NotesPanel({
     <section className="app-panel notes-panel" aria-label="Poznámky">
       <div
         className="notes-panel__layout"
+        data-has-backlinks={Boolean(workspace.selectedNote) && backlinksCount > 0}
         data-mobile={isMobileLayout}
         data-note-open={Boolean(workspace.selectedNote)}
       >
@@ -144,6 +150,7 @@ export function NotesPanel({
                 noteId={workspace.selectedNote.id}
                 noteTitle={workspace.selectedNote.title}
                 teamId={activeTeam.id}
+                onBacklinksChange={setBacklinksCount}
                 onOpenNote={workspace.setSelectedNoteId}
               />
             </div>

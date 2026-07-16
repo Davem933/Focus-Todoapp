@@ -11600,6 +11600,14 @@ input[type="checkbox"]:focus-visible {
   padding: 0.9rem 1rem;
 }
 
+.notes-panel__layout[data-has-backlinks="false"]:not([data-mobile="true"]) {
+  grid-template-columns: minmax(16rem, 20rem) minmax(18rem, 1fr) 0;
+}
+
+.notes-panel__layout[data-has-backlinks="false"] .notes-panel__backlinks {
+  display: none;
+}
+
 .notes-panel__layout[data-mobile="true"] .notes-panel__list,
 .notes-panel__layout[data-mobile="true"] .notes-panel__editor,
 .notes-panel__layout[data-mobile="true"] .notes-panel__backlinks {
