@@ -1,16 +1,11 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import {
-  FileText,
-  FolderPlus,
-  NotebookText,
-  Pin,
-  Plus,
-  Search,
-  SearchCode,
-  Share2,
-} from "lucide-react";
+import { FolderPlus, NotebookText, Pin, Plus, Search, SearchCode, Share2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { NoteFolderTree } from "./NoteFolderTree";
+import { NoteRow } from "./NoteRow";
 import { NoteTagPane } from "./NoteTagPane";
 import type { Note, NoteFolderTreeNode } from "./noteTypes";
 
@@ -101,71 +96,70 @@ export function NoteList({
   }
 
   return (
-    <div className="note-list">
-      <div className="note-list__toolbar">
-        <div className="note-list__toolbar-row">
-          <div className="note-list__heading">
-            <span className="note-list__heading-title">Poznámky</span>
-            <span className="note-list__heading-count">{notes.length}</span>
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-sm font-bold text-nt-fg">Poznámky</span>
+            <Badge variant="count">{notes.length}</Badge>
           </div>
-          <div className="note-list__icon-group">
-            <button
+          <div className="ml-auto flex gap-1">
+            <Button
               aria-label="Rychlé přepínání poznámek"
-              className="note-list__icon-button"
+              size="icon"
               title="Rychlé přepínání (Ctrl/Cmd+O)"
               type="button"
+              variant="ghost"
               onClick={onOpenQuickSwitcher}
             >
               <SearchCode aria-hidden="true" size={15} />
-            </button>
-            <button
+            </Button>
+            <Button
               aria-label="Graf poznámek"
-              className="note-list__icon-button"
+              size="icon"
               title="Graf poznámek"
               type="button"
+              variant="ghost"
               onClick={onOpenGraph}
             >
               <Share2 aria-hidden="true" size={15} />
-            </button>
-            <button
+            </Button>
+            <Button
               aria-label="Nová složka"
-              className="note-list__icon-button"
+              size="icon"
               title="Nová složka"
               type="button"
+              variant="ghost"
               onClick={() => setIsCreatingFolder((current) => !current)}
             >
               <FolderPlus aria-hidden="true" size={15} />
-            </button>
+            </Button>
           </div>
         </div>
-        <div className="note-list__toolbar-row">
-          <div className="note-list__search">
-            <Search aria-hidden="true" size={15} />
+        <div className="flex items-center gap-1.5">
+          <div className="flex flex-1 items-center gap-1.5 rounded-md border border-nt-border bg-nt-card px-2.5">
+            <Search aria-hidden="true" className="text-nt-muted" size={15} />
             <input
               aria-label="Hledat v poznámkách"
+              className="h-9 flex-1 bg-transparent text-sm text-nt-fg outline-none placeholder:text-nt-muted"
               placeholder="Hledat poznámky…"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.currentTarget.value)}
             />
           </div>
-          <button
-            aria-label="Nová poznámka"
-            className="note-list__icon-button note-list__icon-button--primary note-list__new-note-button"
-            title="Nová poznámka"
-            type="button"
-            onClick={onCreateNote}
-          >
+          <Button size="sm" type="button" variant="default" onClick={onCreateNote}>
             <Plus aria-hidden="true" size={15} />
             <span>Nová</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {isCreatingFolder ? (
-        <form className="note-list__folder-create-form" onSubmit={handleCreateFolderSubmit}>
-          <input
+        <form className="flex gap-1.5" onSubmit={handleCreateFolderSubmit}>
+          <Input
             autoFocus
             aria-label="Název nové složky"
+            className="h-8 rounded-full text-xs"
             placeholder="Název složky"
             value={newFolderName}
             onChange={(event) => setNewFolderName(event.currentTarget.value)}
@@ -176,35 +170,35 @@ export function NoteList({
               }
             }}
           />
-          <button type="submit" disabled={!newFolderName.trim()}>
+          <Button
+            className="rounded-full"
+            disabled={!newFolderName.trim()}
+            size="sm"
+            type="submit"
+            variant="default"
+          >
             Přidat
-          </button>
+          </Button>
         </form>
       ) : null}
 
       <NoteTagPane activeTags={activeTags} notes={notes} onToggleTag={toggleTag} />
 
       {!isFiltering && pinnedNotes.length > 0 ? (
-        <div className="note-list__pinned">
-          <div className="note-list__pinned-head">
+        <div className="border-t border-nt-border pt-2">
+          <div className="flex items-center gap-1.5 px-1 py-1 text-[0.82rem] font-semibold text-nt-muted">
             <Pin aria-hidden="true" size={13} />
             <span>Připnuté</span>
           </div>
-          <ul className="note-list__pinned-items">
+          <ul className="flex flex-col gap-0.5">
             {pinnedNotes.map((note) => (
-              <li className="note-list__pinned-item" key={note.id}>
-                <button
-                  className="note-tree__note"
-                  data-selected={note.id === selectedNoteId}
-                  type="button"
-                  onClick={() => onSelectNote(note.id)}
-                >
-                  <FileText aria-hidden="true" size={14} />
-                  <span>{note.title}</span>
-                </button>
+              <li className="flex items-center" key={note.id}>
+                <div className="flex-1">
+                  <NoteRow note={note} selected={note.id === selectedNoteId} onSelectNote={onSelectNote} />
+                </div>
                 <button
                   aria-label="Odepnout poznámku"
-                  className="note-list__pinned-unpin"
+                  className="shrink-0 rounded-md p-1.5 text-nt-brand hover:bg-nt-brand-soft"
                   title="Odepnout poznámku"
                   type="button"
                   onClick={() => onTogglePin(note.id)}
@@ -217,26 +211,26 @@ export function NoteList({
         </div>
       ) : null}
 
-      {error ? <p className="note-list__error">{error}</p> : null}
+      {error ? <p className="text-sm text-nt-danger">{error}</p> : null}
       {isLoading && notes.length === 0 ? (
-        <p className="note-list__empty">Načítám poznámky…</p>
+        <p className="text-sm text-nt-muted">Načítám poznámky…</p>
       ) : null}
       {!isLoading && notes.length === 0 ? (
-        <div className="note-list__empty-card">
+        <div className="flex flex-col items-center gap-2 py-6 text-center text-nt-muted">
           <NotebookText aria-hidden="true" size={24} />
-          <strong>Zatím tu nejsou žádné poznámky</strong>
-          <button type="button" onClick={onCreateNote}>
+          <strong className="text-nt-fg">Zatím tu nejsou žádné poznámky</strong>
+          <Button size="sm" type="button" variant="default" onClick={onCreateNote}>
             Založit první poznámku
-          </button>
+          </Button>
         </div>
       ) : null}
 
       {!isLoading && notes.length > 0 && isFiltering && filteredNotes.length === 0 ? (
-        <p className="note-list__empty">Nic neodpovídá filtru</p>
+        <p className="text-sm text-nt-muted">Nic neodpovídá filtru</p>
       ) : null}
 
       {isFiltering && filteredNotes.length > 0 ? (
-        <ul className="note-tree__notes">
+        <ul className="flex flex-col gap-0.5">
           {filteredNotes.map((note) => (
             <NoteRow
               key={note.id}
@@ -263,29 +257,5 @@ export function NoteList({
         />
       ) : null}
     </div>
-  );
-}
-
-function NoteRow({
-  note,
-  selected,
-  onSelectNote,
-}: {
-  note: Note;
-  selected: boolean;
-  onSelectNote: (noteId: string) => void;
-}) {
-  return (
-    <li>
-      <button
-        className="note-tree__note"
-        data-selected={selected}
-        type="button"
-        onClick={() => onSelectNote(note.id)}
-      >
-        <FileText aria-hidden="true" size={14} />
-        <span>{note.title}</span>
-      </button>
-    </li>
   );
 }
