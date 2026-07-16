@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, DragEvent, FormEvent, ReactNode, TouchEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { BarChart3, Bell, CheckCircle2, FolderKanban, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Trash2, UserPlus, Users, X } from "lucide-react";
@@ -212,6 +212,10 @@ export function AppShell(props: AppShellProps) {
     layout.mode === "mobile-list-only" || layout.mode === "mobile-detail-only";
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
   const [manageableTeamIds, setManageableTeamIds] = useState<Set<string>>(new Set());
+  const activeTeamForNotes = useMemo(
+    () => teams.find((team) => team.id === activeTeamId) ?? null,
+    [teams, activeTeamId],
+  );
   const [taskMentioningNotes, setTaskMentioningNotes] = useState<Note[]>([]);
   const [isTaskMentioningNotesLoading, setIsTaskMentioningNotesLoading] = useState(false);
 
@@ -776,7 +780,7 @@ export function AppShell(props: AppShellProps) {
             />
           ) : isNotesOpen && activeTeamId ? (
             <NotesPanel
-              activeTeam={teams.find((team) => team.id === activeTeamId) ?? null}
+              activeTeam={activeTeamForNotes}
               canManageTeam={isGlobalAdmin || manageableTeamIds.has(activeTeamId)}
               currentUserId={currentUserId}
               isMobileLayout={isMobileLayout}

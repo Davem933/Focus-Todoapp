@@ -65,9 +65,22 @@ export function NoteGraphView({
   const nodesRef = useRef(model.nodes);
 
   useEffect(() => {
-    nodesRef.current = model.nodes;
-    setView({ scale: 1, x: 0, y: 0 });
+    const previousById = new Map(nodesRef.current.map((node) => [node.id, node]));
+
+    nodesRef.current = model.nodes.map((node) => {
+      const previous = previousById.get(node.id);
+
+      return previous
+        ? { ...node, fixed: previous.fixed, vx: previous.vx, vy: previous.vy, x: previous.x, y: previous.y }
+        : node;
+    });
   }, [model]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setView({ scale: 1, x: 0, y: 0 });
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -133,7 +146,12 @@ export function NoteGraphView({
 
   function handleNodePointerDown(event: PointerEvent<SVGGElement>, node: (typeof model.nodes)[number]) {
     event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Pointer capture can fail if the pointer was already released; the
+      // drag still works via dragRef tracking without it.
+    }
     node.fixed = true;
     dragRef.current = { pointerId: event.pointerId, nodeId: node.id, moved: false };
     const point = clientToGraphPoint(event.clientX, event.clientY);
@@ -163,7 +181,7 @@ export function NoteGraphView({
       return;
     }
 
-    node.fixed = false;
+    node.fixed = drag.moved;
     justDraggedNodeIdRef.current = drag.moved ? node.id : null;
     dragRef.current = null;
   }
