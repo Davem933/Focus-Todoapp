@@ -11684,6 +11684,7 @@ input[type="checkbox"]:focus-visible {
 
 .note-list__heading-count {
   background: var(--color-background-card);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
   color: var(--color-text-secondary);
   font-size: 0.72rem;
@@ -12006,6 +12007,7 @@ input[type="checkbox"]:focus-visible {
 
 .note-tree__group-toggle small {
   background: var(--color-background-card);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
   color: var(--color-text-secondary);
   font-size: 0.68rem;
@@ -12429,6 +12431,7 @@ input[type="checkbox"]:focus-visible {
 
 .note-mentions__count {
   background: var(--color-background-card);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
   color: var(--color-text-secondary);
   font-size: 0.68rem;
@@ -12719,7 +12722,7 @@ input[type="checkbox"]:focus-visible {
   text-align: center;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
   .notes-panel__layout {
     grid-template-columns: 1fr;
   }
