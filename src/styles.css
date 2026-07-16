@@ -12366,18 +12366,24 @@ input[type="checkbox"]:focus-visible {
 }
 
 .note-markdown__link {
-  background: none;
+  background: var(--color-accent-soft);
   border: none;
-  border-bottom: 1px solid var(--color-accent);
+  border-radius: 3px;
   color: var(--color-accent);
   cursor: pointer;
   font: inherit;
-  padding: 0;
+  padding: 1px 4px;
+}
+
+.note-markdown__link:hover {
+  text-decoration: underline;
 }
 
 .note-markdown__link[data-resolved="false"] {
-  border-bottom-style: dashed;
+  background: none;
+  border-bottom: 1px dashed var(--color-text-secondary);
   color: var(--color-text-secondary);
+  padding: 0;
 }
 
 .note-markdown__mention {
