@@ -12106,14 +12106,18 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin: 0 auto;
+  max-width: 46rem;
   min-height: 0;
+  width: 100%;
 }
 
 .note-editor__header {
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-width: 46rem;
+  padding-bottom: 0.85rem;
 }
 
 .note-editor__title-row {
@@ -12127,8 +12131,8 @@ input[type="checkbox"]:focus-visible {
   border: none;
   color: var(--color-text-primary);
   flex: 1;
-  font-size: 1.3rem;
-  font-weight: 750;
+  font-size: 1.6rem;
+  font-weight: 700;
   min-width: 0;
   outline: none;
   padding: 0.1rem 0;
@@ -12221,11 +12225,19 @@ input[type="checkbox"]:focus-visible {
 
 .note-editor__tag-input {
   background: none;
-  border: none;
+  border: 1px dashed var(--color-border);
+  border-radius: 999px;
   color: var(--color-text-secondary);
   font-size: 0.78rem;
   outline: none;
+  padding: 0.2rem 0.55rem;
   width: 5rem;
+}
+
+.note-editor__tag-input:focus,
+.note-editor__tag-input:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .note-editor__mobile-switch {
@@ -12293,7 +12305,7 @@ input[type="checkbox"]:focus-visible {
   flex: 1;
   font-family: inherit;
   font-size: 0.88rem;
-  line-height: 1.5;
+  line-height: 1.7;
   min-height: 16rem;
   outline: none;
   padding: 0.85rem;
@@ -12346,7 +12358,7 @@ input[type="checkbox"]:focus-visible {
 .note-markdown {
   color: var(--color-text-primary);
   font-size: 0.9rem;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 .note-markdown p:first-child {
