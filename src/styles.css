@@ -11670,13 +11670,30 @@ input[type="checkbox"]:focus-visible {
   gap: 0.5rem;
 }
 
-.note-list__toolbar-row--icons {
-  justify-content: flex-end;
+.note-list__heading {
+  align-items: baseline;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.note-list__heading-title {
+  color: var(--color-text-primary);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.note-list__heading-count {
+  background: var(--color-background-card);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  padding: 0.05rem 0.45rem;
 }
 
 .note-list__icon-group {
   display: flex;
   gap: 0.4rem;
+  margin-left: auto;
 }
 
 .note-list__search {
