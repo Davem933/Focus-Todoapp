@@ -11571,7 +11571,7 @@ input[type="checkbox"]:focus-visible {
 .notes-panel__layout {
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr) minmax(15rem, 17.5rem);
+  grid-template-columns: minmax(16rem, 20rem) minmax(18rem, 1fr) minmax(15rem, 17.5rem);
   min-height: 0;
 }
 
