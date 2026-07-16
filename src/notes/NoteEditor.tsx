@@ -267,7 +267,7 @@ export function NoteEditor({
             />
             {autocomplete.isOpen && autocomplete.anchorPosition ? (
               <ul
-                className="absolute z-20 max-h-56 w-64 overflow-y-auto rounded-md border border-nt-border bg-nt-card-strong p-1 shadow-xl"
+                className="absolute z-20 max-h-56 w-64 list-none overflow-y-auto rounded-md border border-nt-border bg-nt-card-strong p-1 shadow-xl"
                 style={{
                   left: autocomplete.anchorPosition.left,
                   top: autocomplete.anchorPosition.top,

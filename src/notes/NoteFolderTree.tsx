@@ -100,18 +100,20 @@ export function NoteFolderTree({
         </button>
         {!collapsed.has(ROOT_KEY) ? (
           rootNotes.length > 0 ? (
-            <ul className="flex flex-col gap-0.5">
-              {rootNotes.map((note) => (
-                <li key={note.id}>
-                  <NoteRow
-                    draggable
-                    note={note}
-                    selected={note.id === selectedNoteId}
-                    onSelectNote={onSelectNote}
-                  />
-                </li>
-              ))}
-            </ul>
+            <div className="ml-[0.9rem] flex flex-col gap-0.5 border-l border-nt-border pl-2.5">
+              <ul className="flex list-none flex-col gap-0.5 p-0">
+                {rootNotes.map((note) => (
+                  <li key={note.id}>
+                    <NoteRow
+                      draggable
+                      note={note}
+                      selected={note.id === selectedNoteId}
+                      onSelectNote={onSelectNote}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : (
             <p className="ml-8 py-1 text-xs text-nt-muted">Prázdné</p>
           )
@@ -240,7 +242,6 @@ function FolderNode({
               autoFocus
               aria-label="Přejmenovat složku"
               className="w-full rounded-md border border-nt-brand bg-nt-card px-2 py-1 text-[0.82rem] font-semibold text-nt-fg outline-none"
-              style={{ marginLeft: `${depth * 1.1}rem` }}
               value={renameValue}
               onBlur={commitRename}
               onChange={(event) => setRenameValue(event.currentTarget.value)}
@@ -249,8 +250,7 @@ function FolderNode({
           </form>
         ) : (
           <button
-            className="flex flex-1 items-center gap-1.5 rounded-md py-1.5 pr-1.5 text-left text-[0.82rem] font-semibold text-nt-muted hover:bg-nt-card-hover hover:text-nt-fg"
-            style={{ paddingLeft: `${0.35 + depth * 1.1}rem` }}
+            className="flex flex-1 items-center gap-1.5 rounded-md px-1.5 py-1.5 text-left text-[0.82rem] font-semibold text-nt-muted hover:bg-nt-card-hover hover:text-nt-fg"
             type="button"
             onClick={() => onToggle(node.folder.id)}
           >
@@ -300,11 +300,7 @@ function FolderNode({
       </div>
 
       {isCreatingSubfolder ? (
-        <form
-          className="mt-1 flex gap-1"
-          style={{ marginLeft: `${0.35 + depth * 1.1}rem` }}
-          onSubmit={submitSubfolder}
-        >
+        <form className="ml-[0.9rem] mt-1 flex gap-1 border-l border-nt-border pl-2.5" onSubmit={submitSubfolder}>
           <input
             autoFocus
             aria-label="Název podsložky"
@@ -330,13 +326,12 @@ function FolderNode({
       ) : null}
 
       {!isCollapsed ? (
-        <>
+        <div className="ml-[0.9rem] flex flex-col gap-0.5 border-l border-nt-border pl-2.5">
           {node.notes.length > 0 ? (
-            <ul className="flex flex-col gap-0.5">
+            <ul className="flex list-none flex-col gap-0.5 p-0">
               {node.notes.map((note) => (
                 <li key={note.id}>
                   <NoteRow
-                    depth={depth + 1}
                     draggable
                     note={note}
                     selected={note.id === selectedNoteId}
@@ -346,9 +341,7 @@ function FolderNode({
               ))}
             </ul>
           ) : node.children.length === 0 ? (
-            <p className="py-1 text-xs text-nt-muted" style={{ marginLeft: `${1.5 + depth * 1.1}rem` }}>
-              Prázdné
-            </p>
+            <p className="py-1 text-xs text-nt-muted">Prázdné</p>
           ) : null}
 
           {node.children.map((child) => (
@@ -369,7 +362,7 @@ function FolderNode({
               onToggle={onToggle}
             />
           ))}
-        </>
+        </div>
       ) : null}
     </div>
   );

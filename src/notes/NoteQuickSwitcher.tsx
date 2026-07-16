@@ -120,7 +120,7 @@ export function NoteQuickSwitcher({
                 onKeyDown={handleKeyDown}
               />
             </div>
-            <ul className="max-h-80 overflow-y-auto p-1.5">
+            <ul className="max-h-80 list-none overflow-y-auto p-1.5">
               {results.map((note, index) => (
                 <li key={note.id}>
                   <button

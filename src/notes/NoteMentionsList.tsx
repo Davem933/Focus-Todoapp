@@ -32,7 +32,7 @@ export function NoteMentionsList({
       {isLoading ? (
         <p className="text-sm text-nt-muted">Načítám…</p>
       ) : (
-        <ul className="flex flex-col gap-0.5">
+        <ul className="flex list-none flex-col gap-0.5 p-0">
           {notes.map((note) => (
             <li key={note.id}>
               <button

@@ -190,7 +190,7 @@ export function NoteList({
             <Pin aria-hidden="true" size={13} />
             <span>Připnuté</span>
           </div>
-          <ul className="flex flex-col gap-0.5">
+          <ul className="flex list-none flex-col gap-0.5 p-0">
             {pinnedNotes.map((note) => (
               <li className="flex items-center" key={note.id}>
                 <div className="flex-1">
@@ -230,7 +230,7 @@ export function NoteList({
       ) : null}
 
       {isFiltering && filteredNotes.length > 0 ? (
-        <ul className="flex flex-col gap-0.5">
+        <ul className="flex list-none flex-col gap-0.5 p-0">
           {filteredNotes.map((note) => (
             <li key={note.id}>
               <NoteRow note={note} selected={note.id === selectedNoteId} onSelectNote={onSelectNote} />
