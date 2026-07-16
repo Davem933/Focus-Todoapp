@@ -12427,6 +12427,16 @@ input[type="checkbox"]:focus-visible {
   letter-spacing: 0.04em;
 }
 
+.note-mentions__count {
+  background: var(--color-background-card);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  margin-left: auto;
+  padding: 0.05rem 0.4rem;
+}
+
 .note-mentions__loading {
   color: var(--color-text-secondary);
   font-size: 0.82rem;
@@ -12435,24 +12445,31 @@ input[type="checkbox"]:focus-visible {
 .note-mentions__list {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.2rem;
   list-style: none;
   margin: 0.4rem 0 0;
   padding: 0;
 }
 
 .note-mentions__list button {
+  align-items: center;
   background: none;
-  border: none;
-  color: var(--color-accent);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
   cursor: pointer;
+  display: flex;
   font-size: 0.85rem;
-  padding: 0.15rem 0;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
   text-align: left;
+  transition: var(--transition-fast);
+  width: 100%;
 }
 
 .note-mentions__list button:hover {
-  text-decoration: underline;
+  background: var(--color-background-card-hover);
+  border-color: var(--color-border);
 }
 
 /* Note quick switcher */
