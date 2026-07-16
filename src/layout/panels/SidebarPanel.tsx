@@ -14,6 +14,7 @@ import {
   Home,
   List,
   Moon,
+  NotebookText,
   Pencil,
   Star,
   Sun,
@@ -92,10 +93,12 @@ type SidebarPanelProps = {
   onOpenWorkspaceHome: () => void;
   onOpenTeamsOverview: () => void;
   onOpenProjectsOverview: () => void;
+  onOpenNotes: () => void;
   onOpenProfile: () => void;
   isWorkspaceHomeOpen: boolean;
   isTeamsOverviewOpen: boolean;
   isProjectsOverviewOpen: boolean;
+  isNotesOpen: boolean;
   isProfileOpen: boolean;
   isMobileDrawer?: boolean;
   useTouchListActions?: boolean;
@@ -154,10 +157,12 @@ export function SidebarPanel({
   onOpenWorkspaceHome,
   onOpenTeamsOverview,
   onOpenProjectsOverview,
+  onOpenNotes,
   onOpenProfile,
   isWorkspaceHomeOpen,
   isTeamsOverviewOpen,
   isProjectsOverviewOpen,
+  isNotesOpen,
   isProfileOpen,
   isMobileDrawer = false,
   useTouchListActions = isMobileDrawer,
@@ -572,9 +577,9 @@ export function SidebarPanel({
               <div className="workspace-mode-switch" role="tablist" aria-label="Režim práce">
                 <button
                   className="workspace-mode-switch__item"
-                  data-selected={!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen}
+                  data-selected={!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isNotesOpen}
                   role="tab"
-                  aria-selected={!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen}
+                  aria-selected={!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isNotesOpen}
                   type="button"
                   onClick={() => onSelectWorkspace(null)}
                 >
@@ -585,9 +590,9 @@ export function SidebarPanel({
                 </button>
                 <button
                   className="workspace-mode-switch__item"
-                  data-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen}
+                  data-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen || isNotesOpen}
                   role="tab"
-                  aria-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen}
+                  aria-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen || isNotesOpen}
                   type="button"
                   onClick={selectTeamWorkspace}
                 >
@@ -597,7 +602,7 @@ export function SidebarPanel({
                   </small>
                 </button>
               </div>
-              {isTeamWorkspace || isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen ? (
+              {isTeamWorkspace || isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen || isNotesOpen ? (
                 <nav className="list-nav workspace-nav" aria-label="Nabídka workspace">
                   <button
                     className="list-nav__item workspace-nav__item"
@@ -641,10 +646,23 @@ export function SidebarPanel({
                       <span className="list-nav__name">Nástěnky</span>
                     </span>
                   </button>
+                  <button
+                    className="list-nav__item workspace-nav__item"
+                    data-selected={isNotesOpen}
+                    type="button"
+                    onClick={onOpenNotes}
+                  >
+                    <span className="list-nav__main">
+                      <span className="workspace-nav__icon" aria-hidden="true">
+                        <NotebookText size={16} strokeWidth={1.9} />
+                      </span>
+                      <span className="list-nav__name">Poznámky</span>
+                    </span>
+                  </button>
                 </nav>
               ) : null}
             </section>
-            {!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen ? (
+            {!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isNotesOpen ? (
             <section
               className="list-section list-section--system"
               aria-label={isTeamWorkspace ? "Týmové pohledy" : "Osobní pohledy"}
@@ -679,7 +697,7 @@ export function SidebarPanel({
             </section>
             ) : null}
           </div>
-          {!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen ? (
+          {!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isNotesOpen ? (
           <div className="sidebar-content__scroll">
             <section className="list-section" aria-label={activeTeamId ? "Týmové seznamy" : "Moje seznamy"}>
               <h2>{activeTeamId ? "Týmové seznamy" : "Moje seznamy"}</h2>
@@ -793,7 +811,7 @@ export function SidebarPanel({
               <span className="sr-only">Profil</span>
             </button>
           </div>
-{!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen ? (
+{!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isNotesOpen ? (
             <button
               className="list-nav__item list-nav__item--create"
               type="button"

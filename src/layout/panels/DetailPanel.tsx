@@ -23,16 +23,21 @@ import type {
 } from "../../tasks/taskTypes";
 import type { TeamMember } from "../../teams/teamTypes";
 import { loadTeamMembers } from "../../supabase/teamApi";
+import { NoteMentionsList } from "../../notes/NoteMentionsList";
+import type { Note } from "../../notes/noteTypes";
 
 type DetailPanelProps = {
   task: Task | null;
   lists: TaskList[];
   canDeleteTask: boolean;
+  mentioningNotes: Note[];
+  isMentioningNotesLoading: boolean;
   onClose: () => void;
   onUpdateTask: (taskId: string, update: TaskUpdate) => void;
   onArchiveTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onStartFocus: (taskId: string) => void;
+  onOpenNoteFromTask: (noteId: string) => void;
 };
 
 const PRIORITY_OPTIONS: TaskPriority[] = ["none", "low", "medium", "high"];
@@ -77,11 +82,14 @@ export function DetailPanel({
   task,
   lists,
   canDeleteTask,
+  mentioningNotes,
+  isMentioningNotesLoading,
   onClose,
   onUpdateTask,
   onArchiveTask,
   onDeleteTask,
   onStartFocus,
+  onOpenNoteFromTask,
 }: DetailPanelProps) {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
@@ -987,6 +995,12 @@ export function DetailPanel({
               </label>
             ) : null}
           </section>
+
+          <NoteMentionsList
+            isLoading={isMentioningNotesLoading}
+            notes={mentioningNotes}
+            onOpenNote={onOpenNoteFromTask}
+          />
         </div>
       </div>
     </section>

@@ -11,7 +11,11 @@ import { DetailPanel } from "./panels/DetailPanel";
 import { ListPanel } from "./panels/ListPanel";
 import { SidebarPanel } from "./panels/SidebarPanel";
 import { WorkspaceHomePanel } from "./panels/WorkspaceHomePanel";
+import { NotesPanel } from "./panels/NotesPanel";
 import { ProfilePanel } from "./panels/ProfilePanel";
+import { NoteMentionsList } from "../notes/NoteMentionsList";
+import type { Note } from "../notes/noteTypes";
+import { loadNoteMentionsForTarget } from "../supabase/noteApi";
 import type { LayoutMode } from "./layoutTypes";
 import { buildCountsByListId } from "../tasks/taskCounts";
 import { buildCountsByTeamId } from "../teams/teamCounts";
@@ -188,11 +192,14 @@ export function AppShell(props: AppShellProps) {
   const [isWorkspaceHomeOpen, setIsWorkspaceHomeOpen] = useState(false);
   const [isTeamsOverviewOpen, setIsTeamsOverviewOpen] = useState(false);
   const [isProjectsOverviewOpen, setIsProjectsOverviewOpen] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [openNoteRequestId, setOpenNoteRequestId] = useState<string | null>(null);
+  const [openProjectRequestId, setOpenProjectRequestId] = useState<string | null>(null);
   const layout = useAppLayout({
     selectedTaskId,
     isListSlotOverlayOpen:
-      isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen || isProfileOpen,
+      isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen || isNotesOpen || isProfileOpen,
   });
   const [teamCreateRequestToken, setTeamCreateRequestToken] = useState(0);
   const [projectCreateRequestToken, setProjectCreateRequestToken] = useState(0);
@@ -205,6 +212,45 @@ export function AppShell(props: AppShellProps) {
     layout.mode === "mobile-list-only" || layout.mode === "mobile-detail-only";
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
   const [manageableTeamIds, setManageableTeamIds] = useState<Set<string>>(new Set());
+  const [taskMentioningNotes, setTaskMentioningNotes] = useState<Note[]>([]);
+  const [isTaskMentioningNotesLoading, setIsTaskMentioningNotesLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedTask || !selectedTask.teamId) {
+      setTaskMentioningNotes([]);
+      return;
+    }
+
+    let isCancelled = false;
+    const teamId = selectedTask.teamId;
+    const taskId = selectedTask.id;
+
+    async function loadTaskMentions() {
+      setIsTaskMentioningNotesLoading(true);
+
+      try {
+        const notes = await loadNoteMentionsForTarget(teamId, "task", taskId);
+
+        if (!isCancelled) {
+          setTaskMentioningNotes(notes);
+        }
+      } catch {
+        if (!isCancelled) {
+          setTaskMentioningNotes([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsTaskMentioningNotesLoading(false);
+        }
+      }
+    }
+
+    void loadTaskMentions();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedTask?.id, selectedTask?.teamId]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -427,6 +473,7 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(true);
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
+    setIsNotesOpen(false);
     setIsProfileOpen(false);
 
     if (isMobileLayout) {
@@ -439,6 +486,7 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(false);
     setIsTeamsOverviewOpen(true);
     setIsProjectsOverviewOpen(false);
+    setIsNotesOpen(false);
     setIsProfileOpen(false);
 
     if (isMobileLayout) {
@@ -446,12 +494,28 @@ export function AppShell(props: AppShellProps) {
     }
   }
 
-  function handleOpenProjectsOverview() {
+  function handleOpenProjectsOverview(projectId?: string) {
     onClearTaskSelection();
     setIsWorkspaceHomeOpen(false);
     setIsProjectsOverviewOpen(true);
     setIsTeamsOverviewOpen(false);
+    setIsNotesOpen(false);
     setIsProfileOpen(false);
+    setOpenProjectRequestId(projectId ?? null);
+
+    if (isMobileLayout) {
+      setIsSidebarOpen(false);
+    }
+  }
+
+  function handleOpenNotes(noteId?: string) {
+    onClearTaskSelection();
+    setIsWorkspaceHomeOpen(false);
+    setIsTeamsOverviewOpen(false);
+    setIsProjectsOverviewOpen(false);
+    setIsNotesOpen(true);
+    setIsProfileOpen(false);
+    setOpenNoteRequestId(noteId ?? null);
 
     if (isMobileLayout) {
       setIsSidebarOpen(false);
@@ -463,6 +527,7 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(false);
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
+    setIsNotesOpen(false);
     setIsProfileOpen(true);
 
     if (isMobileLayout) {
@@ -474,6 +539,7 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsTeamsOverviewOpen(true);
+    setIsNotesOpen(false);
     setIsProfileOpen(false);
     setTeamCreateRequestToken((currentValue) => currentValue + 1);
 
@@ -486,6 +552,7 @@ export function AppShell(props: AppShellProps) {
     setIsWorkspaceHomeOpen(false);
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(true);
+    setIsNotesOpen(false);
     setIsProfileOpen(false);
     setProjectCreateRequestToken((currentValue) => currentValue + 1);
 
@@ -572,10 +639,12 @@ export function AppShell(props: AppShellProps) {
         onOpenWorkspaceHome={handleOpenWorkspaceHome}
         onOpenTeamsOverview={handleOpenTeamsOverview}
         onOpenProjectsOverview={handleOpenProjectsOverview}
+        onOpenNotes={() => handleOpenNotes()}
         onOpenProfile={handleOpenProfile}
         isWorkspaceHomeOpen={isWorkspaceHomeOpen}
         isTeamsOverviewOpen={isTeamsOverviewOpen}
         isProjectsOverviewOpen={isProjectsOverviewOpen}
+        isNotesOpen={isNotesOpen}
         isProfileOpen={isProfileOpen}
         isMobileDrawer={isMobileDrawer}
         useTouchListActions={useTouchListActions}
@@ -705,10 +774,28 @@ export function AppShell(props: AppShellProps) {
               onOpenTeamWorkspace={handleSelectWorkspace}
               onTeamUpdated={onTeamUpdated}
             />
+          ) : isNotesOpen && activeTeamId ? (
+            <NotesPanel
+              activeTeam={teams.find((team) => team.id === activeTeamId) ?? null}
+              canManageTeam={isGlobalAdmin || manageableTeamIds.has(activeTeamId)}
+              currentUserId={currentUserId}
+              isMobileLayout={isMobileLayout}
+              openNoteId={openNoteRequestId}
+              tasks={allTasks.filter((task) => task.teamId === activeTeamId)}
+              onOpenNoteRequestHandled={() => setOpenNoteRequestId(null)}
+              onOpenProject={(projectId) => handleOpenProjectsOverview(projectId)}
+              onOpenTask={(taskId) => {
+                setIsNotesOpen(false);
+                handleSelectTask(taskId);
+              }}
+            />
           ) : isProjectsOverviewOpen ? (
             <ProjectsOverviewPanel
               activeTeamId={activeTeamId}
               createRequestToken={projectCreateRequestToken}
+              openProjectId={openProjectRequestId}
+              onOpenProjectRequestHandled={() => setOpenProjectRequestId(null)}
+              onOpenNoteFromProject={(noteId) => handleOpenNotes(noteId)}
               currentUserId={currentUserId}
               isGlobalAdmin={isGlobalAdmin}
               tasks={allTasks}
@@ -755,16 +842,19 @@ export function AppShell(props: AppShellProps) {
           />
           )
         ) : null}
-        {!isWorkspaceHomeOpen && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isProfileOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
+        {!isWorkspaceHomeOpen && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isNotesOpen && !isProfileOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
           <DetailPanel
             task={selectedTask}
             lists={lists}
             canDeleteTask={canDeleteTask(selectedTask)}
+            mentioningNotes={taskMentioningNotes}
+            isMentioningNotesLoading={isTaskMentioningNotesLoading}
             onClose={onClearTaskSelection}
             onUpdateTask={onUpdateTask}
             onArchiveTask={onArchiveTask}
             onDeleteTask={handleDeleteTaskAction}
             onStartFocus={onStartFocus}
+            onOpenNoteFromTask={(noteId) => handleOpenNotes(noteId)}
           />
         ) : null}
       </main>
@@ -1801,6 +1891,9 @@ function TeamsOverviewPanel({
 type ProjectsOverviewPanelProps = {
   activeTeamId: string | null;
   createRequestToken?: number;
+  openProjectId?: string | null;
+  onOpenProjectRequestHandled?: () => void;
+  onOpenNoteFromProject: (noteId: string) => void;
   currentUserId: string | null;
   isGlobalAdmin: boolean;
   tasks: Task[];
@@ -1813,6 +1906,9 @@ type ProjectsOverviewPanelProps = {
 function ProjectsOverviewPanel({
   activeTeamId,
   createRequestToken = 0,
+  openProjectId = null,
+  onOpenProjectRequestHandled,
+  onOpenNoteFromProject,
   currentUserId,
   isGlobalAdmin,
   tasks,
@@ -1852,9 +1948,56 @@ function ProjectsOverviewPanel({
   const [cardComposerSubtaskTitle, setCardComposerSubtaskTitle] = useState("");
   const [cardComposerSubtasks, setCardComposerSubtasks] = useState<TaskSubtask[]>([]);
   const [manageableTeamIds, setManageableTeamIds] = useState<Set<string>>(new Set());
+  const [projectMentioningNotes, setProjectMentioningNotes] = useState<Note[]>([]);
+  const [isProjectMentioningNotesLoading, setIsProjectMentioningNotesLoading] = useState(false);
   const teamById = new Map(teams.map((team) => [team.id, team]));
   const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
   const trimmedProjectName = projectName.trim();
+
+  useEffect(() => {
+    if (openProjectId) {
+      setSelectedProjectId(openProjectId);
+      onOpenProjectRequestHandled?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openProjectId]);
+
+  useEffect(() => {
+    if (!selectedProject) {
+      setProjectMentioningNotes([]);
+      return;
+    }
+
+    let isCancelled = false;
+    const teamId = selectedProject.teamId;
+    const projectId = selectedProject.id;
+
+    async function loadProjectMentions() {
+      setIsProjectMentioningNotesLoading(true);
+
+      try {
+        const notes = await loadNoteMentionsForTarget(teamId, "project", projectId);
+
+        if (!isCancelled) {
+          setProjectMentioningNotes(notes);
+        }
+      } catch {
+        if (!isCancelled) {
+          setProjectMentioningNotes([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsProjectMentioningNotesLoading(false);
+        }
+      }
+    }
+
+    void loadProjectMentions();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedProject?.id, selectedProject?.teamId]);
 
   function canManageProject(project: Project) {
     return isGlobalAdmin || manageableTeamIds.has(project.teamId);
@@ -2467,13 +2610,16 @@ function ProjectsOverviewPanel({
           editingColumnId={editingColumnId}
           editingColumnTitle={editingColumnTitle}
           isBusy={isLoading}
+          isMentioningNotesLoading={isProjectMentioningNotesLoading}
           members={projectMembers}
+          mentioningNotes={projectMentioningNotes}
           newColumnTitle={newColumnTitle}
           project={selectedProject}
           tasks={tasks}
           team={teamById.get(selectedProject.teamId) ?? null}
           onAddColumn={handleAddProjectColumn}
           onBack={closeProjectDetail}
+          onOpenNoteFromProject={onOpenNoteFromProject}
           onCancelRenameColumn={handleCancelRenameProjectColumn}
           onChangeEditingColumnTitle={setEditingColumnTitle}
           onChangeNewColumnTitle={setNewColumnTitle}
@@ -3024,7 +3170,9 @@ function ProjectDetailView({
   editingColumnId,
   editingColumnTitle,
   isBusy,
+  isMentioningNotesLoading,
   members,
+  mentioningNotes,
   newColumnTitle,
   project,
   tasks,
@@ -3040,6 +3188,7 @@ function ProjectDetailView({
   onDeleteTask,
   onDeleteColumn,
   onEditProject,
+  onOpenNoteFromProject,
   onOpenTask,
   onOpenColumnMenuId,
   onRenameColumn,
@@ -3051,7 +3200,9 @@ function ProjectDetailView({
   editingColumnId: string | null;
   editingColumnTitle: string;
   isBusy: boolean;
+  isMentioningNotesLoading: boolean;
   members: TeamMember[];
+  mentioningNotes: Note[];
   newColumnTitle: string;
   project: Project;
   tasks: Task[];
@@ -3066,6 +3217,7 @@ function ProjectDetailView({
   onCreateTask: (columnKey?: Task["boardColumnKey"]) => void;
   onDeleteTask: (taskId: string) => void;
   onDeleteColumn: (column: ProjectColumn) => void;
+  onOpenNoteFromProject: (noteId: string) => void;
   onOpenTask: (taskId: string) => void;
   onEditProject: () => void;
   onOpenColumnMenuId: string | null;
@@ -3211,6 +3363,12 @@ function ProjectDetailView({
             </button>
           ) : null}
         </header>
+
+        <NoteMentionsList
+          isLoading={isMentioningNotesLoading}
+          notes={mentioningNotes}
+          onOpenNote={onOpenNoteFromProject}
+        />
 
         <div className="project-detail__board" aria-label="Kanban board">
           {columns.map((column) => {

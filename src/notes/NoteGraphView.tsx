@@ -49,6 +49,9 @@ export function NoteGraphView({
   const [, setTick] = useState(0);
   const [view, setView] = useState({ scale: 1, x: 0, y: 0 });
   const panRef = useRef<{ pointerId: number; startX: number; startY: number } | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const dragRef = useRef<{ pointerId: number; nodeId: string; moved: boolean } | null>(null);
+  const justDraggedNodeIdRef = useRef<string | null>(null);
 
   const fullModel = useMemo(() => buildNoteGraphModel(notes), [notes]);
   const model = useMemo(() => {
@@ -115,6 +118,63 @@ export function NoteGraphView({
     if (panRef.current?.pointerId === event.pointerId) {
       panRef.current = null;
     }
+  }
+
+  function clientToGraphPoint(clientX: number, clientY: number) {
+    const rect = svgRef.current?.getBoundingClientRect();
+    const originX = (rect?.left ?? 0) + view.x + 400;
+    const originY = (rect?.top ?? 0) + view.y + 220;
+
+    return {
+      x: (clientX - originX) / view.scale,
+      y: (clientY - originY) / view.scale,
+    };
+  }
+
+  function handleNodePointerDown(event: PointerEvent<SVGGElement>, node: (typeof model.nodes)[number]) {
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    node.fixed = true;
+    dragRef.current = { pointerId: event.pointerId, nodeId: node.id, moved: false };
+    const point = clientToGraphPoint(event.clientX, event.clientY);
+    node.x = point.x;
+    node.y = point.y;
+    setTick((current) => current + 1);
+  }
+
+  function handleNodePointerMove(event: PointerEvent<SVGGElement>, node: (typeof model.nodes)[number]) {
+    const drag = dragRef.current;
+
+    if (!drag || drag.pointerId !== event.pointerId || drag.nodeId !== node.id) {
+      return;
+    }
+
+    drag.moved = true;
+    const point = clientToGraphPoint(event.clientX, event.clientY);
+    node.x = point.x;
+    node.y = point.y;
+    setTick((current) => current + 1);
+  }
+
+  function handleNodePointerUp(event: PointerEvent<SVGGElement>, node: (typeof model.nodes)[number]) {
+    const drag = dragRef.current;
+
+    if (!drag || drag.pointerId !== event.pointerId || drag.nodeId !== node.id) {
+      return;
+    }
+
+    node.fixed = false;
+    justDraggedNodeIdRef.current = drag.moved ? node.id : null;
+    dragRef.current = null;
+  }
+
+  function handleNodeClick(node: (typeof model.nodes)[number]) {
+    if (justDraggedNodeIdRef.current === node.id) {
+      justDraggedNodeIdRef.current = null;
+      return;
+    }
+
+    onOpenNote(node.id);
   }
 
   function zoomBy(factor: number) {
@@ -216,7 +276,11 @@ export function NoteGraphView({
               </div>
             </div>
 
-            <svg className="min-h-0 flex-1 cursor-grab bg-nt-bg active:cursor-grabbing" onWheel={handleWheel}>
+            <svg
+              className="min-h-0 flex-1 cursor-grab bg-nt-bg active:cursor-grabbing"
+              ref={svgRef}
+              onWheel={handleWheel}
+            >
               <rect
                 fill="transparent"
                 height="100%"
@@ -252,10 +316,13 @@ export function NoteGraphView({
 
                   return (
                     <g
-                      className="cursor-pointer"
+                      className="cursor-grab active:cursor-grabbing"
                       key={node.id}
                       transform={`translate(${node.x} ${node.y})`}
-                      onClick={() => onOpenNote(node.id)}
+                      onClick={() => handleNodeClick(node)}
+                      onPointerDown={(event) => handleNodePointerDown(event, node)}
+                      onPointerMove={(event) => handleNodePointerMove(event, node)}
+                      onPointerUp={(event) => handleNodePointerUp(event, node)}
                     >
                       <circle className="fill-transparent" r={radius + 10} />
                       <circle
