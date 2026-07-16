@@ -12005,9 +12005,12 @@ input[type="checkbox"]:focus-visible {
 }
 
 .note-tree__group-toggle small {
+  background: var(--color-background-card);
+  border-radius: 999px;
   color: var(--color-text-secondary);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 600;
+  padding: 0.05rem 0.4rem;
 }
 
 .note-tree__group-action,
@@ -12073,7 +12076,7 @@ input[type="checkbox"]:focus-visible {
   color: var(--color-text-secondary);
   cursor: pointer;
   display: flex;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   gap: 0.45rem;
   padding: 0.45rem 0.55rem;
   text-align: left;
