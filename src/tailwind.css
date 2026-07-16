@@ -1,0 +1,23 @@
+@layer legacy, theme, utilities;
+
+@import "./styles.css" layer(legacy);
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@custom-variant dark (&:is([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --color-nt-bg: var(--color-background-main);
+  --color-nt-sidebar: var(--color-background-sidebar);
+  --color-nt-card: var(--color-background-card);
+  --color-nt-card-hover: var(--color-background-card-hover);
+  --color-nt-card-strong: var(--color-background-card-strong);
+  --color-nt-fg: var(--color-text-primary);
+  --color-nt-muted: var(--color-text-secondary);
+  --color-nt-border: var(--color-border);
+  --color-nt-brand: var(--color-accent);
+  --color-nt-brand-soft: var(--color-accent-soft);
+  --color-nt-brand-foreground: #ffffff;
+  --color-nt-danger: #f87171;
+  --color-nt-danger-soft: rgba(248, 113, 113, 0.14);
+}
