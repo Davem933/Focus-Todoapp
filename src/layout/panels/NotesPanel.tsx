@@ -156,7 +156,7 @@ export function NotesPanel({
 
   return (
     <section
-      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-nt-bg text-nt-fg"
+      className="notes-app flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-nt-bg text-nt-fg"
       aria-label="Poznámky"
     >
       {isMobileLayout ? (

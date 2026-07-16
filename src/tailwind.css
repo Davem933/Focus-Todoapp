@@ -6,6 +6,24 @@
 
 @custom-variant dark (&:is([data-theme="dark"], [data-theme="dark"] *));
 
+/*
+  styles.css defines a global `button { border; background; border-radius }`
+  base style for the rest of the app. Scoped to the .notes-app root so
+  Notes buttons start transparent/borderless instead of inheriting that
+  boxy look; Tailwind utility classes (hover/selected states, Button
+  variants) still apply normally since they're in the higher-priority
+  utilities layer and override this same as they'd override the
+  original global rule.
+*/
+@layer legacy {
+  .notes-app button {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+  }
+}
+
 @theme {
   --color-nt-bg: var(--color-background-main);
   --color-nt-sidebar: var(--color-background-sidebar);
