@@ -19,21 +19,29 @@ export function NoteMentionsList({
   }
 
   return (
-    <section className="note-mentions" aria-label={heading}>
-      <div className="note-mentions__head">
+    <section aria-label={heading} className="flex flex-col gap-2">
+      <div className="flex items-center gap-1.5 text-nt-muted">
         <Link2 aria-hidden="true" size={14} />
-        <h3>{heading}</h3>
-        {!isLoading ? <span className="note-mentions__count">{notes.length}</span> : null}
+        <h3 className="text-xs font-bold uppercase tracking-wide text-nt-fg">{heading}</h3>
+        {!isLoading ? (
+          <span className="ml-auto rounded-full border border-nt-border bg-nt-card px-1.5 py-0.5 text-[0.68rem] font-semibold text-nt-muted">
+            {notes.length}
+          </span>
+        ) : null}
       </div>
       {isLoading ? (
-        <p className="note-mentions__loading">Načítám…</p>
+        <p className="text-sm text-nt-muted">Načítám…</p>
       ) : (
-        <ul className="note-mentions__list">
+        <ul className="flex flex-col gap-0.5">
           {notes.map((note) => (
             <li key={note.id}>
-              <button type="button" onClick={() => onOpenNote(note.id)}>
-                <FileText aria-hidden="true" size={13} />
-                <span>{note.title}</span>
+              <button
+                className="flex w-full items-center gap-1.5 rounded-md border border-transparent px-2 py-1.5 text-left text-sm text-nt-fg transition-colors hover:border-nt-border hover:bg-nt-card-hover"
+                type="button"
+                onClick={() => onOpenNote(note.id)}
+              >
+                <FileText aria-hidden="true" size={13} className="shrink-0 text-nt-muted" />
+                <span className="truncate">{note.title}</span>
               </button>
             </li>
           ))}
