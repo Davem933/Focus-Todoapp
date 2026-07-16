@@ -232,12 +232,9 @@ export function NoteList({
       {isFiltering && filteredNotes.length > 0 ? (
         <ul className="flex flex-col gap-0.5">
           {filteredNotes.map((note) => (
-            <NoteRow
-              key={note.id}
-              note={note}
-              selected={note.id === selectedNoteId}
-              onSelectNote={onSelectNote}
-            />
+            <li key={note.id}>
+              <NoteRow note={note} selected={note.id === selectedNoteId} onSelectNote={onSelectNote} />
+            </li>
           ))}
         </ul>
       ) : null}

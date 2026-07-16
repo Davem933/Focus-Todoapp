@@ -102,13 +102,14 @@ export function NoteFolderTree({
           rootNotes.length > 0 ? (
             <ul className="flex flex-col gap-0.5">
               {rootNotes.map((note) => (
-                <NoteRow
-                  key={note.id}
-                  draggable
-                  note={note}
-                  selected={note.id === selectedNoteId}
-                  onSelectNote={onSelectNote}
-                />
+                <li key={note.id}>
+                  <NoteRow
+                    draggable
+                    note={note}
+                    selected={note.id === selectedNoteId}
+                    onSelectNote={onSelectNote}
+                  />
+                </li>
               ))}
             </ul>
           ) : (
@@ -333,14 +334,15 @@ function FolderNode({
           {node.notes.length > 0 ? (
             <ul className="flex flex-col gap-0.5">
               {node.notes.map((note) => (
-                <NoteRow
-                  key={note.id}
-                  depth={depth + 1}
-                  draggable
-                  note={note}
-                  selected={note.id === selectedNoteId}
-                  onSelectNote={onSelectNote}
-                />
+                <li key={note.id}>
+                  <NoteRow
+                    depth={depth + 1}
+                    draggable
+                    note={note}
+                    selected={note.id === selectedNoteId}
+                    onSelectNote={onSelectNote}
+                  />
+                </li>
               ))}
             </ul>
           ) : node.children.length === 0 ? (
