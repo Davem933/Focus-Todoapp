@@ -14,6 +14,8 @@ import { WorkspaceHomePanel } from "./panels/WorkspaceHomePanel";
 import { NotesPanel } from "./panels/NotesPanel";
 import { ProfilePanel } from "./panels/ProfilePanel";
 import { NoteMentionsList } from "../notes/NoteMentionsList";
+import { NotificationPopover } from "../components/ui/notification-popover";
+import type { AppNotification } from "../supabase/notificationsApi";
 import type { Note } from "../notes/noteTypes";
 import { loadNoteMentionsForTarget } from "../supabase/noteApi";
 import type { LayoutMode } from "./layoutTypes";
@@ -101,6 +103,9 @@ type AppShellProps = {
   themeMode: "dark" | "light";
   currentUserId: string | null;
   isGlobalAdmin: boolean;
+  notifications: AppNotification[];
+  onMarkNotificationAsRead: (id: string) => void;
+  onMarkAllNotificationsAsRead: () => void;
   onSelectList: (listId: string) => void;
   onCreateList: (name: string, color?: string | null) => void;
   onRenameList: (listId: string, name: string) => void;
@@ -149,6 +154,9 @@ export function AppShell(props: AppShellProps) {
     themeMode,
     isGlobalAdmin,
     currentUserId,
+    notifications,
+    onMarkNotificationAsRead,
+    onMarkAllNotificationsAsRead,
     onSelectList,
     onCreateList,
     onRenameList,
@@ -196,10 +204,15 @@ export function AppShell(props: AppShellProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [openNoteRequestId, setOpenNoteRequestId] = useState<string | null>(null);
   const [openProjectRequestId, setOpenProjectRequestId] = useState<string | null>(null);
+  const [openTaskCardRequestId, setOpenTaskCardRequestId] = useState<string | null>(null);
   const layout = useAppLayout({
     selectedTaskId,
     isListSlotOverlayOpen:
-      isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen || isNotesOpen || isProfileOpen,
+      isWorkspaceHomeOpen ||
+      isTeamsOverviewOpen ||
+      isProjectsOverviewOpen ||
+      isNotesOpen ||
+      isProfileOpen,
   });
   const [teamCreateRequestToken, setTeamCreateRequestToken] = useState(0);
   const [projectCreateRequestToken, setProjectCreateRequestToken] = useState(0);
@@ -215,6 +228,17 @@ export function AppShell(props: AppShellProps) {
   const activeTeamForNotes = useMemo(
     () => teams.find((team) => team.id === activeTeamId) ?? null,
     [teams, activeTeamId],
+  );
+  const popoverNotifications = useMemo(
+    () =>
+      notifications.map((notification) => ({
+        id: notification.id,
+        title: "Přiřazení úkolu",
+        description: `Byl ti přiřazen úkol „${notification.taskTitle}"`,
+        timestamp: new Date(notification.createdAt),
+        read: notification.isRead,
+      })),
+    [notifications],
   );
   const [taskMentioningNotes, setTaskMentioningNotes] = useState<Note[]>([]);
   const [isTaskMentioningNotesLoading, setIsTaskMentioningNotesLoading] = useState(false);
@@ -446,6 +470,40 @@ export function AppShell(props: AppShellProps) {
     onSelectTask(taskId);
   }
 
+  function handleOpenNotificationTask(notificationId: string) {
+    onMarkNotificationAsRead(notificationId);
+
+    const notification = notifications.find((item) => item.id === notificationId);
+
+    if (!notification) {
+      return;
+    }
+
+    const targetTask =
+      allTasks.find((task) => task.id === notification.taskId) ??
+      allTasks.find(
+        (task) =>
+          task.title === notification.taskTitle &&
+          task.teamId === notification.teamId &&
+          task.assigneeId === currentUserId,
+      );
+
+    if (!targetTask) {
+      return;
+    }
+
+    if (targetTask.projectId) {
+      handleOpenProjectsOverview(targetTask.projectId, targetTask.id);
+      return;
+    }
+
+    if ((targetTask.teamId ?? null) !== activeTeamId) {
+      handleSelectWorkspace(targetTask.teamId ?? null);
+    }
+
+    handleSelectTask(targetTask.id);
+  }
+
   function handleCreateTask(title: string, options?: CreateTaskOptions) {
     clearRecommendation();
     return onCreateTask(title, options);
@@ -498,7 +556,7 @@ export function AppShell(props: AppShellProps) {
     }
   }
 
-  function handleOpenProjectsOverview(projectId?: string) {
+  function handleOpenProjectsOverview(projectId?: string, taskId?: string) {
     onClearTaskSelection();
     setIsWorkspaceHomeOpen(false);
     setIsProjectsOverviewOpen(true);
@@ -506,6 +564,7 @@ export function AppShell(props: AppShellProps) {
     setIsNotesOpen(false);
     setIsProfileOpen(false);
     setOpenProjectRequestId(projectId ?? null);
+    setOpenTaskCardRequestId(taskId ?? null);
 
     if (isMobileLayout) {
       setIsSidebarOpen(false);
@@ -631,6 +690,9 @@ export function AppShell(props: AppShellProps) {
         isGlobalAdmin={isGlobalAdmin}
         themeMode={themeMode}
         currentUserId={currentUserId}
+        notifications={popoverNotifications}
+        onMarkNotificationAsRead={handleOpenNotificationTask}
+        onMarkAllNotificationsAsRead={onMarkAllNotificationsAsRead}
         onSelectList={handleSelectList}
         onSelectWorkspace={handleSelectWorkspace}
         onCreateList={onCreateList}
@@ -729,6 +791,12 @@ export function AppShell(props: AppShellProps) {
             >
               <Bell aria-hidden="true" size={17} />
             </button>
+            <NotificationPopover
+              notifications={popoverNotifications}
+              onMarkAsRead={handleOpenNotificationTask}
+              onMarkAllAsRead={onMarkAllNotificationsAsRead}
+              align="bottom"
+            />
           </div>
         </header>
       ) : null}
@@ -799,6 +867,8 @@ export function AppShell(props: AppShellProps) {
               createRequestToken={projectCreateRequestToken}
               openProjectId={openProjectRequestId}
               onOpenProjectRequestHandled={() => setOpenProjectRequestId(null)}
+              openTaskCardId={openTaskCardRequestId}
+              onOpenTaskCardRequestHandled={() => setOpenTaskCardRequestId(null)}
               onOpenNoteFromProject={(noteId) => handleOpenNotes(noteId)}
               currentUserId={currentUserId}
               isGlobalAdmin={isGlobalAdmin}
@@ -1897,6 +1967,8 @@ type ProjectsOverviewPanelProps = {
   createRequestToken?: number;
   openProjectId?: string | null;
   onOpenProjectRequestHandled?: () => void;
+  openTaskCardId?: string | null;
+  onOpenTaskCardRequestHandled?: () => void;
   onOpenNoteFromProject: (noteId: string) => void;
   currentUserId: string | null;
   isGlobalAdmin: boolean;
@@ -1912,6 +1984,8 @@ function ProjectsOverviewPanel({
   createRequestToken = 0,
   openProjectId = null,
   onOpenProjectRequestHandled,
+  openTaskCardId = null,
+  onOpenTaskCardRequestHandled,
   onOpenNoteFromProject,
   currentUserId,
   isGlobalAdmin,
@@ -1965,6 +2039,16 @@ function ProjectsOverviewPanel({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openProjectId]);
+
+  useEffect(() => {
+    if (!openTaskCardId || !selectedProject) {
+      return;
+    }
+
+    handleOpenProjectCard(openTaskCardId);
+    onOpenTaskCardRequestHandled?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openTaskCardId, selectedProject]);
 
   useEffect(() => {
     if (!selectedProject) {

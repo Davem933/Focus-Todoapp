@@ -35,6 +35,8 @@ import {
   uploadLocalDataToSupabase,
 } from "./supabase/cloudBackup";
 import { supabase } from "./supabase/supabaseClient";
+import { createTaskAssignedNotification } from "./supabase/notificationsApi";
+import { useNotifications } from "./notifications/useNotifications";
 import { loadTaskState, saveTaskState } from "./tasks/taskStorage";
 import { buildCountsByTeamId } from "./teams/teamCounts";
 import {
@@ -131,6 +133,11 @@ export function App() {
   const isApplyingCloudStateRef = useRef(false);
   const lastSyncedSnapshotRef = useRef<string | null>(null);
   const autoSyncTimeoutRef = useRef<number | null>(null);
+  const {
+    notifications,
+    markAsRead: handleMarkNotificationAsRead,
+    markAllAsRead: handleMarkAllNotificationsAsRead,
+  } = useNotifications(authUser?.id ?? null);
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
@@ -617,6 +624,37 @@ export function App() {
         }
       }
     }
+
+    if ("assigneeId" in update) {
+      const currentTask = tasks.find((task) => task.id === taskId);
+
+      if (currentTask) {
+        const nextTask = normalizeTaskUpdate(currentTask, update);
+        notifyTaskAssignment(nextTask, currentTask.assigneeId);
+      }
+    }
+  }
+
+  function notifyTaskAssignment(task: Task, previousAssigneeId: string | null) {
+    if (
+      !authUser ||
+      !task.teamId ||
+      !task.assigneeId ||
+      task.assigneeId === previousAssigneeId ||
+      task.assigneeId === authUser.id
+    ) {
+      return;
+    }
+
+    createTaskAssignedNotification({
+      recipientId: task.assigneeId,
+      actorId: authUser.id,
+      taskId: isUuid(task.id) ? task.id : null,
+      taskTitle: task.title,
+      teamId: task.teamId,
+    }).catch((error) => {
+      console.error("Nepodařilo se odeslat notifikaci o přiřazení úkolu", error);
+    });
   }
 
   function handleArchiveTask(taskId: string) {
@@ -718,6 +756,7 @@ export function App() {
     };
 
     setTasks((currentTasks) => [newTask, ...currentTasks]);
+    notifyTaskAssignment(newTask, null);
 
     if (newTask.dueDate && newTask.dueTime) {
       requestTaskNotificationPermission();
@@ -1415,6 +1454,9 @@ export function App() {
         themeMode={themeMode}
         currentUserId={authUser?.id ?? null}
         isGlobalAdmin={authRole === "admin"}
+        notifications={notifications}
+        onMarkNotificationAsRead={handleMarkNotificationAsRead}
+        onMarkAllNotificationsAsRead={handleMarkAllNotificationsAsRead}
         onToggleTheme={() =>
           setThemeMode((currentThemeMode) =>
             currentThemeMode === "dark" ? "light" : "dark",
@@ -1431,6 +1473,13 @@ export function App() {
       />
     </>
   );
+}
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string): boolean {
+  return UUID_PATTERN.test(value);
 }
 
 function createCloudSyncSnapshot(lists: TaskList[], tasks: Task[]) {

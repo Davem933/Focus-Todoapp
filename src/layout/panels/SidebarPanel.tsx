@@ -23,6 +23,8 @@ import {
   Users,
   UserPlus,
 } from "lucide-react";
+import { NotificationPopover } from "../../components/ui/notification-popover";
+import type { Notification } from "../../components/ui/notification-popover";
 import {
   DEFAULT_TASK_LIST_ID,
   FALLBACK_LIST_ID,
@@ -95,6 +97,9 @@ type SidebarPanelProps = {
   onOpenProjectsOverview: () => void;
   onOpenNotes: () => void;
   onOpenProfile: () => void;
+  notifications: Notification[];
+  onMarkNotificationAsRead: (id: string) => void;
+  onMarkAllNotificationsAsRead: () => void;
   isWorkspaceHomeOpen: boolean;
   isTeamsOverviewOpen: boolean;
   isProjectsOverviewOpen: boolean;
@@ -159,6 +164,9 @@ export function SidebarPanel({
   onOpenProjectsOverview,
   onOpenNotes,
   onOpenProfile,
+  notifications,
+  onMarkNotificationAsRead,
+  onMarkAllNotificationsAsRead,
   isWorkspaceHomeOpen,
   isTeamsOverviewOpen,
   isProjectsOverviewOpen,
@@ -799,6 +807,16 @@ export function SidebarPanel({
               <Download aria-hidden="true" size={16} />
               <span className="sr-only">Android</span>
             </a>
+            {!isMobileDrawer ? (
+              <NotificationPopover
+                notifications={notifications}
+                onMarkAsRead={onMarkNotificationAsRead}
+                onMarkAllAsRead={onMarkAllNotificationsAsRead}
+                align="top"
+                side="left"
+                usePortal
+              />
+            ) : null}
             <button
               className="sidebar-profile-button"
               type="button"

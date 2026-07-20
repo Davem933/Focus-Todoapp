@@ -1,25 +1,21 @@
-import { useMemo, useRef, useState } from "react";
-import type { KeyboardEvent } from "react";
-import { FolderKanban, ListTodo, Pin, Share2, Trash2, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Pin, Share2, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { NoteMarkdownRenderer } from "./NoteMarkdownRenderer";
+import { NoteLiveEditor } from "./NoteLiveEditor";
 import { buildNoteFolderTree, flattenFolderTreeForOptions } from "./noteFolderTreeHelpers";
-import { useInlineAutocomplete } from "./useInlineAutocomplete";
-import type { MentionItem } from "./useInlineAutocomplete";
-import type { Note, NoteFolder } from "./noteTypes";
+import type { MentionItem, Note, NoteFolder } from "./noteTypes";
 
 type NoteEditorProps = {
   title: string;
   content: string;
+  noteId: string;
   tags: string[];
   folderId: string | null;
   folders: NoteFolder[];
   notesInTeam: Note[];
   mentionItems: MentionItem[];
-  isNarrow: boolean;
   canDelete: boolean;
   isPinned: boolean;
   onTitleChange: (title: string) => void;
@@ -40,12 +36,12 @@ const NONE_FOLDER_VALUE = "__none__";
 export function NoteEditor({
   title,
   content,
+  noteId,
   tags,
   folderId,
   folders,
   notesInTeam,
   mentionItems,
-  isNarrow,
   canDelete,
   isPinned,
   onTitleChange,
@@ -60,10 +56,7 @@ export function NoteEditor({
   onTogglePin,
   onOpenLocalGraph,
 }: NoteEditorProps) {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [tagDraft, setTagDraft] = useState("");
-  const [mobileView, setMobileView] = useState<"edit" | "preview">("edit");
-  const noteTitles = notesInTeam.map((note) => note.title);
 
   const folderOptions = useMemo(() => {
     const tree = buildNoteFolderTree(folders, notesInTeam);
@@ -76,27 +69,6 @@ export function NoteEditor({
       })),
     ];
   }, [folders, notesInTeam]);
-
-  const autocomplete = useInlineAutocomplete({
-    mentionItems,
-    noteTitles,
-    onCommit: (nextValue, nextCursor) => {
-      onContentChange(nextValue);
-      requestAnimationFrame(() => {
-        const textarea = textareaRef.current;
-
-        if (textarea) {
-          textarea.focus();
-          textarea.setSelectionRange(nextCursor, nextCursor);
-        }
-      });
-    },
-    textareaRef,
-  });
-
-  function handleTextareaKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    autocomplete.handleKeyDown(event);
-  }
 
   function addTag() {
     const trimmed = tagDraft.trim();
@@ -113,9 +85,6 @@ export function NoteEditor({
   function removeTag(tag: string) {
     onTagsChange(tags.filter((existingTag) => existingTag !== tag));
   }
-
-  const showEditor = !isNarrow || mobileView === "edit";
-  const showPreview = !isNarrow || mobileView === "preview";
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-col gap-3">
@@ -215,103 +184,18 @@ export function NoteEditor({
         </div>
       </div>
 
-      {isNarrow ? (
-        <div
-          className="inline-flex w-fit gap-1 rounded-full border border-nt-border bg-nt-card p-1"
-          role="tablist"
-          aria-label="Zobrazení poznámky"
-        >
-          <button
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold text-nt-muted",
-              mobileView === "edit" && "bg-nt-brand text-nt-brand-foreground",
-            )}
-            role="tab"
-            aria-selected={mobileView === "edit"}
-            type="button"
-            onClick={() => setMobileView("edit")}
-          >
-            Editovat
-          </button>
-          <button
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold text-nt-muted",
-              mobileView === "preview" && "bg-nt-brand text-nt-brand-foreground",
-            )}
-            role="tab"
-            aria-selected={mobileView === "preview"}
-            type="button"
-            onClick={() => setMobileView("preview")}
-          >
-            Náhled
-          </button>
-        </div>
-      ) : null}
-
-      <div className={cn("grid min-h-64 flex-1 gap-4", isNarrow ? "grid-cols-1" : "grid-cols-2")}>
-        {showEditor ? (
-          <div className="relative min-h-0">
-            <Textarea
-              aria-label="Obsah poznámky (markdown)"
-              className="h-full min-h-64 resize-y leading-relaxed"
-              placeholder="Piš markdown… použij [[Název poznámky]] pro odkaz na jinou poznámku a @ pro zmínku úkolu/nástěnky."
-              ref={textareaRef}
-              value={content}
-              onChange={(event) => {
-                onContentChange(event.currentTarget.value);
-                requestAnimationFrame(autocomplete.refresh);
-              }}
-              onClick={autocomplete.refresh}
-              onKeyDown={handleTextareaKeyDown}
-              onKeyUp={autocomplete.refresh}
-            />
-            {autocomplete.isOpen && autocomplete.anchorPosition ? (
-              <ul
-                className="absolute z-20 max-h-56 w-64 list-none overflow-y-auto rounded-md border border-nt-border bg-nt-card-strong p-1 shadow-xl"
-                style={{
-                  left: autocomplete.anchorPosition.left,
-                  top: autocomplete.anchorPosition.top,
-                }}
-              >
-                {autocomplete.items.map((item, index) => (
-                  <li key={item.type + ":" + item.id}>
-                    <button
-                      className={cn(
-                        "flex w-full items-center gap-1.5 rounded-sm px-2 py-1.5 text-left text-sm text-nt-fg",
-                        index === autocomplete.activeIndex && "bg-nt-brand-soft text-nt-brand",
-                      )}
-                      type="button"
-                      onMouseDown={(event) => {
-                        event.preventDefault();
-                        autocomplete.handleSelect(item);
-                      }}
-                    >
-                      {item.type === "task" ? (
-                        <ListTodo aria-hidden="true" size={13} />
-                      ) : item.type === "project" ? (
-                        <FolderKanban aria-hidden="true" size={13} />
-                      ) : null}
-                      <span>{item.label}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        ) : null}
-
-        {showPreview ? (
-          <div className="min-h-0 overflow-y-auto border-l border-nt-border pl-4">
-            <NoteMarkdownRenderer
-              content={content}
-              notesInTeam={notesInTeam}
-              onCreateNoteWithTitle={onCreateNoteWithTitle}
-              onOpenNoteByTitle={onOpenNoteByTitle}
-              onOpenProject={onOpenProject}
-              onOpenTask={onOpenTask}
-            />
-          </div>
-        ) : null}
+      <div className="flex min-h-64 flex-1 flex-col">
+        <NoteLiveEditor
+          content={content}
+          mentionItems={mentionItems}
+          noteId={noteId}
+          notesInTeam={notesInTeam}
+          onContentChange={onContentChange}
+          onCreateNoteWithTitle={onCreateNoteWithTitle}
+          onOpenNoteByTitle={onOpenNoteByTitle}
+          onOpenProject={onOpenProject}
+          onOpenTask={onOpenTask}
+        />
       </div>
     </div>
   );

@@ -43,3 +43,9 @@ export type ParsedNoteReference = {
   targetKey: string;
   targetLabel: string;
 };
+
+export type MentionItem = {
+  id: string;
+  type: "task" | "project";
+  label: string;
+};

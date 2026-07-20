@@ -17,8 +17,7 @@ import {
 import type { Task } from "../tasks/taskTypes";
 import type { Team } from "../teams/teamTypes";
 import { buildNoteFolderTree, wouldCreateFolderCycle } from "./noteFolderTreeHelpers";
-import type { Note, NoteFolder, NoteFolderTreeNode } from "./noteTypes";
-import type { MentionItem } from "./useInlineAutocomplete";
+import type { MentionItem, Note, NoteFolder, NoteFolderTreeNode } from "./noteTypes";
 
 const AUTOSAVE_DELAY_MS = 800;
 

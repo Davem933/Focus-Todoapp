@@ -83,9 +83,9 @@ export function NotesPanel({
       <NoteEditor
         canDelete={canManageTeam}
         content={workspace.draftContent}
+        noteId={workspace.selectedNote.id}
         folderId={workspace.draftFolderId}
         folders={workspace.folders}
-        isNarrow={isMobileLayout}
         isPinned={workspace.selectedNote.isPinned}
         mentionItems={workspace.mentionItems}
         notesInTeam={workspace.notes}
