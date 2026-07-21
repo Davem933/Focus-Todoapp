@@ -198,7 +198,7 @@ export function AppShell(props: AppShellProps) {
   const [isFocusAssistantOpen, setIsFocusAssistantOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
-  const [isWorkspaceHomeOpen, setIsWorkspaceHomeOpen] = useState(false);
+  const [isWorkspaceHomeOpen, setIsWorkspaceHomeOpen] = useState(activeTeamId !== null);
   const [isTeamsOverviewOpen, setIsTeamsOverviewOpen] = useState(false);
   const [isProjectsOverviewOpen, setIsProjectsOverviewOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
