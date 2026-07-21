@@ -117,8 +117,6 @@ export async function replaceSupabaseData({
     throw new Error("Neni co ulozit. Nejdriv vytvor aspon jeden seznam.");
   }
 
-  await deleteCloudData(userId);
-
   return insertLocalData({ lists: userLists, tasks, userId });
 }
 
@@ -131,47 +129,35 @@ async function insertLocalData({
   tasks: Task[];
   userId: string;
 }) {
-  const insertedLists = await insertLists(userId, lists);
-  const listIdByLocalId = new Map(
-    insertedLists.map((remoteList, index) => [lists[index]?.id, remoteList.id]),
-  );
-  const fallbackRemoteListId = insertedLists[0]?.id;
+  const upsertedLists = await upsertLists(userId, lists);
+  const fallbackListId = upsertedLists[0]?.id;
 
-  if (!fallbackRemoteListId) {
-    throw new Error("Nepodarilo se vytvorit seznam v cloudu.");
+  if (!fallbackListId) {
+    throw new Error("Nepodarilo se ulozit seznam do cloudu.");
   }
 
-  const insertedTasks = await insertTasks(
-    userId,
-    tasks,
-    listIdByLocalId,
-    fallbackRemoteListId,
-  );
-  const taskIdByLocalId = new Map(
-    insertedTasks.map((remoteTask, index) => [tasks[index]?.id, remoteTask.id]),
-  );
+  const validListIds = new Set(upsertedLists.map((list) => list.id));
+  const upsertedTasks = await upsertTasks(userId, tasks, validListIds, fallbackListId);
   const labels = collectLabels(tasks);
-  const insertedLabels = await insertLabels(userId, labels);
+  const upsertedLabels = await insertLabels(userId, labels);
   const labelIdByKey = new Map(
-    insertedLabels.map((remoteLabel, index) => [
+    upsertedLabels.map((remoteLabel, index) => [
       getLabelKey(labels[index]),
       remoteLabel.id,
     ]),
   );
-  const subtasksCount = await insertSubtasks(userId, tasks, taskIdByLocalId);
-  const taskLabelsCount = await insertTaskLabels(
-    userId,
-    tasks,
-    taskIdByLocalId,
-    labelIdByKey,
-  );
+  const subtasksCount = await upsertSubtasks(userId, tasks);
+  const taskLabelsCount = await upsertTaskLabels(userId, tasks, labelIdByKey);
+
+  await deleteRemovedTasks(userId, tasks);
+  await deleteRemovedLists(userId, lists);
 
   return {
-    labels: insertedLabels.length,
-    lists: insertedLists.length,
+    labels: upsertedLabels.length,
+    lists: upsertedLists.length,
     subtasks: subtasksCount,
     taskLabels: taskLabelsCount,
-    tasks: insertedTasks.length,
+    tasks: upsertedTasks.length,
   };
 }
 
@@ -357,43 +343,93 @@ async function checkCloudDataExists(userId: string) {
   return Boolean((listsResult.count ?? 0) > 0 || (tasksResult.count ?? 0) > 0);
 }
 
-async function deleteCloudData(userId: string) {
+async function deleteRemovedLists(userId: string, lists: TaskList[]) {
   if (!supabase) {
     return;
   }
 
-  const deleteRequests = [
-    supabase.from("task_labels").delete().eq("owner_id", userId),
-    supabase.from("subtasks").delete().eq("owner_id", userId),
-    supabase.from("tasks").delete().eq("owner_id", userId),
-    supabase.from("labels").delete().eq("owner_id", userId),
-    supabase.from("task_lists").delete().eq("owner_id", userId),
-  ];
+  const keepIds = lists.map((list) => list.id);
+  let query = supabase.from("task_lists").delete().eq("owner_id", userId);
 
-  for (const request of deleteRequests) {
-    const { error } = await request;
+  if (keepIds.length > 0) {
+    query = query.not("id", "in", `(${keepIds.join(",")})`);
+  }
 
-    if (error) {
-      throw error;
-    }
+  const { error } = await query;
+
+  if (error) {
+    throw error;
   }
 }
 
-async function insertLists(userId: string, lists: TaskList[]) {
+async function deleteRemovedTasks(userId: string, tasks: Task[]) {
   if (!supabase) {
+    return;
+  }
+
+  const keepIds = tasks.map((task) => task.id);
+  let query = supabase.from("tasks").delete().eq("owner_id", userId);
+
+  if (keepIds.length > 0) {
+    query = query.not("id", "in", `(${keepIds.join(",")})`);
+  }
+
+  const { error } = await query;
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function upsertLists(userId: string, lists: TaskList[]) {
+  if (!supabase || lists.length === 0) {
     return [];
+  }
+
+  // Team lists owned by a teammate can only be updated by that team's admins
+  // (task_lists RLS), so skip re-writing lists we don't own to avoid failing
+  // the whole sync for regular members. We still treat them as valid targets
+  // for a task's list_id.
+  const { data: existingLists, error: existingError } = await supabase
+    .from("task_lists")
+    .select("id,owner_id")
+    .in(
+      "id",
+      lists.map((list) => list.id),
+    );
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  const ownerByRemoteId = new Map(
+    (existingLists ?? []).map((row) => [row.id as string, row.owner_id as string]),
+  );
+  const writableLists = lists.filter((list) => {
+    const remoteOwner = ownerByRemoteId.get(list.id);
+
+    return remoteOwner === undefined || remoteOwner === userId;
+  });
+  const readOnlyIds = lists
+    .filter((list) => !writableLists.includes(list))
+    .map((list) => ({ id: list.id }));
+
+  if (writableLists.length === 0) {
+    return readOnlyIds;
   }
 
   const { data, error } = await supabase
     .from("task_lists")
-    .insert(
-      lists.map((list) => ({
+    .upsert(
+      writableLists.map((list) => ({
+        id: list.id,
         color: list.color ?? null,
         is_archived: list.isArchived,
         name: list.name,
         owner_id: userId,
         team_id: list.teamId ?? null,
       })),
+      { onConflict: "id" },
     )
     .select("id");
 
@@ -401,14 +437,14 @@ async function insertLists(userId: string, lists: TaskList[]) {
     throw error;
   }
 
-  return (data ?? []) as RemoteId[];
+  return [...((data ?? []) as RemoteId[]), ...readOnlyIds];
 }
 
-async function insertTasks(
+async function upsertTasks(
   userId: string,
   tasks: Task[],
-  listIdByLocalId: Map<string | undefined, string>,
-  fallbackRemoteListId: string,
+  validListIds: Set<string>,
+  fallbackListId: string,
 ) {
   if (!supabase || tasks.length === 0) {
     return [];
@@ -416,13 +452,14 @@ async function insertTasks(
 
   const { data, error } = await supabase
     .from("tasks")
-    .insert(
+    .upsert(
       tasks.map((task) => ({
+        id: task.id,
         completed: task.completed,
         due_date: task.dueDate,
         due_time: task.dueTime,
         is_archived: task.isArchived,
-        list_id: listIdByLocalId.get(task.listId) ?? fallbackRemoteListId,
+        list_id: validListIds.has(task.listId) ? task.listId : fallbackListId,
         note: task.note,
         owner_id: userId,
         priority: task.priority,
@@ -433,6 +470,7 @@ async function insertTasks(
         team_id: task.teamId,
         title: task.title,
       })),
+      { onConflict: "id" },
     )
     .select("id");
 
@@ -467,36 +505,65 @@ async function insertLabels(userId: string, labels: TaskLabel[]) {
   return (data ?? []) as RemoteId[];
 }
 
-async function insertSubtasks(
-  userId: string,
-  tasks: Task[],
-  taskIdByLocalId: Map<string | undefined, string>,
-) {
+async function upsertSubtasks(userId: string, tasks: Task[]) {
   if (!supabase) {
     return 0;
   }
 
-  const subtaskRows = tasks.flatMap((task) => {
-    const taskId = taskIdByLocalId.get(task.id);
-
-    if (!taskId) {
-      return [];
-    }
-
-    return task.subtasks.map((subtask, index) => ({
+  const allRows = tasks.flatMap((task) =>
+    task.subtasks.map((subtask, index) => ({
+      id: subtask.id,
       completed: subtask.completed,
       owner_id: userId,
       position: index,
-      task_id: taskId,
+      task_id: task.id,
       title: subtask.title,
-    }));
+    })),
+  );
+
+  const keepIds = allRows.map((row) => row.id);
+  let deleteQuery = supabase.from("subtasks").delete().eq("owner_id", userId);
+
+  if (keepIds.length > 0) {
+    deleteQuery = deleteQuery.not("id", "in", `(${keepIds.join(",")})`);
+  }
+
+  const { error: deleteError } = await deleteQuery;
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  if (allRows.length === 0) {
+    return 0;
+  }
+
+  // subtasks RLS only allows the owner (or a global admin) to update a row,
+  // so skip re-writing subtasks owned by a teammate to avoid failing the
+  // whole batch for the rest of this user's own subtasks.
+  const { data: existingSubtasks, error: existingError } = await supabase
+    .from("subtasks")
+    .select("id,owner_id")
+    .in("id", keepIds);
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  const ownerById = new Map(
+    (existingSubtasks ?? []).map((row) => [row.id as string, row.owner_id as string]),
+  );
+  const subtaskRows = allRows.filter((row) => {
+    const remoteOwner = ownerById.get(row.id);
+
+    return remoteOwner === undefined || remoteOwner === userId;
   });
 
   if (subtaskRows.length === 0) {
     return 0;
   }
 
-  const { error } = await supabase.from("subtasks").insert(subtaskRows);
+  const { error } = await supabase.from("subtasks").upsert(subtaskRows, { onConflict: "id" });
 
   if (error) {
     throw error;
@@ -505,24 +572,17 @@ async function insertSubtasks(
   return subtaskRows.length;
 }
 
-async function insertTaskLabels(
+async function upsertTaskLabels(
   userId: string,
   tasks: Task[],
-  taskIdByLocalId: Map<string | undefined, string>,
   labelIdByKey: Map<string, string>,
 ) {
   if (!supabase) {
     return 0;
   }
 
-  const taskLabelRows = tasks.flatMap((task) => {
-    const taskId = taskIdByLocalId.get(task.id);
-
-    if (!taskId) {
-      return [];
-    }
-
-    return task.labels
+  const allRows = tasks.flatMap((task) =>
+    task.labels
       .map((label) => {
         const labelId = labelIdByKey.get(getLabelKey(label));
 
@@ -530,18 +590,62 @@ async function insertTaskLabels(
           ? {
               label_id: labelId,
               owner_id: userId,
-              task_id: taskId,
+              task_id: task.id,
             }
           : null;
       })
-      .filter((row): row is NonNullable<typeof row> => row !== null);
+      .filter((row): row is NonNullable<typeof row> => row !== null),
+  );
+
+  const taskIds = tasks.map((task) => task.id);
+
+  if (taskIds.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("task_labels")
+      .delete()
+      .eq("owner_id", userId)
+      .in("task_id", taskIds);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+  }
+
+  if (allRows.length === 0) {
+    return 0;
+  }
+
+  // task_labels RLS only allows the owner (or a global admin) to update a
+  // row, so skip re-writing pairs owned by a teammate to avoid failing the
+  // whole batch for the rest of this user's own task_labels.
+  const { data: existingTaskLabels, error: existingError } = await supabase
+    .from("task_labels")
+    .select("task_id,label_id,owner_id")
+    .in("task_id", taskIds);
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  const ownerByPair = new Map(
+    (existingTaskLabels ?? []).map((row) => [
+      `${row.task_id}:${row.label_id}`,
+      row.owner_id as string,
+    ]),
+  );
+  const taskLabelRows = allRows.filter((row) => {
+    const remoteOwner = ownerByPair.get(`${row.task_id}:${row.label_id}`);
+
+    return remoteOwner === undefined || remoteOwner === userId;
   });
 
   if (taskLabelRows.length === 0) {
     return 0;
   }
 
-  const { error } = await supabase.from("task_labels").insert(taskLabelRows);
+  const { error } = await supabase
+    .from("task_labels")
+    .upsert(taskLabelRows, { onConflict: "task_id,label_id" });
 
   if (error) {
     throw error;

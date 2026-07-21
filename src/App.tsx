@@ -13,6 +13,7 @@ import {
   TASK_NOTIFICATION_RECEIVED_EVENT,
 } from "./notifications/taskNotifications";
 import { getTodayDateValue } from "./tasks/dateUtils";
+import { createEntityId } from "./tasks/idUtils";
 import {
   DEFAULT_TASK_LIST_ID,
   FALLBACK_LIST_ID,
@@ -290,7 +291,6 @@ export function App() {
           setTasks(cleanTasks);
           setActiveListId(DEFAULT_TASK_LIST_ID);
           setSelectedTaskId(null);
-          setActiveTeamId(null);
           replaceListRoute(DEFAULT_TASK_LIST_ID);
           lastSyncedSnapshotRef.current = createCloudSyncSnapshot(
             cleanLists,
@@ -321,7 +321,7 @@ export function App() {
     return () => {
       isCancelled = true;
     };
-  }, [authUser, authRole]);
+  }, [authUser]);
 
   useEffect(() => {
     if (!authUser || authRole === null) {
@@ -772,7 +772,7 @@ export function App() {
         : getTaskTargetListId(lists, activeListId);
     const dueDate = options.dueDate ?? getNewTaskDueDate(activeListId);
     const newTask: Task = {
-      id: `task-${Date.now()}`,
+      id: createEntityId(),
       title: trimmedTitle,
       completed: false,
       listId: targetListId,
@@ -809,7 +809,7 @@ export function App() {
     }
 
     const newList: TaskList = {
-      id: `list-${Date.now()}`,
+      id: createEntityId(),
       name: trimmedName,
       isArchived: false,
       isSystem: false,
@@ -1771,13 +1771,13 @@ function createRecurringTask(task: Task): Task {
 
   return {
     ...task,
-    id: createEntityId("task"),
+    id: createEntityId(),
     completed: false,
     dueDate: nextDueDate,
     isArchived: false,
-    subtasks: task.subtasks.map((subtask, index) => ({
+    subtasks: task.subtasks.map((subtask) => ({
       ...subtask,
-      id: createEntityId(`subtask-${index}`),
+      id: createEntityId(),
       completed: false,
     })),
   };
@@ -1846,13 +1846,6 @@ function formatDateValue(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function createEntityId(prefix: string) {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return `${prefix}-${crypto.randomUUID()}`;
-  }
-
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
 
 function getNewTaskDueDate(activeListId: string) {
   if (activeListId === TODAY_LIST_ID || activeListId === PLANNED_LIST_ID) {
