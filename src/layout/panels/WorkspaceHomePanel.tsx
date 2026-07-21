@@ -278,9 +278,11 @@ export function WorkspaceHomePanel({
                         {item.actor.slice(0, 2).toUpperCase()}
                       </span>
                       <div className="workspace-home__activity-copy">
-                        <strong>{item.actor}</strong>
+                        <div className="workspace-home__activity-top">
+                          <strong>{item.actor}</strong>
+                          <small data-tone={item.tone}>{item.status}</small>
+                        </div>
                         <p>{item.detail}</p>
-                        <small data-tone={item.tone}>{item.status}</small>
                       </div>
                     </>
                   );

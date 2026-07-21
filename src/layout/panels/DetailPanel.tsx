@@ -12,6 +12,7 @@ import type { CSSProperties, ChangeEvent, FormEvent, KeyboardEvent, MouseEvent }
 import { CustomDropdown } from "../CustomDropdown";
 import type { DropdownOption } from "../CustomDropdown";
 import { getTodayDateValue } from "../../tasks/dateUtils";
+import { createEntityId } from "../../tasks/idUtils";
 import type {
   Task,
   TaskLabel,
@@ -243,7 +244,7 @@ export function DetailPanel({
       subtasks: [
         ...activeTask.subtasks,
         {
-          id: `subtask-${Date.now()}`,
+          id: createEntityId(),
           title: trimmedTitle,
           completed: false,
         },

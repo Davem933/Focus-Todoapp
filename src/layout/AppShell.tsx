@@ -7,6 +7,7 @@ import { CustomDropdown } from "./CustomDropdown";
 import type { DropdownOption } from "./CustomDropdown";
 import type { VisiblePanel } from "./layoutTypes";
 import { getTodayDateValue } from "../tasks/dateUtils";
+import { createEntityId } from "../tasks/idUtils";
 import { DetailPanel } from "./panels/DetailPanel";
 import { ListPanel } from "./panels/ListPanel";
 import { SidebarPanel } from "./panels/SidebarPanel";
@@ -835,6 +836,13 @@ export function AppShell(props: AppShellProps) {
               onCreateTeam={handleOpenTeamCreateFlow}
               onOpenProjectsOverview={handleOpenProjectsOverview}
               onOpenTask={(taskId) => {
+                const targetTask = allTasks.find((task) => task.id === taskId);
+
+                if (targetTask?.projectId) {
+                  handleOpenProjectsOverview(targetTask.projectId, targetTask.id);
+                  return;
+                }
+
                 setIsWorkspaceHomeOpen(false);
                 handleSelectTask(taskId);
               }}
@@ -2405,7 +2413,7 @@ function ProjectsOverviewPanel({
     setCardComposerSubtasks((currentSubtasks) => [
       ...currentSubtasks,
       {
-        id: "subtask-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+        id: createEntityId(),
         title,
         completed: false,
       },
