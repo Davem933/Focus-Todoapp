@@ -107,6 +107,10 @@ function normalizeTask(task: Task): Task {
       typeof task.assigneeId === "string" || task.assigneeId === null
         ? task.assigneeId
         : null,
+    ownerId:
+      typeof task.ownerId === "string" || task.ownerId === null
+        ? task.ownerId
+        : null,
     boardColumnKey: isBoardColumnKey(task.boardColumnKey) ? task.boardColumnKey : "todo",
     labels: Array.isArray(task.labels) ? task.labels.filter(isTaskLabel) : [],
     subtasks: Array.isArray(task.subtasks)
@@ -165,7 +169,7 @@ function normalizeTaskList(list: TaskList): TaskList | null {
   if (list.id === DEFAULT_TASK_LIST_ID) {
     return {
       id: DEFAULT_TASK_LIST_ID,
-      name: "Doruèené",
+      name: "Doruï¿½enï¿½",
       isArchived: false,
       isSystem: false,
       teamId: null,
@@ -262,6 +266,9 @@ function isTask(value: unknown): value is Task {
     (typeof value.assigneeId === "string" ||
       value.assigneeId === null ||
       typeof value.assigneeId === "undefined") &&
+    (typeof value.ownerId === "string" ||
+      value.ownerId === null ||
+      typeof value.ownerId === "undefined") &&
     (typeof value.projectId === "string" ||
       value.projectId === null ||
       typeof value.projectId === "undefined") &&

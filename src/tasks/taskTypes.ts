@@ -32,6 +32,7 @@ export type Task = {
   recurrence: TaskRecurrence;
   teamId: string | null;
   assigneeId: string | null;
+  ownerId: string | null;
   projectId: string | null;
   boardColumnKey: BoardColumnKey;
   labels: TaskLabel[];

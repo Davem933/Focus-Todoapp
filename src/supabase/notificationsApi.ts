@@ -125,6 +125,37 @@ export async function createTaskAssignedNotification({
   }
 }
 
+export async function createTaskCompletedNotification({
+  recipientId,
+  actorId,
+  taskId,
+  taskTitle,
+  teamId,
+}: {
+  recipientId: string;
+  actorId: string;
+  taskId: string | null;
+  taskTitle: string;
+  teamId: string;
+}): Promise<void> {
+  if (!supabase || recipientId === actorId) {
+    return;
+  }
+
+  const { error } = await supabase.from("notifications").insert({
+    recipient_id: recipientId,
+    actor_id: actorId,
+    kind: "task_completed",
+    task_id: taskId,
+    task_title: taskTitle,
+    team_id: teamId,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
 export function subscribeToNotifications(
   userId: string,
   onInsert: (notification: AppNotification) => void,

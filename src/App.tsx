@@ -35,7 +35,10 @@ import {
   uploadLocalDataToSupabase,
 } from "./supabase/cloudBackup";
 import { supabase } from "./supabase/supabaseClient";
-import { createTaskAssignedNotification } from "./supabase/notificationsApi";
+import {
+  createTaskAssignedNotification,
+  createTaskCompletedNotification,
+} from "./supabase/notificationsApi";
 import { useNotifications } from "./notifications/useNotifications";
 import { loadTaskState, saveTaskState } from "./tasks/taskStorage";
 import { buildCountsByTeamId } from "./teams/teamCounts";
@@ -633,6 +636,38 @@ export function App() {
         notifyTaskAssignment(nextTask, currentTask.assigneeId);
       }
     }
+
+    if ("completed" in update) {
+      const currentTask = tasks.find((task) => task.id === taskId);
+
+      if (currentTask) {
+        const nextTask = normalizeTaskUpdate(currentTask, update);
+        notifyTaskCompletion(nextTask, currentTask.completed);
+      }
+    }
+  }
+
+  function notifyTaskCompletion(task: Task, previousCompleted: boolean) {
+    if (
+      !authUser ||
+      !task.teamId ||
+      !task.ownerId ||
+      previousCompleted ||
+      !task.completed ||
+      task.ownerId === authUser.id
+    ) {
+      return;
+    }
+
+    createTaskCompletedNotification({
+      recipientId: task.ownerId,
+      actorId: authUser.id,
+      taskId: isUuid(task.id) ? task.id : null,
+      taskTitle: task.title,
+      teamId: task.teamId,
+    }).catch((error) => {
+      console.error("Nepodařilo se odeslat notifikaci o dokončení úkolu", error);
+    });
   }
 
   function notifyTaskAssignment(task: Task, previousAssigneeId: string | null) {
@@ -749,6 +784,7 @@ export function App() {
       isArchived: false,
       teamId: targetTeamId,
       assigneeId: options.assigneeId ?? null,
+      ownerId: authUser?.id ?? null,
       projectId: options.projectId ?? null,
       boardColumnKey: options.boardColumnKey ?? "todo",
       labels: options.labels ?? [],

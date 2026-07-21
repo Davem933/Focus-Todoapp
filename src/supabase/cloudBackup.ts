@@ -48,6 +48,7 @@ type CloudTaskRow = {
   list_id: string;
   team_id: string | null;
   assignee_id: string | null;
+  owner_id: string;
   project_id: string | null;
   board_column_key: string | null;
   note: string | null;
@@ -209,7 +210,7 @@ export async function downloadSupabaseData(userId: string): Promise<StoredTaskSt
     supabase
       .from("tasks")
       .select(
-        "id,list_id,title,completed,due_date,due_time,is_archived,note,priority,recurrence,team_id,assignee_id,project_id,board_column_key",
+        "id,list_id,title,completed,due_date,due_time,is_archived,note,priority,recurrence,team_id,assignee_id,owner_id,project_id,board_column_key",
       )
       .or(ownedOrAssignedOrTeamFilter)
       .order("created_at", { ascending: true }),
@@ -301,6 +302,7 @@ export async function downloadSupabaseData(userId: string): Promise<StoredTaskSt
     isArchived: task.is_archived,
     teamId: task.team_id,
     assigneeId: task.assignee_id,
+    ownerId: task.owner_id,
     projectId: task.project_id,
     boardColumnKey: normalizeBoardColumnKey(task.board_column_key),
     labels: (taskLabelsByTaskId.get(task.id) ?? [])

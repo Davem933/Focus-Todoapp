@@ -233,8 +233,11 @@ export function AppShell(props: AppShellProps) {
     () =>
       notifications.map((notification) => ({
         id: notification.id,
-        title: "Přiřazení úkolu",
-        description: `Byl ti přiřazen úkol „${notification.taskTitle}"`,
+        title: notification.kind === "task_completed" ? "Úkol dokončen" : "Přiřazení úkolu",
+        description:
+          notification.kind === "task_completed"
+            ? `Úkol „${notification.taskTitle}" byl dokončen`
+            : `Byl ti přiřazen úkol „${notification.taskTitle}"`,
         timestamp: new Date(notification.createdAt),
         read: notification.isRead,
       })),
