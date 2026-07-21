@@ -8977,6 +8977,22 @@ input[type="checkbox"]:focus-visible {
   color: #86efac;
 }
 
+.workspace-home__activity-toggle {
+  background: transparent;
+  border: 0;
+  color: #c4b5fd;
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin-top: 0.7rem;
+  padding: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.workspace-home__activity-toggle:hover {
+  color: #ddd6fe;
+}
+
 .workspace-home__empty,
 .workspace-home__error {
   color: var(--color-text-secondary);
@@ -9030,6 +9046,34 @@ input[type="checkbox"]:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding-left: 0;
     padding-top: 1.2rem;
+  }
+
+  .workspace-home__activity-item {
+    gap: 0.6rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .workspace-home__activity-avatar {
+    height: 1.9rem;
+    width: 1.9rem;
+    font-size: 0.64rem;
+  }
+
+  .workspace-home__activity-copy strong {
+    font-size: 0.82rem;
+  }
+
+  .workspace-home__activity-copy p {
+    font-size: 0.78rem;
+  }
+
+  .workspace-home__activity-copy small {
+    font-size: 0.68rem;
+    margin-top: 0.3rem;
+  }
+
+  .workspace-home__activity-list {
+    gap: 0.55rem;
   }
 }
 

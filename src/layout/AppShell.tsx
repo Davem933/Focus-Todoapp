@@ -825,6 +825,8 @@ export function AppShell(props: AppShellProps) {
           ) : isWorkspaceHomeOpen && activeTeamId ? (
             <WorkspaceHomePanel
               activeTeam={teams.find((team) => team.id === activeTeamId) ?? null}
+              canCreateBoard={isGlobalAdmin || manageableTeamIds.has(activeTeamId)}
+              canCreateTeam={isGlobalAdmin || manageableTeamIds.size > 0}
               currentUserId={currentUserId}
               currentUserEmail={userEmail}
               currentUserNickname={nickname}
@@ -840,6 +842,7 @@ export function AppShell(props: AppShellProps) {
           ) : isTeamsOverviewOpen ? (
             <TeamsOverviewPanel
               activeTeamId={activeTeamId}
+              canCreateTeam={isGlobalAdmin || manageableTeamIds.size > 0}
               createRequestToken={teamCreateRequestToken}
               currentUserId={currentUserId}
               isGlobalAdmin={isGlobalAdmin}
@@ -1016,6 +1019,7 @@ type CreateTeamDraftMember = {
 
 type TeamsOverviewPanelProps = {
   activeTeamId: string | null;
+  canCreateTeam: boolean;
   createRequestToken?: number;
   currentUserId: string | null;
   isGlobalAdmin: boolean;
@@ -1028,6 +1032,7 @@ type TeamsOverviewPanelProps = {
 
 function TeamsOverviewPanel({
   activeTeamId,
+  canCreateTeam,
   createRequestToken = 0,
   currentUserId,
   isGlobalAdmin,
@@ -1084,7 +1089,7 @@ function TeamsOverviewPanel({
   }, [activeTeamId, teams]);
 
   useEffect(() => {
-    if (createRequestToken > 0) {
+    if (createRequestToken > 0 && canCreateTeam) {
       setIsCreateTeamOpen(true);
     }
   }, [createRequestToken]);
@@ -1171,6 +1176,10 @@ function TeamsOverviewPanel({
   }
 
   function openCreateTeamFlow() {
+    if (!canCreateTeam) {
+      return;
+    }
+
     setEditingTeamId(null);
     resetTeamFlowFields();
     setError(null);
@@ -1230,6 +1239,10 @@ function TeamsOverviewPanel({
     event.preventDefault();
 
     if (!trimmedNewTeamName || isLoading) {
+      return;
+    }
+
+    if (!editingTeamId && !canCreateTeam) {
       return;
     }
 
@@ -1502,10 +1515,12 @@ function TeamsOverviewPanel({
           <p>Spravuj role, pozvánky a členy pracovního prostoru.</p>
         </div>
         <div className="teams-overview__actions teams-page__actions">
-          <button type="button" onClick={openCreateTeamFlow}>
-            <UserPlus aria-hidden="true" size={16} />
-            <span>Vytvořit tým</span>
-          </button>
+          {canCreateTeam ? (
+            <button type="button" onClick={openCreateTeamFlow}>
+              <UserPlus aria-hidden="true" size={16} />
+              <span>Vytvořit tým</span>
+            </button>
+          ) : null}
           <button
             type="button"
             disabled={!selectedTeam || !canManageSelectedTeam}

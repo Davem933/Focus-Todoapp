@@ -17,6 +17,8 @@ import type { Team, TeamMember } from "../../teams/teamTypes";
 
 type WorkspaceHomePanelProps = {
   activeTeam: Team | null;
+  canCreateBoard: boolean;
+  canCreateTeam: boolean;
   currentUserId: string | null;
   currentUserEmail: string | null;
   currentUserNickname: string | null;
@@ -38,6 +40,8 @@ type WorkspaceActivityItem = {
 
 export function WorkspaceHomePanel({
   activeTeam,
+  canCreateBoard,
+  canCreateTeam,
   currentUserId,
   currentUserEmail,
   currentUserNickname,
@@ -51,6 +55,7 @@ export function WorkspaceHomePanel({
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isActivityExpanded, setIsActivityExpanded] = useState(false);
 
   useEffect(() => {
     if (!activeTeam) {
@@ -119,7 +124,16 @@ export function WorkspaceHomePanel({
     currentUserNickname?.trim() || formatWorkspaceUserName(welcomeEmail);
   const memberById = new Map(members.map((member) => [member.userId, member]));
   const projectById = new Map(projects.map((project) => [project.id, project]));
-  const activity = buildWorkspaceActivityItems(tasks, memberById, projectById, today).slice(0, 5);
+  const canExpandActivity = canCreateBoard;
+  const allActivity = buildWorkspaceActivityItems(
+    tasks,
+    memberById,
+    projectById,
+    today,
+    canExpandActivity ? 20 : 5,
+  );
+  const activity = isActivityExpanded ? allActivity : allActivity.slice(0, 5);
+  const hasMoreActivity = canExpandActivity && allActivity.length > 5;
   const welcomeSummary = getWorkspaceWelcomeSummary({
     activeProjects: activeProjects.length,
     dueTodayCount,
@@ -189,10 +203,12 @@ export function WorkspaceHomePanel({
               <div className="workspace-home__empty-card">
                 <strong>Zatím tu není žádná nástěnka</strong>
                 <span>Vytvoř první board a dej týmu jasný tok práce.</span>
-                <button type="button" onClick={onCreateBoard}>
-                  <PlusSquare aria-hidden="true" size={16} />
-                  Nová nástěnka
-                </button>
+                {canCreateBoard ? (
+                  <button type="button" onClick={onCreateBoard}>
+                    <PlusSquare aria-hidden="true" size={16} />
+                    Nová nástěnka
+                  </button>
+                ) : null}
               </div>
             ) : null}
             {projects.length > 0 ? (
@@ -224,21 +240,27 @@ export function WorkspaceHomePanel({
         </div>
 
         <aside className="workspace-home__side">
-          <section className="workspace-home__section workspace-home__actions">
-            <div className="workspace-home__section-head">
-              <h3>Rychlé akce</h3>
-            </div>
-            <div className="workspace-home__action-grid">
-              <button type="button" onClick={onCreateTeam}>
-                <Users aria-hidden="true" size={15} />
-                <span>Nový tým</span>
-              </button>
-              <button type="button" onClick={onCreateBoard}>
-                <FolderKanban aria-hidden="true" size={15} />
-                <span>Nová nástěnka</span>
-              </button>
-            </div>
-          </section>
+          {canCreateTeam || canCreateBoard ? (
+            <section className="workspace-home__section workspace-home__actions">
+              <div className="workspace-home__section-head">
+                <h3>Rychlé akce</h3>
+              </div>
+              <div className="workspace-home__action-grid">
+                {canCreateTeam ? (
+                  <button type="button" onClick={onCreateTeam}>
+                    <Users aria-hidden="true" size={15} />
+                    <span>Nový tým</span>
+                  </button>
+                ) : null}
+                {canCreateBoard ? (
+                  <button type="button" onClick={onCreateBoard}>
+                    <FolderKanban aria-hidden="true" size={15} />
+                    <span>Nová nástěnka</span>
+                  </button>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
 
           <section className="workspace-home__section workspace-home__activity">
             <div className="workspace-home__section-head">
@@ -280,6 +302,15 @@ export function WorkspaceHomePanel({
                 })}
               </div>
             )}
+            {hasMoreActivity ? (
+              <button
+                type="button"
+                className="workspace-home__activity-toggle"
+                onClick={() => setIsActivityExpanded((expanded) => !expanded)}
+              >
+                {isActivityExpanded ? "Zobrazit méně" : "Zobrazit více"}
+              </button>
+            ) : null}
           </section>
         </aside>
       </div>
@@ -366,6 +397,7 @@ function buildWorkspaceActivityItems(
   memberById: Map<string, TeamMember>,
   projectById: Map<string, Project>,
   today: string,
+  limit = 6,
 ): WorkspaceActivityItem[] {
   const candidates = [
     ...tasks
@@ -436,7 +468,7 @@ function buildWorkspaceActivityItems(
       });
     }
 
-    if (result.length >= 6) {
+    if (result.length >= limit) {
       break;
     }
   }
