@@ -5,6 +5,7 @@ import { loadProjectsForTeams } from "../../supabase/projectApi";
 import type { Project } from "../../projects/projectTypes";
 import type { Team } from "../../teams/teamTypes";
 import type { Task } from "../../tasks/taskTypes";
+import { getTodayDateValue } from "../../tasks/dateUtils";
 import {
   CZECH_MONTH_NAMES,
   CZECH_WEEKDAY_LABELS,
@@ -78,6 +79,7 @@ export function CalendarPanel({ teams, tasks }: CalendarPanelProps) {
   }));
 
   const weeks = useMemo(() => getMonthMatrix(year, month), [year, month]);
+  const today = getTodayDateValue();
 
   const taskIdsByDueDate = useMemo(() => {
     if (!selectedProjectId) {
@@ -127,6 +129,7 @@ export function CalendarPanel({ teams, tasks }: CalendarPanelProps) {
                   className="calendar-panel__day"
                   key={day?.date ?? `empty-${weekIndex}-${dayIndex}`}
                   data-empty={day ? "false" : "true"}
+                  data-today={day?.date === today ? "true" : "false"}
                 >
                   {day ? (
                     <>

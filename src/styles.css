@@ -12939,6 +12939,11 @@ input[type="checkbox"]:focus-visible {
   border-color: transparent;
 }
 
+.calendar-panel__day[data-today="true"] {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent-soft);
+}
+
 .calendar-panel__day-number {
   font-size: 0.8rem;
   font-weight: 600;
