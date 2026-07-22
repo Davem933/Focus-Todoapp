@@ -26,28 +26,39 @@ export function getCurrentYearMonth(): { year: number; month: number } {
   return { year: now.getFullYear(), month: now.getMonth() + 1 };
 }
 
-export function getMonthMatrix(year: number, month: number): (CalendarDay | null)[][] {
+function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+export function getMonthMatrix(year: number, month: number): CalendarDay[][] {
   const firstOfMonth = new Date(year, month - 1, 1);
   const daysInMonth = new Date(year, month, 0).getDate();
+  const daysInPrevMonth = new Date(year, month - 1, 0).getDate();
   const firstWeekdayMondayIndex = (firstOfMonth.getDay() + 6) % 7;
 
-  const cells: (CalendarDay | null)[] = [];
+  const cells: CalendarDay[] = [];
 
-  for (let i = 0; i < firstWeekdayMondayIndex; i += 1) {
-    cells.push(null);
+  for (let i = firstWeekdayMondayIndex; i > 0; i -= 1) {
+    const dayOfMonth = daysInPrevMonth - i + 1;
+    cells.push({ date: formatDate(new Date(year, month - 2, dayOfMonth)), dayOfMonth });
   }
 
   for (let day = 1; day <= daysInMonth; day += 1) {
-    const monthStr = String(month).padStart(2, "0");
-    const dayStr = String(day).padStart(2, "0");
-    cells.push({ date: `${year}-${monthStr}-${dayStr}`, dayOfMonth: day });
+    cells.push({ date: formatDate(new Date(year, month - 1, day)), dayOfMonth: day });
   }
+
+  let nextMonthDay = 1;
 
   while (cells.length % 7 !== 0) {
-    cells.push(null);
+    cells.push({ date: formatDate(new Date(year, month, nextMonthDay)), dayOfMonth: nextMonthDay });
+    nextMonthDay += 1;
   }
 
-  const weeks: (CalendarDay | null)[][] = [];
+  const weeks: CalendarDay[][] = [];
 
   for (let i = 0; i < cells.length; i += 7) {
     weeks.push(cells.slice(i, i + 7));

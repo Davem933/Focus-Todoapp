@@ -124,33 +124,24 @@ export function CalendarPanel({ teams, tasks }: CalendarPanelProps) {
           </div>
           {weeks.map((week, weekIndex) => (
             <div className="calendar-panel__week" key={weekIndex}>
-              {week.map((day, dayIndex) => (
+              {week.map((day) => (
                 <div
                   className="calendar-panel__day"
-                  key={day?.date ?? `empty-${weekIndex}-${dayIndex}`}
-                  data-empty={day ? "false" : "true"}
-                  data-today={day?.date === today ? "true" : "false"}
+                  key={day.date}
+                  data-today={day.date === today ? "true" : "false"}
                 >
-                  {day ? (
-                    <>
-                      <span className="calendar-panel__day-number">{day.dayOfMonth}</span>
-                      <div className="calendar-panel__day-tasks">
-                        {(taskIdsByDueDate.get(day.date) ?? []).map((taskId) => {
-                          const task = taskById.get(taskId);
+                  <span className="calendar-panel__day-number">{day.dayOfMonth}</span>
+                  <div className="calendar-panel__day-tasks">
+                    {(taskIdsByDueDate.get(day.date) ?? []).map((taskId) => {
+                      const task = taskById.get(taskId);
 
-                          return task ? (
-                            <span
-                              className="calendar-panel__task"
-                              key={taskId}
-                              title={task.title}
-                            >
-                              {task.title}
-                            </span>
-                          ) : null;
-                        })}
-                      </div>
-                    </>
-                  ) : null}
+                      return task ? (
+                        <span className="calendar-panel__task" key={taskId} title={task.title}>
+                          {task.title}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
                 </div>
               ))}
             </div>
