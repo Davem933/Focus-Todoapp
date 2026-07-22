@@ -95,6 +95,7 @@ type SidebarPanelProps = {
   onOpenWorkspaceHome: () => void;
   onOpenTeamsOverview: () => void;
   onOpenProjectsOverview: () => void;
+  onOpenCalendar: () => void;
   onOpenNotes: () => void;
   onOpenProfile: () => void;
   notifications: Notification[];
@@ -103,6 +104,7 @@ type SidebarPanelProps = {
   isWorkspaceHomeOpen: boolean;
   isTeamsOverviewOpen: boolean;
   isProjectsOverviewOpen: boolean;
+  isCalendarOpen: boolean;
   isNotesOpen: boolean;
   isProfileOpen: boolean;
   isMobileDrawer?: boolean;
@@ -162,6 +164,7 @@ export function SidebarPanel({
   onOpenWorkspaceHome,
   onOpenTeamsOverview,
   onOpenProjectsOverview,
+  onOpenCalendar,
   onOpenNotes,
   onOpenProfile,
   notifications,
@@ -170,6 +173,7 @@ export function SidebarPanel({
   isWorkspaceHomeOpen,
   isTeamsOverviewOpen,
   isProjectsOverviewOpen,
+  isCalendarOpen,
   isNotesOpen,
   isProfileOpen,
   isMobileDrawer = false,
@@ -598,9 +602,9 @@ export function SidebarPanel({
                 </button>
                 <button
                   className="workspace-mode-switch__item"
-                  data-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen || isNotesOpen}
+                  data-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen || isCalendarOpen || isNotesOpen}
                   role="tab"
-                  aria-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen || isNotesOpen}
+                  aria-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen || isCalendarOpen || isNotesOpen}
                   type="button"
                   onClick={selectTeamWorkspace}
                 >
@@ -610,7 +614,7 @@ export function SidebarPanel({
                   </small>
                 </button>
               </div>
-              {isTeamWorkspace || isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen || isNotesOpen ? (
+              {isTeamWorkspace || isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen || isCalendarOpen || isNotesOpen ? (
                 <nav className="list-nav workspace-nav" aria-label="Nabídka workspace">
                   <button
                     className="list-nav__item workspace-nav__item"
@@ -656,6 +660,19 @@ export function SidebarPanel({
                   </button>
                   <button
                     className="list-nav__item workspace-nav__item"
+                    data-selected={isCalendarOpen}
+                    type="button"
+                    onClick={onOpenCalendar}
+                  >
+                    <span className="list-nav__main">
+                      <span className="workspace-nav__icon" aria-hidden="true">
+                        <CalendarDays size={16} strokeWidth={1.9} />
+                      </span>
+                      <span className="list-nav__name">Kalendář</span>
+                    </span>
+                  </button>
+                  <button
+                    className="list-nav__item workspace-nav__item"
                     data-selected={isNotesOpen}
                     type="button"
                     onClick={onOpenNotes}
@@ -670,7 +687,7 @@ export function SidebarPanel({
                 </nav>
               ) : null}
             </section>
-            {!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isNotesOpen ? (
+            {!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isCalendarOpen && !isNotesOpen ? (
             <section
               className="list-section list-section--system"
               aria-label={isTeamWorkspace ? "Týmové pohledy" : "Osobní pohledy"}
