@@ -31,8 +31,10 @@ import {
   loadTeamInvites,
   loadTeamMembers,
   removeTeamMember,
+  searchUsersForInvite,
   updateTeamInSupabase,
   updateTeamMemberRole,
+  type UserSearchResult,
 } from "../supabase/teamApi";
 import {
   archiveProjectColumn,
@@ -1023,6 +1025,7 @@ export function AppShell(props: AppShellProps) {
 type CreateTeamDraftMember = {
   email: string;
   id: string;
+  nickname: string | null;
 };
 
 type TeamsOverviewPanelProps = {
@@ -1065,6 +1068,8 @@ function TeamsOverviewPanel({
   const [newTeamMission, setNewTeamMission] = useState("");
   const [newTeamMemberEmail, setNewTeamMemberEmail] = useState("");
   const [newTeamMembers, setNewTeamMembers] = useState<CreateTeamDraftMember[]>([]);
+  const [memberSuggestions, setMemberSuggestions] = useState<UserSearchResult[]>([]);
+  const [isSearchingMembers, setIsSearchingMembers] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [isTeamMenuOpen, setIsTeamMenuOpen] = useState(false);
   const teamMenuRef = useRef<HTMLDivElement | null>(null);
@@ -1082,6 +1087,46 @@ function TeamsOverviewPanel({
   const trimmedNewTeamName = newTeamName.trim();
   const trimmedNewTeamMemberEmail = newTeamMemberEmail.trim().toLowerCase();
   const trimmedNewMemberEmail = newMemberEmail.trim();
+
+  useEffect(() => {
+    if (!isCreateTeamOpen || !trimmedNewTeamMemberEmail) {
+      setMemberSuggestions([]);
+      setIsSearchingMembers(false);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsSearchingMembers(true);
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const results = await searchUsersForInvite({
+          query: trimmedNewTeamMemberEmail,
+          teamId: editingTeamId,
+        });
+
+        if (!isCancelled) {
+          const draftEmails = new Set(newTeamMembers.map((member) => member.email));
+          setMemberSuggestions(
+            results.filter((result) => !draftEmails.has(result.email.toLowerCase())),
+          );
+        }
+      } catch {
+        if (!isCancelled) {
+          setMemberSuggestions([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsSearchingMembers(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [editingTeamId, isCreateTeamOpen, newTeamMembers, trimmedNewTeamMemberEmail]);
 
   useEffect(() => {
     if (activeTeamId && teams.some((team) => team.id === activeTeamId)) {
@@ -1181,6 +1226,7 @@ function TeamsOverviewPanel({
     setNewTeamMission("");
     setNewTeamMemberEmail("");
     setNewTeamMembers([]);
+    setMemberSuggestions([]);
   }
 
   function openCreateTeamFlow() {
@@ -1216,25 +1262,31 @@ function TeamsOverviewPanel({
     resetTeamFlowFields();
   }
 
-  function handleAddDraftTeamMember() {
-    if (!trimmedNewTeamMemberEmail) {
+  function handleAddDraftTeamMember(email = trimmedNewTeamMemberEmail, nickname: string | null = null) {
+    if (!email) {
       return;
     }
 
     setNewTeamMembers((currentMembers) => {
-      if (currentMembers.some((member) => member.email === trimmedNewTeamMemberEmail)) {
+      if (currentMembers.some((member) => member.email === email)) {
         return currentMembers;
       }
 
       return [
         ...currentMembers,
         {
-          email: trimmedNewTeamMemberEmail,
+          email,
           id: crypto.randomUUID(),
+          nickname,
         },
       ];
     });
     setNewTeamMemberEmail("");
+    setMemberSuggestions([]);
+  }
+
+  function handleSelectMemberSuggestion(suggestion: UserSearchResult) {
+    handleAddDraftTeamMember(suggestion.email.toLowerCase(), suggestion.nickname);
   }
 
   function handleRemoveDraftTeamMember(memberId: string) {
@@ -1899,18 +1951,53 @@ function TeamsOverviewPanel({
               >
                 <h3>Přidat členy</h3>
                 <div className="team-create-flow__member-add">
-                  <input
-                    aria-label="E-mail člena"
-                    autoComplete="email"
-                    inputMode="email"
-                    placeholder="kolega@firma.cz"
-                    type="email"
-                    value={newTeamMemberEmail}
-                    onChange={(event) => setNewTeamMemberEmail(event.currentTarget.value)}
-                  />
+                  <div className="team-create-flow__member-search">
+                    <input
+                      aria-label="Jméno nebo e-mail člena"
+                      autoComplete="off"
+                      placeholder="přezdívka nebo kolega@firma.cz"
+                      type="text"
+                      value={newTeamMemberEmail}
+                      onChange={(event) => setNewTeamMemberEmail(event.currentTarget.value)}
+                    />
+                    <AnimatePresence>
+                      {trimmedNewTeamMemberEmail && (memberSuggestions.length > 0 || isSearchingMembers) ? (
+                        <motion.div
+                          className="team-create-flow__member-suggestions"
+                          initial={prefersReducedMotion ? false : { opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={prefersReducedMotion ? undefined : { opacity: 0, y: -4 }}
+                          transition={{ duration: 0.12 }}
+                        >
+                          {isSearchingMembers && memberSuggestions.length === 0 ? (
+                            <span className="team-create-flow__member-suggestions-empty">Hledám…</span>
+                          ) : memberSuggestions.length === 0 ? (
+                            <span className="team-create-flow__member-suggestions-empty">Nikdo nenalezen</span>
+                          ) : (
+                            memberSuggestions.map((suggestion) => (
+                              <button
+                                key={suggestion.userId}
+                                className="team-create-flow__member-suggestion"
+                                type="button"
+                                onClick={() => handleSelectMemberSuggestion(suggestion)}
+                              >
+                                <span className="teams-overview__avatar" aria-hidden="true">
+                                  {getMemberInitials(suggestion)}
+                                </span>
+                                <span>
+                                  <strong>{getMemberDisplayName(suggestion)}</strong>
+                                  <small>{suggestion.email}</small>
+                                </span>
+                              </button>
+                            ))
+                          )}
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                  </div>
                   <motion.button
                     type="button"
-                    onClick={handleAddDraftTeamMember}
+                    onClick={() => handleAddDraftTeamMember()}
                     disabled={!trimmedNewTeamMemberEmail}
                     whileHover={prefersReducedMotion || !trimmedNewTeamMemberEmail ? undefined : { scale: 1.05 }}
                     whileTap={prefersReducedMotion || !trimmedNewTeamMemberEmail ? undefined : { scale: 0.95 }}
@@ -1936,8 +2023,8 @@ function TeamsOverviewPanel({
                             {getMemberInitials(member)}
                           </span>
                           <span>
-                            <strong>{member.email}</strong>
-                            <small>Člen</small>
+                            <strong>{getMemberDisplayName(member)}</strong>
+                            <small>{member.email}</small>
                           </span>
                           <button
                             aria-label={"Odebrat " + member.email}

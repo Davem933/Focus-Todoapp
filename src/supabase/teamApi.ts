@@ -43,6 +43,18 @@ export type TeamInviteResult =
   | { kind: "member"; member: TeamMember }
   | { kind: "invite"; invite: TeamInvite };
 
+export type UserSearchResult = {
+  email: string;
+  nickname: string | null;
+  userId: string;
+};
+
+type UserSearchRow = {
+  email: string;
+  nickname: string | null;
+  user_id: string;
+};
+
 export async function loadUserTeams(userId: string): Promise<Team[]> {
   if (!supabase) {
     return [];
@@ -203,6 +215,33 @@ export async function loadTeamMembers(teamId: string): Promise<TeamMember[]> {
   }
 
   return ((data ?? []) as TeamMemberRow[]).map(mapTeamMemberRow);
+}
+
+export async function searchUsersForInvite({
+  query,
+  teamId,
+}: {
+  query: string;
+  teamId: string | null;
+}): Promise<UserSearchResult[]> {
+  if (!supabase || !query.trim()) {
+    return [];
+  }
+
+  const { data, error } = await supabase.rpc('search_users_for_invite', {
+    check_team_id: teamId,
+    search_query: query.trim(),
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as UserSearchRow[]).map((row) => ({
+    email: row.email,
+    nickname: row.nickname,
+    userId: row.user_id,
+  }));
 }
 
 export async function inviteTeamMemberByEmail({
