@@ -165,7 +165,7 @@ export function WorkspaceHomePanel({
                 tone="purple"
                 value={members.length}
                 detail={members.length > 0 ? members.length + " v týmu" : "Zatím bez členů"}
-                avatars={members.slice(0, 4).map((member) => getMemberInitials(member.email))}
+                avatars={members.slice(0, 4).map((member) => getMemberInitials(member))}
               />
               <MetricCard
                 index={1}
@@ -420,7 +420,7 @@ function buildWorkspaceActivityItems(
     seen.add(task.id);
     const assignee = task.assigneeId ? memberById.get(task.assigneeId) : null;
     const actor = assignee
-      ? getMemberDisplayName(assignee.email)
+      ? getMemberDisplayName(assignee)
       : projectById.get(task.projectId ?? "")?.name ?? "Workspace";
     const projectName = task.projectId ? projectById.get(task.projectId)?.name : null;
 
@@ -514,12 +514,20 @@ function getProjectStatusLabel(status: Project["status"]) {
   }
 }
 
-function getMemberDisplayName(email: string) {
+function getEmailLocalName(email: string) {
   return email.split("@")[0] || email;
 }
 
+function getMemberDisplayName(member: { email: string; nickname?: string | null }) {
+  const nickname = member.nickname?.trim();
+  if (nickname) {
+    return nickname;
+  }
+  return getEmailLocalName(member.email);
+}
+
 function formatWorkspaceUserName(email: string) {
-  const baseName = getMemberDisplayName(email);
+  const baseName = getEmailLocalName(email);
   const parts = baseName
     .split(/[._\-\s]+/)
     .filter(Boolean)
@@ -528,8 +536,8 @@ function formatWorkspaceUserName(email: string) {
   return parts.join(" ");
 }
 
-function getMemberInitials(email: string) {
-  const name = getMemberDisplayName(email);
+function getMemberInitials(member: { email: string; nickname?: string | null }) {
+  const name = getMemberDisplayName(member);
   const parts = name.split(/[._\\-\\s]+/).filter(Boolean);
 
   if (parts.length >= 2) {

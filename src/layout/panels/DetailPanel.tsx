@@ -75,6 +75,10 @@ type NativePickerInput = HTMLInputElement & {
 };
 
 function getTeamMemberDisplayName(member: TeamMember) {
+  const nickname = member.nickname?.trim();
+  if (nickname) {
+    return nickname;
+  }
   const [name] = member.email.split("@");
   return name || member.email;
 }

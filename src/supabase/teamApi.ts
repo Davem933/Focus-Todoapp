@@ -16,6 +16,7 @@ type MembershipRow = {
 type TeamMemberRow = {
   created_at: string;
   email: string;
+  nickname?: string | null;
   role: "admin" | "member";
   user_id: string;
 };
@@ -387,6 +388,7 @@ function mapTeamMemberRow(row: TeamMemberRow): TeamMember {
   return {
     createdAt: row.created_at,
     email: row.email,
+    nickname: row.nickname ?? null,
     role: row.role === 'admin' ? 'admin' : 'member',
     userId: row.user_id,
   };

@@ -9,6 +9,7 @@
 export type TeamMember = {
   createdAt: string;
   email: string;
+  nickname: string | null;
   role: "admin" | "member";
   userId: string;
 };

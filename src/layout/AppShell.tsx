@@ -1673,10 +1673,10 @@ function TeamsOverviewPanel({
                     >
                       <span className="teams-overview__member-cell" role="cell">
                         <span className="teams-overview__avatar" aria-hidden="true">
-                          {getMemberInitials(invite.email)}
+                          {getMemberInitials(invite)}
                         </span>
                         <span>
-                          <strong>{getMemberDisplayName(invite.email)}</strong>
+                          <strong>{getMemberDisplayName(invite)}</strong>
                           <small>{invite.email}</small>
                         </span>
                       </span>
@@ -1706,7 +1706,7 @@ function TeamsOverviewPanel({
                 const isSelfRow = Boolean(currentUserId && member.userId === currentUserId);
                 const nextRole = memberIsAdmin ? "member" : "admin";
                 const isLastAdmin = memberIsAdmin && adminCount <= 1;
-                const memberInitials = getMemberInitials(member.email);
+                const memberInitials = getMemberInitials(member);
                 const roleLabel = isOwnerRow ? "Vlastník" : getTeamRoleLabel(member.role);
                 const roleDataAttr = isOwnerRow ? "owner" : memberIsAdmin ? "admin" : "member";
 
@@ -1758,7 +1758,7 @@ function TeamsOverviewPanel({
                     <span className="teams-overview__member-cell" role="cell">
                       <span className="teams-overview__avatar" aria-hidden="true">{memberInitials}</span>
                       <span>
-                        <strong>{getMemberDisplayName(member.email)}{isSelfRow ? " (Ty)" : ""}</strong>
+                        <strong>{getMemberDisplayName(member)}{isSelfRow ? " (Ty)" : ""}</strong>
                         <small>{member.email}</small>
                       </span>
                     </span>
@@ -1933,7 +1933,7 @@ function TeamsOverviewPanel({
                           transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                         >
                           <span className="teams-overview__avatar" aria-hidden="true">
-                            {getMemberInitials(member.email)}
+                            {getMemberInitials(member)}
                           </span>
                           <span>
                             <strong>{member.email}</strong>
@@ -3234,7 +3234,7 @@ function ProjectCardComposerModal({
               <option value="">Neprirazeno</option>
               {members.map((member) => (
                 <option key={member.userId} value={member.userId}>
-                  {getMemberDisplayName(member.email)}
+                  {getMemberDisplayName(member)}
                 </option>
               ))}
             </select>
@@ -3250,7 +3250,7 @@ function ProjectCardComposerModal({
                 whileHover={prefersReducedMotion ? undefined : { scale: 1.08 }}
                 whileTap={prefersReducedMotion ? undefined : { scale: 0.94 }}
               >
-                {getMemberInitials(member.email)}
+                {getMemberInitials(member)}
               </motion.button>
             ))}
             <small>{columnTitle}</small>
@@ -3665,7 +3665,7 @@ function ProjectTaskMiniRow({
     >
       <div className="project-detail__task-open">
         <span>{task.title}</span>
-        <small>{assignee ? getMemberDisplayName(assignee.email) : "Bez přiřazení"}</small>
+        <small>{assignee ? getMemberDisplayName(assignee) : "Bez přiřazení"}</small>
       </div>
     </article>
   );
@@ -3806,12 +3806,16 @@ function TeamsMetricCard({
   );
 }
 
-function getMemberDisplayName(email: string) {
-  return email.split("@")[0] || email;
+function getMemberDisplayName(member: { email: string; nickname?: string | null }) {
+  const nickname = member.nickname?.trim();
+  if (nickname) {
+    return nickname;
+  }
+  return member.email.split("@")[0] || member.email;
 }
 
-function getMemberInitials(email: string) {
-  const name = getMemberDisplayName(email);
+function getMemberInitials(member: { email: string; nickname?: string | null }) {
+  const name = getMemberDisplayName(member);
   const parts = name.split(/[._\-\s]+/).filter(Boolean);
 
   if (parts.length >= 2) {
