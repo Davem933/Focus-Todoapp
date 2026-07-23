@@ -3780,8 +3780,17 @@ function ProjectTaskMiniRow({
     >
       <div className="project-detail__task-open">
         <span>{task.title}</span>
-        <small>{assignee ? getMemberDisplayName(assignee) : "Bez přiřazení"}</small>
       </div>
+      {assignee ? (
+        <span
+          className="project-detail__task-avatar"
+          role="img"
+          title={getMemberDisplayName(assignee)}
+          aria-label={"Přiřazeno: " + getMemberDisplayName(assignee)}
+        >
+          {getMemberInitials(assignee)}
+        </span>
+      ) : null}
     </article>
   );
 }

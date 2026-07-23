@@ -10048,24 +10048,23 @@ input[type="checkbox"]:focus-visible {
   white-space: nowrap;
 }
 
-.project-detail__task-row small {
-  background: rgba(45, 212, 191, 0.11);
-  border-radius: 999px;
-  color: #5eead4;
-  flex: 0 0 auto;
-  font-size: 0.66rem;
-  font-weight: 850;
-  padding: 0.16rem 0.4rem;
-}
-
 .project-detail__task-row[data-completed="true"] span {
   color: var(--color-text-muted);
   text-decoration: line-through;
 }
 
-.project-detail__task-row[data-completed="true"] small {
-  background: rgba(139, 92, 246, 0.13);
-  color: #c4b5fd;
+.project-detail__task-avatar {
+  align-items: center;
+  background: linear-gradient(135deg, #8b5cf6, #6d5dfc);
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.62rem;
+  font-weight: 900;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
 }
 
 
