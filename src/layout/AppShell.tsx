@@ -3450,8 +3450,6 @@ function ProjectDetailView({
   onUpdateTask: (taskId: string, update: TaskUpdate) => void;
 }) {
   const projectTasks = tasks.filter((task) => task.projectId === project.id && !task.isArchived);
-  const completedCount = projectTasks.filter((task) => task.completed || task.boardColumnKey === "done").length;
-  const progress = projectTasks.length > 0 ? Math.round((completedCount / projectTasks.length) * 100) : 0;
   const memberById = new Map(members.map((member) => [member.userId, member]));
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dropColumnKey, setDropColumnKey] = useState<Task["boardColumnKey"] | null>(null);
@@ -3572,13 +3570,6 @@ function ProjectDetailView({
             <div className="project-detail__meta">
               <span>{getProjectStatusLabel(project.status)}</span>
               <span>{formatProjectDateRange(project.startDate, project.endDate)}</span>
-            </div>
-          </div>
-          <div className="project-detail__progress">
-            <strong>{progress}%</strong>
-            <span>Progres nástěnky</span>
-            <div aria-hidden="true">
-              <i style={{ width: progress + "%" }} />
             </div>
           </div>
         </header>

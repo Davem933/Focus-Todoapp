@@ -9906,36 +9906,6 @@ input[type="checkbox"]:focus-visible {
   padding: 0.25rem 0.55rem;
 }
 
-.project-detail__progress {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.project-detail__progress strong {
-  color: var(--color-text-primary);
-  font-size: 1rem;
-}
-
-.project-detail__progress span {
-  color: var(--color-text-muted);
-  font-size: 0.72rem;
-  font-weight: 850;
-}
-
-.project-detail__progress div {
-  background: rgba(148, 163, 184, 0.13);
-  border-radius: 999px;
-  height: 6px;
-  overflow: hidden;
-}
-
-.project-detail__progress i {
-  background: linear-gradient(90deg, #8b5cf6, #c084fc);
-  border-radius: inherit;
-  display: block;
-  height: 100%;
-}
-
 .project-detail__member-grid {
   display: grid;
   gap: 1rem;
