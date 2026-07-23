@@ -9860,23 +9860,6 @@ input[type="checkbox"]:focus-visible {
   padding: 1.35rem;
 }
 
-.project-detail__edit {
-  align-items: center;
-  border-radius: 8px;
-  display: inline-flex;
-  font-weight: 850;
-  justify-content: center;
-  min-height: 36px;
-}
-
-.project-detail__edit {
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  color: var(--color-text-primary);
-  padding: 0.5rem 0.7rem;
-}
-
-
 .project-detail__main {
   min-height: 0;
   overflow-y: auto;

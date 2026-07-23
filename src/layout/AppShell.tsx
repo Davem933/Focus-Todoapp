@@ -2970,7 +2970,6 @@ function ProjectsOverviewPanel({
           onChangeOpenColumnMenuId={setOpenColumnMenuId}
           onDeleteTask={onDeleteTask}
           onDeleteColumn={handleDeleteProjectColumn}
-          onEditProject={() => openEditProject(selectedProject)}
           onOpenTask={handleOpenProjectCard}
           onOpenColumnMenuId={openColumnMenuId}
           onRenameColumn={handleRenameProjectColumn}
@@ -3414,7 +3413,6 @@ function ProjectDetailView({
   onChangeOpenColumnMenuId,
   onDeleteTask,
   onDeleteColumn,
-  onEditProject,
   onOpenNoteFromProject,
   onOpenTask,
   onOpenColumnMenuId,
@@ -3446,7 +3444,6 @@ function ProjectDetailView({
   onDeleteColumn: (column: ProjectColumn) => void;
   onOpenNoteFromProject: (noteId: string) => void;
   onOpenTask: (taskId: string) => void;
-  onEditProject: () => void;
   onOpenColumnMenuId: string | null;
   onRenameColumn: (columnId: string, title: string) => void;
   onStartRenameColumn: (column: ProjectColumn) => void;
@@ -3584,11 +3581,6 @@ function ProjectDetailView({
               <i style={{ width: progress + "%" }} />
             </div>
           </div>
-          {canManage ? (
-            <button className="project-detail__edit" type="button" onClick={onEditProject}>
-              Upravit nástěnku
-            </button>
-          ) : null}
         </header>
 
         <NoteMentionsList
