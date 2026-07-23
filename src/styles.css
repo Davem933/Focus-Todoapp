@@ -10004,9 +10004,10 @@ input[type="checkbox"]:focus-visible {
 
 .project-detail__task-row {
   align-items: center;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(148, 163, 184, 0.1);
+  background: var(--color-background-card);
+  border: 0;
   border-radius: 8px;
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
   display: flex;
   gap: 0.6rem;
@@ -10014,7 +10015,6 @@ input[type="checkbox"]:focus-visible {
   min-height: 34px;
   padding: 0.38rem 0.55rem;
   transition:
-    border-color 0.18s ease,
     box-shadow 0.18s ease,
     opacity 0.18s ease,
     transform 0.18s ease;
@@ -10022,6 +10022,11 @@ input[type="checkbox"]:focus-visible {
 
 .project-detail__task-row:active {
   cursor: grabbing;
+}
+
+.project-detail__task-row:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .project-detail__task-row[data-dragging="true"] {
