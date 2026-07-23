@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Pencil, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import type { Project } from "./projectTypes";
 import type { Team } from "../teams/teamTypes";
 import type { Task } from "../tasks/taskTypes";
@@ -29,9 +29,37 @@ export function ProjectBoardGrid({
 }: ProjectBoardGridProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const prefersReducedMotion = useReducedMotion();
   const today = getTodayDateValue();
   const activeId = hoveredId ?? focusedId;
+  const openMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!openMenuId) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (openMenuRef.current?.contains(target)) {
+        return;
+      }
+
+      setOpenMenuId(null);
+    }
+
+    window.addEventListener("mousedown", handlePointerDown);
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [openMenuId]);
 
   return (
     <div className="projects-overview__grid">
@@ -89,8 +117,58 @@ export function ProjectBoardGrid({
             >
               <div className="projects-overview__card-header">
                 <span className="projects-overview__team-pill">{projectTeam?.name ?? "Tým"}</span>
-                <span className="projects-overview__status" data-status={project.status}>
-                  {getProjectStatusLabel(project.status)}
+                <span className="projects-overview__card-header-right">
+                  <span className="projects-overview__status" data-status={project.status}>
+                    {getProjectStatusLabel(project.status)}
+                  </span>
+                  {canManage ? (
+                    <span
+                      className="projects-overview__card-menu"
+                      ref={openMenuId === project.id ? openMenuRef : null}
+                    >
+                      <button
+                        className="projects-overview__card-menu-button"
+                        type="button"
+                        aria-label={"Akce nástěnky " + project.name}
+                        aria-expanded={openMenuId === project.id}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setOpenMenuId((current) => (current === project.id ? null : project.id));
+                        }}
+                      >
+                        <MoreVertical aria-hidden="true" size={16} />
+                      </button>
+                      {openMenuId === project.id ? (
+                        <div className="projects-overview__card-menu-content" role="menu">
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setOpenMenuId(null);
+                              onEditProject(project);
+                            }}
+                          >
+                            <Pencil aria-hidden="true" size={15} />
+                            Upravit nástěnku
+                          </button>
+                          <button
+                            className="projects-overview__card-menu-danger"
+                            type="button"
+                            role="menuitem"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setOpenMenuId(null);
+                              onDeleteProject(project);
+                            }}
+                          >
+                            <Trash2 aria-hidden="true" size={15} />
+                            Smazat nástěnku
+                          </button>
+                        </div>
+                      ) : null}
+                    </span>
+                  ) : null}
                 </span>
               </div>
               <h3>{project.name}</h3>
@@ -103,30 +181,6 @@ export function ProjectBoardGrid({
               </div>
               <div className="projects-overview__meta">
                 <span>{dateRange}</span>
-                {canManage ? (
-                  <span className="projects-overview__card-actions">
-                    <button
-                      aria-label={"Upravit nástěnku " + project.name}
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onEditProject(project);
-                      }}
-                    >
-                      <Pencil aria-hidden="true" size={14} />
-                    </button>
-                    <button
-                      aria-label={"Smazat nástěnku " + project.name}
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onDeleteProject(project);
-                      }}
-                    >
-                      <Trash2 aria-hidden="true" size={14} />
-                    </button>
-                  </span>
-                ) : null}
               </div>
             </article>
           </motion.div>
