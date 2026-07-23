@@ -9906,6 +9906,167 @@ input[type="checkbox"]:focus-visible {
   padding: 0.25rem 0.55rem;
 }
 
+.project-detail__toolbar {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+
+.project-detail__filter {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.3rem;
+  position: relative;
+}
+
+.project-detail__filter-button {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 0.45rem;
+  min-height: 2.1rem;
+  padding: 0.4rem 0.7rem;
+}
+
+.project-detail__filter-button:hover,
+.project-detail__filter-button[aria-expanded="true"] {
+  background: rgba(109, 93, 252, 0.14);
+  border-color: rgba(167, 139, 250, 0.28);
+  color: var(--color-text-primary);
+}
+
+.project-detail__filter-badge {
+  align-items: center;
+  background: rgba(139, 92, 246, 0.85);
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 900;
+  gap: 0.2rem;
+  height: 1.2rem;
+  justify-content: center;
+  min-width: 1.2rem;
+  padding: 0 0.3rem;
+}
+
+.project-detail__filter-clear {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.1rem;
+  justify-content: center;
+  padding: 0;
+  width: 2.1rem;
+}
+
+.project-detail__filter-clear:hover {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(248, 113, 113, 0.34);
+  color: #fca5a5;
+}
+
+.project-detail__filter-panel {
+  background: rgba(9, 12, 28, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.45);
+  display: grid;
+  gap: 0.85rem;
+  left: 0;
+  max-height: 22rem;
+  min-width: 15rem;
+  overflow-y: auto;
+  padding: 0.75rem;
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  z-index: 5;
+}
+
+.project-detail__filter-section {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.project-detail__filter-section > span:first-child {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.project-detail__filter-option {
+  align-items: center;
+  border-radius: 7px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.84rem;
+  gap: 0.5rem;
+  padding: 0.32rem 0.4rem;
+}
+
+.project-detail__filter-option:hover {
+  background: rgba(109, 93, 252, 0.12);
+}
+
+.project-detail__filter-option input {
+  accent-color: #8b5cf6;
+}
+
+.project-detail__filter-dot {
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 8px;
+  width: 8px;
+}
+
+.project-detail__filter-empty {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.project-detail__sort-dropdown.custom-dropdown {
+  max-width: none;
+  width: auto;
+}
+
+.project-detail__sort-dropdown .custom-dropdown__trigger {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(148, 163, 184, 0.16);
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 0.45rem;
+  min-height: 2.1rem;
+  padding: 0.4rem 0.7rem;
+}
+
+.project-detail__sort-dropdown .custom-dropdown__trigger:hover {
+  background: rgba(109, 93, 252, 0.14);
+  border-color: rgba(167, 139, 250, 0.28);
+}
+
+.project-detail__sort-dropdown .custom-dropdown__value {
+  align-items: center;
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  gap: 0.45rem;
+}
+
 .project-detail__member-grid {
   display: grid;
   gap: 1rem;
@@ -10005,6 +10166,20 @@ input[type="checkbox"]:focus-visible {
 .project-detail__task-row[data-completed="true"] span {
   color: var(--color-text-muted);
   text-decoration: line-through;
+}
+
+.project-detail__task-labels {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 3px;
+}
+
+.project-detail__task-labels i {
+  border-radius: 999px;
+  display: block;
+  height: 6px;
+  width: 6px;
 }
 
 .project-detail__task-avatar {
