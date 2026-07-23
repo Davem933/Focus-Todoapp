@@ -2828,6 +2828,124 @@ function ProjectsOverviewPanel({
   const plannedProjects = projects.filter((project) => project.startDate || project.endDate).length;
   const completedProjects = projects.filter((project) => project.status === "completed").length;
 
+  const editProjectModal = isCreateOpen ? (
+    <div className="team-create-flow" role="presentation">
+      <button
+        className="team-create-flow__backdrop"
+        aria-label="Zavřít vytváření nástěnky"
+        type="button"
+        onClick={closeCreateProject}
+      />
+      <form
+        className="team-create-flow__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="nastenka-create-title"
+        onSubmit={handleCreateProject}
+      >
+        <div className="team-create-flow__header">
+          <div>
+            <span>{editingProjectId ? "Upravit nástěnku" : "Vytvořit nástěnku"}</span>
+            <h2 id="nastenka-create-title">{editingProjectId ? "Upravit nástěnku" : "Nová nástěnka"}</h2>
+            <p>{editingProjectId ? "Uprav cíl, termín a tým nástěnky." : "Nastav cíl, časový rámec a tým, který bude na nástěnce pracovat."}</p>
+          </div>
+          <button
+            className="team-create-flow__close"
+            aria-label="Zavřít"
+            type="button"
+            onClick={closeCreateProject}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="team-create-flow__grid">
+          <section className="team-create-flow__card">
+            <h3>Nástěnka</h3>
+            <label className="team-create-flow__field">
+              <span>Název nástěnky</span>
+              <input
+                autoFocus
+                maxLength={80}
+                placeholder="např. Redesign klientské zóny"
+                value={projectName}
+                onChange={(event) => setProjectName(event.currentTarget.value)}
+              />
+            </label>
+            <label className="team-create-flow__field">
+              <span>Popis / mise</span>
+              <textarea
+                placeholder="Co má tahle nástěnka pomoct doručit?"
+                rows={4}
+                value={projectDescription}
+                onChange={(event) => setProjectDescription(event.currentTarget.value)}
+              />
+            </label>
+          </section>
+
+          <section className="team-create-flow__card team-create-flow__deploy">
+            <h3>Rozsah</h3>
+            <label className="team-create-flow__field">
+              <span>Přiřadit týmu</span>
+              <select
+                value={projectTeamId}
+                onChange={(event) => setProjectTeamId(event.currentTarget.value)}
+              >
+                {teams
+                  .filter((team) =>
+                    editingProjectId
+                      ? team.id === projectTeamId
+                      : manageableTeamIds.has(team.id),
+                  )
+                  .map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
+
+            <label className="team-create-flow__field">
+              <span>Stav</span>
+              <select
+                value={projectStatus}
+                onChange={(event) => setProjectStatus(event.currentTarget.value as Project["status"])}
+              >
+                <option value="active">Aktivní</option>
+                <option value="paused">Pozastaveno</option>
+                <option value="completed">Hotovo</option>
+              </select>
+            </label>
+            <div className="projects-overview__date-fields">
+              <label className="team-create-flow__field">
+                <span>Od</span>
+                <input
+                  type="date"
+                  value={projectStartDate}
+                  onChange={(event) => setProjectStartDate(event.currentTarget.value)}
+                />
+              </label>
+              <label className="team-create-flow__field">
+                <span>Do</span>
+                <input
+                  type="date"
+                  value={projectEndDate}
+                  onChange={(event) => setProjectEndDate(event.currentTarget.value)}
+                />
+              </label>
+            </div>
+            <button className="team-create-flow__submit" type="submit" disabled={!trimmedProjectName || !projectTeamId || isLoading}>
+              {editingProjectId ? "Uložit nástěnku" : "Vytvořit nástěnku"}
+            </button>
+            <button className="team-create-flow__cancel" type="button" onClick={closeCreateProject}>
+              Zrušit
+            </button>
+          </section>
+        </div>
+      </form>
+    </div>
+  ) : null;
+
   if (selectedProject) {
     const composerColumn = projectColumns.find((column) => column.key === cardComposerColumnKey) ?? null;
 
@@ -2897,6 +3015,7 @@ function ProjectsOverviewPanel({
           />
         ) : null}
         </AnimatePresence>
+        {editProjectModal}
       </>
     );
   }
@@ -2941,123 +3060,7 @@ function ProjectsOverviewPanel({
         onDeleteProject={(project) => { void handleDeleteProject(project); }}
       />
 
-      {isCreateOpen ? (
-        <div className="team-create-flow" role="presentation">
-          <button
-            className="team-create-flow__backdrop"
-            aria-label="Zavřít vytváření nástěnky"
-            type="button"
-            onClick={closeCreateProject}
-          />
-          <form
-            className="team-create-flow__panel"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="nastenka-create-title"
-            onSubmit={handleCreateProject}
-          >
-            <div className="team-create-flow__header">
-              <div>
-                <span>{editingProjectId ? "Upravit nástěnku" : "Vytvořit nástěnku"}</span>
-                <h2 id="nastenka-create-title">{editingProjectId ? "Upravit nástěnku" : "Nová nástěnka"}</h2>
-                <p>{editingProjectId ? "Uprav cíl, termín a tým nástěnky." : "Nastav cíl, časový rámec a tým, který bude na nástěnce pracovat."}</p>
-              </div>
-              <button
-                className="team-create-flow__close"
-                aria-label="Zavřít"
-                type="button"
-                onClick={closeCreateProject}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="team-create-flow__grid">
-              <section className="team-create-flow__card">
-                <h3>Nástěnka</h3>
-                <label className="team-create-flow__field">
-                  <span>Název nástěnky</span>
-                  <input
-                    autoFocus
-                    maxLength={80}
-                    placeholder="např. Redesign klientské zóny"
-                    value={projectName}
-                    onChange={(event) => setProjectName(event.currentTarget.value)}
-                  />
-                </label>
-                <label className="team-create-flow__field">
-                  <span>Popis / mise</span>
-                  <textarea
-                    placeholder="Co má tahle nástěnka pomoct doručit?"
-                    rows={4}
-                    value={projectDescription}
-                    onChange={(event) => setProjectDescription(event.currentTarget.value)}
-                  />
-                </label>
-              </section>
-
-              <section className="team-create-flow__card team-create-flow__deploy">
-                <h3>Rozsah</h3>
-                <label className="team-create-flow__field">
-                  <span>Přiřadit týmu</span>
-                  <select
-                    value={projectTeamId}
-                    onChange={(event) => setProjectTeamId(event.currentTarget.value)}
-                  >
-                    {teams
-                      .filter((team) =>
-                        editingProjectId
-                          ? team.id === projectTeamId
-                          : manageableTeamIds.has(team.id),
-                      )
-                      .map((team) => (
-                        <option key={team.id} value={team.id}>
-                          {team.name}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-
-                <label className="team-create-flow__field">
-                  <span>Stav</span>
-                  <select
-                    value={projectStatus}
-                    onChange={(event) => setProjectStatus(event.currentTarget.value as Project["status"])}
-                  >
-                    <option value="active">Aktivní</option>
-                    <option value="paused">Pozastaveno</option>
-                    <option value="completed">Hotovo</option>
-                  </select>
-                </label>
-                <div className="projects-overview__date-fields">
-                  <label className="team-create-flow__field">
-                    <span>Od</span>
-                    <input
-                      type="date"
-                      value={projectStartDate}
-                      onChange={(event) => setProjectStartDate(event.currentTarget.value)}
-                    />
-                  </label>
-                  <label className="team-create-flow__field">
-                    <span>Do</span>
-                    <input
-                      type="date"
-                      value={projectEndDate}
-                      onChange={(event) => setProjectEndDate(event.currentTarget.value)}
-                    />
-                  </label>
-                </div>
-                <button className="team-create-flow__submit" type="submit" disabled={!trimmedProjectName || !projectTeamId || isLoading}>
-                  {editingProjectId ? "Uložit nástěnku" : "Vytvořit nástěnku"}
-                </button>
-                <button className="team-create-flow__cancel" type="button" onClick={closeCreateProject}>
-                  Zrušit
-                </button>
-              </section>
-            </div>
-          </form>
-        </div>
-      ) : null}
+      {editProjectModal}
     </section>
   );
 }

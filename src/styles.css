@@ -10012,8 +10012,8 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   gap: 0.6rem;
   justify-content: space-between;
-  min-height: 21px;
-  padding: 0.16rem 0.5rem;
+  min-height: 30px;
+  padding: 0.4rem 0.5rem;
   transition:
     box-shadow 0.18s ease,
     opacity 0.18s ease,
@@ -10043,6 +10043,7 @@ input[type="checkbox"]:focus-visible {
   color: var(--color-text-primary);
   font-size: 0.82rem;
   font-weight: 800;
+  line-height: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -10060,11 +10061,11 @@ input[type="checkbox"]:focus-visible {
   color: #ffffff;
   display: inline-flex;
   flex: 0 0 auto;
-  font-size: 0.5rem;
+  font-size: 0.56rem;
   font-weight: 900;
-  height: 16px;
+  height: 20px;
   justify-content: center;
-  width: 16px;
+  width: 20px;
 }
 
 
@@ -10291,6 +10292,7 @@ input[type="checkbox"]:focus-visible {
   opacity: 0.55;
 }
 .project-detail__column-list {
+  align-content: start;
   display: grid;
   gap: 0.55rem;
   min-height: 3.5rem;
