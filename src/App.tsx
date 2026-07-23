@@ -137,6 +137,7 @@ export function App() {
   const isApplyingCloudStateRef = useRef(false);
   const lastSyncedSnapshotRef = useRef<string | null>(null);
   const autoSyncTimeoutRef = useRef<number | null>(null);
+  const hydratedUserIdRef = useRef<string | null>(null);
   const {
     notifications,
     markAsRead: handleMarkNotificationAsRead,
@@ -230,12 +231,22 @@ export function App() {
       setIsCloudReady(false);
       setIsAutoSyncing(false);
       lastSyncedSnapshotRef.current = null;
+      hydratedUserIdRef.current = null;
 
       if (autoSyncTimeoutRef.current !== null) {
         window.clearTimeout(autoSyncTimeoutRef.current);
         autoSyncTimeoutRef.current = null;
       }
 
+      return;
+    }
+
+    if (hydratedUserIdRef.current === authUser.id) {
+      // Supabase re-emits auth state (e.g. token refresh on tab focus) with a
+      // new session/user object for the *same* account. Re-running the full
+      // cloud hydrate here would clobber any local edit that hasn't reached
+      // the debounced auto-sync yet, so only hydrate on an actual account
+      // change.
       return;
     }
 
@@ -266,6 +277,8 @@ export function App() {
         if (isCancelled) {
           return;
         }
+
+        hydratedUserIdRef.current = currentAuthUser.id;
 
         if (hasCloudData) {
           isApplyingCloudStateRef.current = true;
@@ -1306,6 +1319,7 @@ export function App() {
       const cloudState = await downloadSupabaseData(sessionUser.id);
 
       setAuthUser(sessionUser);
+      hydratedUserIdRef.current = sessionUser.id;
       isApplyingCloudStateRef.current = true;
       setLists(cloudState.lists);
       setTasks(cloudState.tasks);
