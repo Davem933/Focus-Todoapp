@@ -10661,12 +10661,6 @@ input[type="checkbox"]:focus-visible {
   color: var(--color-text-secondary);
 }
 
-.projects-overview__date-fields {
-  display: grid;
-  gap: 0.65rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 [data-theme="light"] .projects-overview__card-glow {
   background: radial-gradient(
     circle at 50% 0%,
@@ -10678,10 +10672,6 @@ input[type="checkbox"]:focus-visible {
 
 @media (max-width: 760px) {
   .projects-overview__grid {
-    grid-template-columns: 1fr;
-  }
-
-  .projects-overview__date-fields {
     grid-template-columns: 1fr;
   }
 }
@@ -10792,6 +10782,33 @@ input[type="checkbox"]:focus-visible {
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.9fr);
+}
+
+.project-edit-flow__panel {
+  max-width: min(30rem, calc(100vw - 2rem));
+}
+
+.project-edit-flow__body {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.project-edit-flow__row {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.project-edit-flow__actions {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+@media (max-width: 560px) {
+  .project-edit-flow__row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .team-create-flow__card {

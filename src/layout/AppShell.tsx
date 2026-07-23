@@ -1913,7 +1913,7 @@ function TeamsOverviewPanel({
             transition={{ duration: 0.18 }}
           />
           <motion.form
-            className="team-create-flow__panel"
+            className="team-create-flow__panel project-edit-flow__panel"
             role="dialog"
             aria-modal="true"
             aria-labelledby="team-create-title"
@@ -1942,14 +1942,12 @@ function TeamsOverviewPanel({
               </motion.button>
             </div>
 
-            <div className="team-create-flow__grid">
-              <motion.section
-                className="team-create-flow__card"
-                initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.22, delay: 0.04, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <h3>Identita týmu</h3>
+            <motion.div
+              className="project-edit-flow__body"
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, delay: 0.04, ease: [0.16, 1, 0.3, 1] }}
+            >
                 <label className="team-create-flow__field">
                   <span>Název týmu</span>
                   <input
@@ -1964,20 +1962,14 @@ function TeamsOverviewPanel({
                   <span>Zaměření a mise</span>
                   <textarea
                     placeholder="Stručně popiš, k čemu tým slouží."
-                    rows={4}
+                    rows={3}
                     value={newTeamMission}
                     onChange={(event) => setNewTeamMission(event.currentTarget.value)}
                   />
                 </label>
-              </motion.section>
 
-              <motion.section
-                className="team-create-flow__card team-create-flow__deploy"
-                initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.22, delay: 0.09, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <h3>Přidat členy</h3>
+                <div className="team-create-flow__field">
+                  <span>Přidat členy</span>
                 <div className="team-create-flow__member-add">
                   <div className="team-create-flow__member-search">
                     <input
@@ -2074,6 +2066,9 @@ function TeamsOverviewPanel({
                     )}
                   </AnimatePresence>
                 </div>
+                </div>
+
+              <div className="project-edit-flow__actions">
                 <motion.button
                   className="team-create-flow__submit"
                   type="submit"
@@ -2092,8 +2087,8 @@ function TeamsOverviewPanel({
                 >
                   Zrušit
                 </motion.button>
-              </motion.section>
-            </div>
+              </div>
+            </motion.div>
           </motion.form>
         </div>
         ) : null}
@@ -2837,7 +2832,7 @@ function ProjectsOverviewPanel({
         onClick={closeCreateProject}
       />
       <form
-        className="team-create-flow__panel"
+        className="team-create-flow__panel project-edit-flow__panel"
         role="dialog"
         aria-modal="true"
         aria-labelledby="nastenka-create-title"
@@ -2859,32 +2854,28 @@ function ProjectsOverviewPanel({
           </button>
         </div>
 
-        <div className="team-create-flow__grid">
-          <section className="team-create-flow__card">
-            <h3>Nástěnka</h3>
-            <label className="team-create-flow__field">
-              <span>Název nástěnky</span>
-              <input
-                autoFocus
-                maxLength={80}
-                placeholder="např. Redesign klientské zóny"
-                value={projectName}
-                onChange={(event) => setProjectName(event.currentTarget.value)}
-              />
-            </label>
-            <label className="team-create-flow__field">
-              <span>Popis / mise</span>
-              <textarea
-                placeholder="Co má tahle nástěnka pomoct doručit?"
-                rows={4}
-                value={projectDescription}
-                onChange={(event) => setProjectDescription(event.currentTarget.value)}
-              />
-            </label>
-          </section>
+        <div className="project-edit-flow__body">
+          <label className="team-create-flow__field">
+            <span>Název nástěnky</span>
+            <input
+              autoFocus
+              maxLength={80}
+              placeholder="např. Redesign klientské zóny"
+              value={projectName}
+              onChange={(event) => setProjectName(event.currentTarget.value)}
+            />
+          </label>
+          <label className="team-create-flow__field">
+            <span>Popis / mise</span>
+            <textarea
+              placeholder="Co má tahle nástěnka pomoct doručit?"
+              rows={3}
+              value={projectDescription}
+              onChange={(event) => setProjectDescription(event.currentTarget.value)}
+            />
+          </label>
 
-          <section className="team-create-flow__card team-create-flow__deploy">
-            <h3>Rozsah</h3>
+          <div className="project-edit-flow__row">
             <label className="team-create-flow__field">
               <span>Přiřadit týmu</span>
               <select
@@ -2916,31 +2907,35 @@ function ProjectsOverviewPanel({
                 <option value="completed">Hotovo</option>
               </select>
             </label>
-            <div className="projects-overview__date-fields">
-              <label className="team-create-flow__field">
-                <span>Od</span>
-                <input
-                  type="date"
-                  value={projectStartDate}
-                  onChange={(event) => setProjectStartDate(event.currentTarget.value)}
-                />
-              </label>
-              <label className="team-create-flow__field">
-                <span>Do</span>
-                <input
-                  type="date"
-                  value={projectEndDate}
-                  onChange={(event) => setProjectEndDate(event.currentTarget.value)}
-                />
-              </label>
-            </div>
+          </div>
+
+          <div className="project-edit-flow__row">
+            <label className="team-create-flow__field">
+              <span>Od</span>
+              <input
+                type="date"
+                value={projectStartDate}
+                onChange={(event) => setProjectStartDate(event.currentTarget.value)}
+              />
+            </label>
+            <label className="team-create-flow__field">
+              <span>Do</span>
+              <input
+                type="date"
+                value={projectEndDate}
+                onChange={(event) => setProjectEndDate(event.currentTarget.value)}
+              />
+            </label>
+          </div>
+
+          <div className="project-edit-flow__actions">
             <button className="team-create-flow__submit" type="submit" disabled={!trimmedProjectName || !projectTeamId || isLoading}>
               {editingProjectId ? "Uložit nástěnku" : "Vytvořit nástěnku"}
             </button>
             <button className="team-create-flow__cancel" type="button" onClick={closeCreateProject}>
               Zrušit
             </button>
-          </section>
+          </div>
         </div>
       </form>
     </div>
