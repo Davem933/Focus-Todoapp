@@ -33,6 +33,7 @@ import { AuthWidget } from "./supabase/AuthWidget";
 import {
   downloadSupabaseData,
   replaceSupabaseData,
+  subscribeToTaskChanges,
   uploadLocalDataToSupabase,
 } from "./supabase/cloudBackup";
 import { supabase } from "./supabase/supabaseClient";
@@ -431,6 +432,53 @@ export function App() {
       }
     };
   }, [authUser, isCloudReady, lists, tasks]);
+
+  useEffect(() => {
+    if (!supabase || !authUser || !isCloudReady) {
+      return;
+    }
+
+    const unsubscribe = subscribeToTaskChanges((event) => {
+      isApplyingCloudStateRef.current = true;
+
+      setTasks((currentTasks) => {
+        if (event.type === "deleted") {
+          if (!currentTasks.some((task) => task.id === event.taskId)) {
+            return currentTasks;
+          }
+
+          return currentTasks.filter((task) => task.id !== event.taskId);
+        }
+
+        const index = currentTasks.findIndex((task) => task.id === event.task.id);
+
+        if (index === -1) {
+          return [{ ...event.task, labels: [], subtasks: [] }, ...currentTasks];
+        }
+
+        const existing = currentTasks[index];
+        const merged: Task = { ...existing, ...event.task };
+        const hasChanges = (Object.keys(event.task) as (keyof typeof event.task)[]).some(
+          (key) => existing[key] !== merged[key],
+        );
+
+        if (!hasChanges) {
+          return currentTasks;
+        }
+
+        const nextTasks = [...currentTasks];
+        nextTasks[index] = merged;
+
+        return nextTasks;
+      });
+
+      window.setTimeout(() => {
+        isApplyingCloudStateRef.current = false;
+      }, 0);
+    });
+
+    return unsubscribe;
+  }, [authUser, isCloudReady]);
 
   useEffect(() => {
     function handleNativeTaskNotification(event: Event) {

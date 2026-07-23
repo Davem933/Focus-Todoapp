@@ -281,31 +281,15 @@ export async function downloadSupabaseData(userId: string): Promise<StoredTaskSt
   ];
   const fallbackListId = remoteLists[0]?.id ?? DEFAULT_TASK_LIST_ID;
   const tasks: Task[] = remoteTasks.map((task) => ({
-    id: task.id,
-    completed: task.completed,
-    dueDate: task.due_date,
-    dueTime: task.due_date ? normalizeTimeValue(task.due_time) : null,
-    isArchived: task.is_archived,
-    teamId: task.team_id,
-    assigneeId: task.assignee_id,
-    ownerId: task.owner_id,
-    projectId: task.project_id,
-    boardColumnKey: normalizeBoardColumnKey(task.board_column_key),
+    ...mapCloudTaskRowCore(task, remoteLists.map((list) => list.id), fallbackListId),
     labels: (taskLabelsByTaskId.get(task.id) ?? [])
       .map((taskLabel) => labelsById.get(taskLabel.label_id))
       .filter((label): label is TaskLabel => Boolean(label)),
-    listId: remoteLists.some((list) => list.id === task.list_id)
-      ? task.list_id
-      : fallbackListId,
-    note: task.note ?? "",
-    priority: normalizePriority(task.priority),
-    recurrence: normalizeRecurrence(task.recurrence),
     subtasks: (subtasksByTaskId.get(task.id) ?? []).map((subtask) => ({
       id: subtask.id,
       completed: subtask.completed,
       title: subtask.title,
     })),
-    title: task.title,
   }));
 
   return {
@@ -690,6 +674,72 @@ function groupBy<T>(items: T[], getKey: (item: T) => string) {
 
 function normalizeBoardColumnKey(value: string | null): Task["boardColumnKey"] {
   return value && value.trim().length > 0 ? value : "todo";
+}
+
+function mapCloudTaskRowCore(
+  task: CloudTaskRow,
+  validListIds: string[],
+  fallbackListId: string,
+): Omit<Task, "labels" | "subtasks"> {
+  return {
+    id: task.id,
+    completed: task.completed,
+    dueDate: task.due_date,
+    dueTime: task.due_date ? normalizeTimeValue(task.due_time) : null,
+    isArchived: task.is_archived,
+    teamId: task.team_id,
+    assigneeId: task.assignee_id,
+    ownerId: task.owner_id,
+    projectId: task.project_id,
+    boardColumnKey: normalizeBoardColumnKey(task.board_column_key),
+    listId: validListIds.includes(task.list_id) ? task.list_id : fallbackListId,
+    note: task.note ?? "",
+    priority: normalizePriority(task.priority),
+    recurrence: normalizeRecurrence(task.recurrence),
+    title: task.title,
+  };
+}
+
+export type TaskChangeEvent =
+  | { type: "upserted"; task: Omit<Task, "labels" | "subtasks"> }
+  | { type: "deleted"; taskId: string };
+
+export function subscribeToTaskChanges(
+  onChange: (event: TaskChangeEvent) => void,
+): () => void {
+  if (!supabase) {
+    return () => {};
+  }
+
+  const channel = supabase
+    .channel("tasks-realtime")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "tasks" },
+      (payload) => {
+        if (payload.eventType === "DELETE") {
+          const oldRow = payload.old as Partial<CloudTaskRow>;
+
+          if (oldRow.id) {
+            onChange({ type: "deleted", taskId: oldRow.id });
+          }
+
+          return;
+        }
+
+        const row = payload.new as CloudTaskRow;
+
+        onChange({
+          type: "upserted",
+          task: mapCloudTaskRowCore(row, [row.list_id], row.list_id),
+        });
+      },
+    )
+    .subscribe();
+
+  return () => {
+    supabase?.removeChannel(channel);
+  };
 }
 
 function normalizePriority(priority: string): TaskPriority {
