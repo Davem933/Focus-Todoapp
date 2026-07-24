@@ -3,7 +3,6 @@ import type {
   CSSProperties,
   DragEvent,
   FormEvent,
-  MouseEvent as ReactMouseEvent,
   ReactNode,
   TouchEvent,
 } from "react";
@@ -11,7 +10,6 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { BarChart3, Bell, CheckCircle2, FolderKanban, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Trash2, UserPlus, Users, X } from "lucide-react";
 import { useAppLayout } from "./useAppLayout";
 import { CustomDropdown } from "./CustomDropdown";
-import type { DropdownOption } from "./CustomDropdown";
 import type { VisiblePanel } from "./layoutTypes";
 import { getTodayDateValue } from "../tasks/dateUtils";
 import { createEntityId } from "../tasks/idUtils";
