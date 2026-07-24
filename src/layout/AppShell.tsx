@@ -18,6 +18,7 @@ import { ListPanel } from "./panels/ListPanel";
 import { SidebarPanel } from "./panels/SidebarPanel";
 import { WorkspaceHomePanel } from "./panels/WorkspaceHomePanel";
 import { CalendarPanel } from "./panels/CalendarPanel";
+import { TableViewPanel } from "./panels/TableViewPanel";
 import { NotesPanel } from "./panels/NotesPanel";
 import { ProfilePanel } from "./panels/ProfilePanel";
 import { NoteMentionsList } from "../notes/NoteMentionsList";
@@ -208,6 +209,7 @@ export function AppShell(props: AppShellProps) {
   const [isTeamsOverviewOpen, setIsTeamsOverviewOpen] = useState(false);
   const [isProjectsOverviewOpen, setIsProjectsOverviewOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isTableOpen, setIsTableOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [openNoteRequestId, setOpenNoteRequestId] = useState<string | null>(null);
@@ -220,6 +222,7 @@ export function AppShell(props: AppShellProps) {
       isTeamsOverviewOpen ||
       isProjectsOverviewOpen ||
       isCalendarOpen ||
+      isTableOpen ||
       isNotesOpen ||
       isProfileOpen,
   });
@@ -548,6 +551,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsTableOpen(false);
     setIsNotesOpen(false);
     setIsProfileOpen(false);
 
@@ -562,6 +566,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(true);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsTableOpen(false);
     setIsNotesOpen(false);
     setIsProfileOpen(false);
 
@@ -576,6 +581,7 @@ export function AppShell(props: AppShellProps) {
     setIsProjectsOverviewOpen(true);
     setIsTeamsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsTableOpen(false);
     setIsNotesOpen(false);
     setIsProfileOpen(false);
     setOpenProjectRequestId(projectId ?? null);
@@ -592,6 +598,22 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(true);
+    setIsTableOpen(false);
+    setIsNotesOpen(false);
+    setIsProfileOpen(false);
+
+    if (isMobileLayout) {
+      setIsSidebarOpen(false);
+    }
+  }
+
+  function handleOpenTable() {
+    onClearTaskSelection();
+    setIsWorkspaceHomeOpen(false);
+    setIsTeamsOverviewOpen(false);
+    setIsProjectsOverviewOpen(false);
+    setIsCalendarOpen(false);
+    setIsTableOpen(true);
     setIsNotesOpen(false);
     setIsProfileOpen(false);
 
@@ -606,6 +628,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsTableOpen(false);
     setIsNotesOpen(true);
     setIsProfileOpen(false);
     setOpenNoteRequestId(noteId ?? null);
@@ -621,6 +644,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsTableOpen(false);
     setIsNotesOpen(false);
     setIsProfileOpen(true);
 
@@ -739,12 +763,14 @@ export function AppShell(props: AppShellProps) {
         onOpenTeamsOverview={handleOpenTeamsOverview}
         onOpenProjectsOverview={handleOpenProjectsOverview}
         onOpenCalendar={handleOpenCalendar}
+        onOpenTable={handleOpenTable}
         onOpenNotes={() => handleOpenNotes()}
         onOpenProfile={handleOpenProfile}
         isWorkspaceHomeOpen={isWorkspaceHomeOpen}
         isTeamsOverviewOpen={isTeamsOverviewOpen}
         isProjectsOverviewOpen={isProjectsOverviewOpen}
         isCalendarOpen={isCalendarOpen}
+        isTableOpen={isTableOpen}
         isNotesOpen={isNotesOpen}
         isProfileOpen={isProfileOpen}
         isMobileDrawer={isMobileDrawer}
@@ -908,6 +934,12 @@ export function AppShell(props: AppShellProps) {
             />
           ) : isCalendarOpen ? (
             <CalendarPanel teams={teams} tasks={allTasks} />
+          ) : isTableOpen ? (
+            <TableViewPanel
+              teams={teams}
+              tasks={allTasks}
+              onOpenTask={(projectId, taskId) => handleOpenProjectsOverview(projectId, taskId)}
+            />
           ) : isProjectsOverviewOpen ? (
             <ProjectsOverviewPanel
               activeTeamId={activeTeamId}
@@ -963,7 +995,7 @@ export function AppShell(props: AppShellProps) {
           />
           )
         ) : null}
-        {!isWorkspaceHomeOpen && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isCalendarOpen && !isNotesOpen && !isProfileOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
+        {!isWorkspaceHomeOpen && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isCalendarOpen && !isTableOpen && !isNotesOpen && !isProfileOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
           <DetailPanel
             task={selectedTask}
             lists={lists}
