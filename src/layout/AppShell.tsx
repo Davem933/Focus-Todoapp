@@ -37,12 +37,9 @@ import { ProjectBoardGrid } from "../projects/ProjectBoardGrid";
 import { ProjectBoardToolbar } from "../projects/ProjectBoardToolbar";
 import {
   filterProjectTasks,
-  getDefaultProjectBoardPreferences,
   loadProjectBoardPreferences,
   saveProjectBoardPreferences,
   sortProjectTasks,
-  toggleFilterValue,
-  type ProjectBoardDueFilter,
   type ProjectBoardPreferences,
   type ProjectBoardSortKey,
 } from "../projects/projectBoardPreferences";
@@ -88,7 +85,6 @@ import type { Task, TaskLabel, TaskList, TaskPriority, TaskSubtask, TaskUpdate }
 import {
   BOARD_CARD_PRIORITY_DROPDOWN_OPTIONS,
   BOARD_CARD_PRIORITY_LABELS,
-  BOARD_CARD_PRIORITY_OPTIONS,
   TASK_PRIORITY_COLORS as BOARD_CARD_PRIORITY_COLORS,
 } from "../tasks/taskPriorityColors";
 
