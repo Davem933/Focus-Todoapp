@@ -30,6 +30,7 @@ import { loadNoteMentionsForTarget } from "../supabase/noteApi";
 import type { LayoutMode } from "./layoutTypes";
 import { buildCountsByListId } from "../tasks/taskCounts";
 import { buildCountsByTeamId } from "../teams/teamCounts";
+import { getMemberDisplayName, getMemberInitials } from "../teams/teamMemberDisplay";
 import type { Team, TeamInvite, TeamMember } from "../teams/teamTypes";
 import type { Project, ProjectColumn } from "../projects/projectTypes";
 import { ProjectBoardGrid } from "../projects/ProjectBoardGrid";
@@ -4241,25 +4242,6 @@ function TeamsMetricCard({
       <strong>{value}</strong>
     </motion.div>
   );
-}
-
-function getMemberDisplayName(member: { email: string; nickname?: string | null }) {
-  const nickname = member.nickname?.trim();
-  if (nickname) {
-    return nickname;
-  }
-  return member.email.split("@")[0] || member.email;
-}
-
-function getMemberInitials(member: { email: string; nickname?: string | null }) {
-  const name = getMemberDisplayName(member);
-  const parts = name.split(/[._\-\s]+/).filter(Boolean);
-
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-
-  return name.slice(0, 2).toUpperCase();
 }
 
 function isTeamAdminRole(role: TeamMember["role"] | undefined) {
