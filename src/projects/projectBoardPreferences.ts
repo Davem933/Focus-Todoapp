@@ -1,4 +1,4 @@
-import type { TaskPriority } from "../tasks/taskTypes";
+import type { Task, TaskPriority } from "../tasks/taskTypes";
 
 const STORAGE_KEY_PREFIX = "focus-todo-board-prefs:";
 const DUE_FILTERS = ["overdue", "today", "none"] as const;
@@ -103,4 +103,90 @@ function isStringArray(value: unknown): value is string[] {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+export function getTaskDueStatus(task: Task, today: string): ProjectBoardDueFilter | null {
+  if (!task.dueDate) {
+    return "none";
+  }
+
+  if (task.dueDate < today) {
+    return "overdue";
+  }
+
+  if (task.dueDate === today) {
+    return "today";
+  }
+
+  return null;
+}
+
+export function filterProjectTasks(
+  tasks: Task[],
+  filters: ProjectBoardFilters,
+  today: string,
+): Task[] {
+  return tasks.filter((task) => {
+    const { assigneeIds, priorities, dueStatuses, labelIds } = filters;
+
+    if (assigneeIds.length > 0 && (!task.assigneeId || !assigneeIds.includes(task.assigneeId))) {
+      return false;
+    }
+
+    if (priorities.length > 0 && !priorities.includes(task.priority)) {
+      return false;
+    }
+
+    if (dueStatuses.length > 0) {
+      const status = getTaskDueStatus(task, today);
+
+      if (!status || !dueStatuses.includes(status)) {
+        return false;
+      }
+    }
+
+    if (labelIds.length > 0 && !task.labels.some((label) => labelIds.includes(label.id))) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+export function sortProjectTasks(tasks: Task[], sortKey: ProjectBoardSortKey): Task[] {
+  if (sortKey === "manual") {
+    return tasks;
+  }
+
+  const sorted = [...tasks];
+
+  if (sortKey === "priority") {
+    const priorityRank: Record<TaskPriority, number> = { high: 3, medium: 2, low: 1, none: 0 };
+
+    sorted.sort((a, b) => priorityRank[b.priority] - priorityRank[a.priority]);
+  } else if (sortKey === "dueDate") {
+    sorted.sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) {
+        return 0;
+      }
+
+      if (!a.dueDate) {
+        return 1;
+      }
+
+      if (!b.dueDate) {
+        return -1;
+      }
+
+      return a.dueDate.localeCompare(b.dueDate);
+    });
+  } else if (sortKey === "title") {
+    sorted.sort((a, b) => a.title.localeCompare(b.title, "cs"));
+  }
+
+  return sorted;
+}
+
+export function toggleFilterValue<T>(list: T[], value: T): T[] {
+  return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
 }
