@@ -13152,3 +13152,144 @@ input[type="checkbox"]:focus-visible {
   text-overflow: ellipsis;
 }
 
+
+.table-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.table-view__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.table-view__error {
+  color: #ef4444;
+  margin: 0;
+}
+
+.table-view__empty {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.table-view__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.table-view__table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table-view__table th:nth-child(1),
+.table-view__table td:nth-child(1) {
+  width: 38%;
+}
+
+.table-view__table th:nth-child(2),
+.table-view__table td:nth-child(2) {
+  width: 14%;
+}
+
+.table-view__table th:nth-child(3),
+.table-view__table td:nth-child(3) {
+  width: 16%;
+}
+
+.table-view__table th:nth-child(4),
+.table-view__table td:nth-child(4) {
+  width: 20%;
+}
+
+.table-view__table th:nth-child(5),
+.table-view__table td:nth-child(5) {
+  width: 12%;
+}
+
+.table-view__table thead th {
+  text-align: left;
+  padding: 10px 14px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-size: 0.78rem;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table-view__table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  vertical-align: middle;
+}
+
+.table-view__row {
+  cursor: pointer;
+}
+
+.table-view__row:hover td {
+  background: var(--color-background-card-hover);
+}
+
+.table-view__cell-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.table-view__completed-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.table-view__completed-dot[data-completed="true"] {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.table-view__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-view__assignee {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-background-card);
+  border: 1px solid var(--color-border);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.table-view__cell-empty {
+  color: var(--color-text-secondary);
+}
+
+.table-view__priority-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}

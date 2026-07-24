@@ -3,15 +3,13 @@ import type {
   CSSProperties,
   DragEvent,
   FormEvent,
-  MouseEvent as ReactMouseEvent,
   ReactNode,
   TouchEvent,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowUpDown, BarChart3, Bell, CheckCircle2, Filter, FolderKanban, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Trash2, UserPlus, Users, X } from "lucide-react";
+import { BarChart3, Bell, CheckCircle2, FolderKanban, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Trash2, UserPlus, Users, X } from "lucide-react";
 import { useAppLayout } from "./useAppLayout";
 import { CustomDropdown } from "./CustomDropdown";
-import type { DropdownOption } from "./CustomDropdown";
 import type { VisiblePanel } from "./layoutTypes";
 import { getTodayDateValue } from "../tasks/dateUtils";
 import { createEntityId } from "../tasks/idUtils";
@@ -20,6 +18,7 @@ import { ListPanel } from "./panels/ListPanel";
 import { SidebarPanel } from "./panels/SidebarPanel";
 import { WorkspaceHomePanel } from "./panels/WorkspaceHomePanel";
 import { CalendarPanel } from "./panels/CalendarPanel";
+import { TableViewPanel } from "./panels/TableViewPanel";
 import { NotesPanel } from "./panels/NotesPanel";
 import { ProfilePanel } from "./panels/ProfilePanel";
 import { NoteMentionsList } from "../notes/NoteMentionsList";
@@ -30,14 +29,16 @@ import { loadNoteMentionsForTarget } from "../supabase/noteApi";
 import type { LayoutMode } from "./layoutTypes";
 import { buildCountsByListId } from "../tasks/taskCounts";
 import { buildCountsByTeamId } from "../teams/teamCounts";
+import { getMemberDisplayName, getMemberInitials } from "../teams/teamMemberDisplay";
 import type { Team, TeamInvite, TeamMember } from "../teams/teamTypes";
 import type { Project, ProjectColumn } from "../projects/projectTypes";
 import { ProjectBoardGrid } from "../projects/ProjectBoardGrid";
+import { ProjectBoardToolbar } from "../projects/ProjectBoardToolbar";
 import {
-  getDefaultProjectBoardPreferences,
+  filterProjectTasks,
   loadProjectBoardPreferences,
   saveProjectBoardPreferences,
-  type ProjectBoardDueFilter,
+  sortProjectTasks,
   type ProjectBoardPreferences,
   type ProjectBoardSortKey,
 } from "../projects/projectBoardPreferences";
@@ -80,6 +81,11 @@ import {
   getVisibleTasksForList,
 } from "../tasks/taskViews";
 import type { Task, TaskLabel, TaskList, TaskPriority, TaskSubtask, TaskUpdate } from "../tasks/taskTypes";
+import {
+  BOARD_CARD_PRIORITY_DROPDOWN_OPTIONS,
+  BOARD_CARD_PRIORITY_LABELS,
+  TASK_PRIORITY_COLORS as BOARD_CARD_PRIORITY_COLORS,
+} from "../tasks/taskPriorityColors";
 
 type CreateTaskOptions = {
   assigneeId?: string | null;
@@ -94,79 +100,7 @@ type CreateTaskOptions = {
   teamId?: string | null;
 };
 
-const BOARD_CARD_PRIORITY_OPTIONS: TaskPriority[] = ["none", "low", "medium", "high"];
-const BOARD_CARD_PRIORITY_LABELS: Record<TaskPriority, string> = {
-  none: "Zadna",
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-};
-const BOARD_CARD_PRIORITY_COLORS: Record<TaskPriority, string> = {
-  none: "#7c8aa8",
-  low: "#38bdf8",
-  medium: "#f59e0b",
-  high: "#f43f5e",
-};
-const BOARD_CARD_PRIORITY_DROPDOWN_OPTIONS: DropdownOption[] = BOARD_CARD_PRIORITY_OPTIONS.map((option) => ({
-  value: option,
-  label: BOARD_CARD_PRIORITY_LABELS[option],
-}));
 const BOARD_CARD_LABEL_COLORS = ["#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
-const BOARD_DUE_FILTER_OPTIONS: { value: ProjectBoardDueFilter; label: string }[] = [
-  { value: "overdue", label: "Po termínu" },
-  { value: "today", label: "Dnes" },
-  { value: "none", label: "Bez termínu" },
-];
-const BOARD_SORT_DROPDOWN_OPTIONS: DropdownOption[] = [
-  { value: "manual", label: "Ruční pořadí" },
-  { value: "priority", label: "Priorita, vysoká první" },
-  { value: "dueDate", label: "Termín, nejbližší první" },
-  { value: "title", label: "Abecedně" },
-];
-const BOARD_SORT_TRIGGER_LABELS: Record<ProjectBoardSortKey, string> = {
-  manual: "Řadit",
-  priority: "Řadit: Priorita",
-  dueDate: "Řadit: Termín",
-  title: "Řadit: Abecedně",
-};
-
-function sortProjectTasks(tasks: Task[], sortKey: ProjectBoardSortKey): Task[] {
-  if (sortKey === "manual") {
-    return tasks;
-  }
-
-  const sorted = [...tasks];
-
-  if (sortKey === "priority") {
-    const priorityRank: Record<TaskPriority, number> = { high: 3, medium: 2, low: 1, none: 0 };
-
-    sorted.sort((a, b) => priorityRank[b.priority] - priorityRank[a.priority]);
-  } else if (sortKey === "dueDate") {
-    sorted.sort((a, b) => {
-      if (!a.dueDate && !b.dueDate) {
-        return 0;
-      }
-
-      if (!a.dueDate) {
-        return 1;
-      }
-
-      if (!b.dueDate) {
-        return -1;
-      }
-
-      return a.dueDate.localeCompare(b.dueDate);
-    });
-  } else if (sortKey === "title") {
-    sorted.sort((a, b) => a.title.localeCompare(b.title, "cs"));
-  }
-
-  return sorted;
-}
-
-function toggleFilterValue<T>(list: T[], value: T): T[] {
-  return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
-}
 type AppShellProps = {
   tasks: Task[];
   allTasks: Task[];
@@ -275,6 +209,7 @@ export function AppShell(props: AppShellProps) {
   const [isTeamsOverviewOpen, setIsTeamsOverviewOpen] = useState(false);
   const [isProjectsOverviewOpen, setIsProjectsOverviewOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isTableOpen, setIsTableOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [openNoteRequestId, setOpenNoteRequestId] = useState<string | null>(null);
@@ -287,6 +222,7 @@ export function AppShell(props: AppShellProps) {
       isTeamsOverviewOpen ||
       isProjectsOverviewOpen ||
       isCalendarOpen ||
+      isTableOpen ||
       isNotesOpen ||
       isProfileOpen,
   });
@@ -615,6 +551,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsTableOpen(false);
     setIsNotesOpen(false);
     setIsProfileOpen(false);
 
@@ -629,6 +566,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(true);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsTableOpen(false);
     setIsNotesOpen(false);
     setIsProfileOpen(false);
 
@@ -643,6 +581,7 @@ export function AppShell(props: AppShellProps) {
     setIsProjectsOverviewOpen(true);
     setIsTeamsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsTableOpen(false);
     setIsNotesOpen(false);
     setIsProfileOpen(false);
     setOpenProjectRequestId(projectId ?? null);
@@ -659,6 +598,22 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(true);
+    setIsTableOpen(false);
+    setIsNotesOpen(false);
+    setIsProfileOpen(false);
+
+    if (isMobileLayout) {
+      setIsSidebarOpen(false);
+    }
+  }
+
+  function handleOpenTable() {
+    onClearTaskSelection();
+    setIsWorkspaceHomeOpen(false);
+    setIsTeamsOverviewOpen(false);
+    setIsProjectsOverviewOpen(false);
+    setIsCalendarOpen(false);
+    setIsTableOpen(true);
     setIsNotesOpen(false);
     setIsProfileOpen(false);
 
@@ -673,6 +628,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsTableOpen(false);
     setIsNotesOpen(true);
     setIsProfileOpen(false);
     setOpenNoteRequestId(noteId ?? null);
@@ -688,6 +644,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsTableOpen(false);
     setIsNotesOpen(false);
     setIsProfileOpen(true);
 
@@ -806,12 +763,14 @@ export function AppShell(props: AppShellProps) {
         onOpenTeamsOverview={handleOpenTeamsOverview}
         onOpenProjectsOverview={handleOpenProjectsOverview}
         onOpenCalendar={handleOpenCalendar}
+        onOpenTable={handleOpenTable}
         onOpenNotes={() => handleOpenNotes()}
         onOpenProfile={handleOpenProfile}
         isWorkspaceHomeOpen={isWorkspaceHomeOpen}
         isTeamsOverviewOpen={isTeamsOverviewOpen}
         isProjectsOverviewOpen={isProjectsOverviewOpen}
         isCalendarOpen={isCalendarOpen}
+        isTableOpen={isTableOpen}
         isNotesOpen={isNotesOpen}
         isProfileOpen={isProfileOpen}
         isMobileDrawer={isMobileDrawer}
@@ -975,6 +934,12 @@ export function AppShell(props: AppShellProps) {
             />
           ) : isCalendarOpen ? (
             <CalendarPanel teams={teams} tasks={allTasks} />
+          ) : isTableOpen ? (
+            <TableViewPanel
+              teams={teams}
+              tasks={allTasks}
+              onOpenTask={(projectId, taskId) => handleOpenProjectsOverview(projectId, taskId)}
+            />
           ) : isProjectsOverviewOpen ? (
             <ProjectsOverviewPanel
               activeTeamId={activeTeamId}
@@ -1030,7 +995,7 @@ export function AppShell(props: AppShellProps) {
           />
           )
         ) : null}
-        {!isWorkspaceHomeOpen && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isCalendarOpen && !isNotesOpen && !isProfileOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
+        {!isWorkspaceHomeOpen && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isCalendarOpen && !isTableOpen && !isNotesOpen && !isProfileOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
           <DetailPanel
             task={selectedTask}
             lists={lists}
@@ -3531,38 +3496,9 @@ function ProjectDetailView({
   const [preferences, setPreferences] = useState<ProjectBoardPreferences>(() =>
     loadProjectBoardPreferences(project.id),
   );
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const filterPanelRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
     saveProjectBoardPreferences(project.id, preferences);
   }, [project.id, preferences]);
-
-  useEffect(() => {
-    if (!isFilterOpen) {
-      return;
-    }
-
-    function handlePointerDown(event: MouseEvent) {
-      const target = event.target;
-
-      if (!(target instanceof Node)) {
-        return;
-      }
-
-      if (filterPanelRef.current?.contains(target)) {
-        return;
-      }
-
-      setIsFilterOpen(false);
-    }
-
-    window.addEventListener("mousedown", handlePointerDown);
-
-    return () => {
-      window.removeEventListener("mousedown", handlePointerDown);
-    };
-  }, [isFilterOpen]);
 
   const today = getTodayDateValue();
   const availableLabels = Array.from(
@@ -3570,63 +3506,8 @@ function ProjectDetailView({
       projectTasks.flatMap((task) => task.labels).map((label) => [label.id, label]),
     ).values(),
   );
-  const activeFilterCount =
-    preferences.filters.assigneeIds.length +
-    preferences.filters.priorities.length +
-    preferences.filters.dueStatuses.length +
-    preferences.filters.labelIds.length;
-
-  function getTaskDueStatus(task: Task): ProjectBoardDueFilter | null {
-    if (!task.dueDate) {
-      return "none";
-    }
-
-    if (task.dueDate < today) {
-      return "overdue";
-    }
-
-    if (task.dueDate === today) {
-      return "today";
-    }
-
-    return null;
-  }
-
-  const filteredProjectTasks = projectTasks.filter((task) => {
-    const { assigneeIds, priorities, dueStatuses, labelIds } = preferences.filters;
-
-    if (assigneeIds.length > 0 && (!task.assigneeId || !assigneeIds.includes(task.assigneeId))) {
-      return false;
-    }
-
-    if (priorities.length > 0 && !priorities.includes(task.priority)) {
-      return false;
-    }
-
-    if (dueStatuses.length > 0) {
-      const status = getTaskDueStatus(task);
-
-      if (!status || !dueStatuses.includes(status)) {
-        return false;
-      }
-    }
-
-    if (labelIds.length > 0 && !task.labels.some((label) => labelIds.includes(label.id))) {
-      return false;
-    }
-
-    return true;
-  });
-
+  const filteredProjectTasks = filterProjectTasks(projectTasks, preferences.filters, today);
   const sortedProjectTasks = sortProjectTasks(filteredProjectTasks, preferences.sort);
-
-  function handleClearFilters(event: ReactMouseEvent) {
-    event.stopPropagation();
-    setPreferences((current) => ({
-      ...current,
-      filters: getDefaultProjectBoardPreferences().filters,
-    }));
-  }
 
   function handleMoveTask(task: Task, columnKey: Task["boardColumnKey"]) {
     onUpdateTask(task.id, {
@@ -3744,160 +3625,12 @@ function ProjectDetailView({
           </div>
         </header>
 
-        <div className="project-detail__toolbar">
-          <div className="project-detail__filter" ref={isFilterOpen ? filterPanelRef : null}>
-            <button
-              className="project-detail__filter-button"
-              type="button"
-              aria-expanded={isFilterOpen}
-              onClick={() => setIsFilterOpen((current) => !current)}
-            >
-              <Filter aria-hidden="true" size={15} />
-              <span>Filtr</span>
-              {activeFilterCount > 0 ? (
-                <span className="project-detail__filter-badge">{activeFilterCount}</span>
-              ) : null}
-            </button>
-            {activeFilterCount > 0 ? (
-              <button
-                className="project-detail__filter-clear"
-                type="button"
-                aria-label="Zrušit filtry"
-                onClick={handleClearFilters}
-              >
-                <X aria-hidden="true" size={12} />
-              </button>
-            ) : null}
-            {isFilterOpen ? (
-              <div className="project-detail__filter-panel" role="menu">
-                <div className="project-detail__filter-section">
-                  <span>Přiřazeno</span>
-                  {members.length === 0 ? (
-                    <p className="project-detail__filter-empty">Nástěnka nemá žádné členy.</p>
-                  ) : (
-                    members.map((member) => (
-                      <label className="project-detail__filter-option" key={member.userId}>
-                        <input
-                          type="checkbox"
-                          checked={preferences.filters.assigneeIds.includes(member.userId)}
-                          onChange={() =>
-                            setPreferences((current) => ({
-                              ...current,
-                              filters: {
-                                ...current.filters,
-                                assigneeIds: toggleFilterValue(
-                                  current.filters.assigneeIds,
-                                  member.userId,
-                                ),
-                              },
-                            }))
-                          }
-                        />
-                        <span>{getMemberDisplayName(member)}</span>
-                      </label>
-                    ))
-                  )}
-                </div>
-
-                <div className="project-detail__filter-section">
-                  <span>Priorita</span>
-                  {BOARD_CARD_PRIORITY_OPTIONS.map((priorityOption) => (
-                    <label className="project-detail__filter-option" key={priorityOption}>
-                      <input
-                        type="checkbox"
-                        checked={preferences.filters.priorities.includes(priorityOption)}
-                        onChange={() =>
-                          setPreferences((current) => ({
-                            ...current,
-                            filters: {
-                              ...current.filters,
-                              priorities: toggleFilterValue(current.filters.priorities, priorityOption),
-                            },
-                          }))
-                        }
-                      />
-                      <i
-                        className="project-detail__filter-dot"
-                        aria-hidden="true"
-                        style={{ background: BOARD_CARD_PRIORITY_COLORS[priorityOption] }}
-                      />
-                      <span>{BOARD_CARD_PRIORITY_LABELS[priorityOption]}</span>
-                    </label>
-                  ))}
-                </div>
-
-                <div className="project-detail__filter-section">
-                  <span>Termín</span>
-                  {BOARD_DUE_FILTER_OPTIONS.map((option) => (
-                    <label className="project-detail__filter-option" key={option.value}>
-                      <input
-                        type="checkbox"
-                        checked={preferences.filters.dueStatuses.includes(option.value)}
-                        onChange={() =>
-                          setPreferences((current) => ({
-                            ...current,
-                            filters: {
-                              ...current.filters,
-                              dueStatuses: toggleFilterValue(current.filters.dueStatuses, option.value),
-                            },
-                          }))
-                        }
-                      />
-                      <span>{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-
-                {availableLabels.length > 0 ? (
-                  <div className="project-detail__filter-section">
-                    <span>Štítky</span>
-                    {availableLabels.map((label) => (
-                      <label className="project-detail__filter-option" key={label.id}>
-                        <input
-                          type="checkbox"
-                          checked={preferences.filters.labelIds.includes(label.id)}
-                          onChange={() =>
-                            setPreferences((current) => ({
-                              ...current,
-                              filters: {
-                                ...current.filters,
-                                labelIds: toggleFilterValue(current.filters.labelIds, label.id),
-                              },
-                            }))
-                          }
-                        />
-                        <i
-                          className="project-detail__filter-dot"
-                          aria-hidden="true"
-                          style={{ background: label.color }}
-                        />
-                        <span>{label.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="project-detail__sort">
-            <CustomDropdown
-              ariaLabel="Řadit úkoly"
-              className="project-detail__sort-dropdown"
-              value={preferences.sort}
-              options={BOARD_SORT_DROPDOWN_OPTIONS}
-              onChange={(value) =>
-                setPreferences((current) => ({ ...current, sort: value as ProjectBoardSortKey }))
-              }
-              renderTriggerContent={() => (
-                <span className="custom-dropdown__value">
-                  <ArrowUpDown aria-hidden="true" size={14} />
-                  {BOARD_SORT_TRIGGER_LABELS[preferences.sort]}
-                </span>
-              )}
-            />
-          </div>
-        </div>
+        <ProjectBoardToolbar
+          preferences={preferences}
+          onPreferencesChange={setPreferences}
+          members={members}
+          availableLabels={availableLabels}
+        />
 
         <NoteMentionsList
           isLoading={isMentioningNotesLoading}
@@ -4241,25 +3974,6 @@ function TeamsMetricCard({
       <strong>{value}</strong>
     </motion.div>
   );
-}
-
-function getMemberDisplayName(member: { email: string; nickname?: string | null }) {
-  const nickname = member.nickname?.trim();
-  if (nickname) {
-    return nickname;
-  }
-  return member.email.split("@")[0] || member.email;
-}
-
-function getMemberInitials(member: { email: string; nickname?: string | null }) {
-  const name = getMemberDisplayName(member);
-  const parts = name.split(/[._\-\s]+/).filter(Boolean);
-
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-
-  return name.slice(0, 2).toUpperCase();
 }
 
 function isTeamAdminRole(role: TeamMember["role"] | undefined) {
