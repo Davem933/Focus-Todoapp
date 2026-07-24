@@ -213,7 +213,15 @@ export function TableViewPanel({ teams, tasks, onOpenTask }: TableViewPanelProps
                       <tr
                         className="table-view__row"
                         key={task.id}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => onOpenTask(selectedBoard.id, task.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onOpenTask(selectedBoard.id, task.id);
+                          }
+                        }}
                       >
                         <td className="table-view__cell-name">
                           <span
