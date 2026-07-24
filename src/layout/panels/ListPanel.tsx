@@ -25,6 +25,7 @@ import {
 } from "../../tasks/taskRecommendation";
 import { parseTaskInput } from "../../tasks/naturalLanguageTaskParser";
 import type { Task, TaskList, TaskPriority, TaskUpdate } from "../../tasks/taskTypes";
+import { TASK_PRIORITY_COLORS } from "../../tasks/taskPriorityColors";
 
 type CreateTaskOptions = {
   dueDate?: string | null;
@@ -41,12 +42,6 @@ const PRIORITY_LABELS: Record<TaskPriority, string> = {
   low: "Nízká",
   medium: "Střední",
   high: "Vysoká",
-};
-const PRIORITY_COLORS: Record<TaskPriority, string> = {
-  none: "#7c8aa8",
-  low: "#38bdf8",
-  medium: "#f59e0b",
-  high: "#f43f5e",
 };
 
 const MIN_TASKS_FOR_WEEK_PRESSURE = 2;
@@ -334,7 +329,7 @@ export function ListPanel({
                   <span
                     className="task-composer__priority-dot"
                     aria-hidden="true"
-                    style={{ "--priority-color": PRIORITY_COLORS[newTaskPriority] } as CSSProperties}
+                    style={{ "--priority-color": TASK_PRIORITY_COLORS[newTaskPriority] } as CSSProperties}
                   />
                   <span>{option?.label ?? PRIORITY_LABELS.none}</span>
                 </span>
@@ -344,7 +339,7 @@ export function ListPanel({
                   <span
                     className="task-composer__priority-dot"
                     aria-hidden="true"
-                    style={{ "--priority-color": PRIORITY_COLORS[option.value as TaskPriority] } as CSSProperties}
+                    style={{ "--priority-color": TASK_PRIORITY_COLORS[option.value as TaskPriority] } as CSSProperties}
                   />
                   <span>{option.label}</span>
                 </span>

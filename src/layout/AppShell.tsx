@@ -81,6 +81,12 @@ import {
   getVisibleTasksForList,
 } from "../tasks/taskViews";
 import type { Task, TaskLabel, TaskList, TaskPriority, TaskSubtask, TaskUpdate } from "../tasks/taskTypes";
+import {
+  BOARD_CARD_PRIORITY_DROPDOWN_OPTIONS,
+  BOARD_CARD_PRIORITY_LABELS,
+  BOARD_CARD_PRIORITY_OPTIONS,
+  TASK_PRIORITY_COLORS as BOARD_CARD_PRIORITY_COLORS,
+} from "../tasks/taskPriorityColors";
 
 type CreateTaskOptions = {
   assigneeId?: string | null;
@@ -95,23 +101,6 @@ type CreateTaskOptions = {
   teamId?: string | null;
 };
 
-const BOARD_CARD_PRIORITY_OPTIONS: TaskPriority[] = ["none", "low", "medium", "high"];
-const BOARD_CARD_PRIORITY_LABELS: Record<TaskPriority, string> = {
-  none: "Zadna",
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-};
-const BOARD_CARD_PRIORITY_COLORS: Record<TaskPriority, string> = {
-  none: "#7c8aa8",
-  low: "#38bdf8",
-  medium: "#f59e0b",
-  high: "#f43f5e",
-};
-const BOARD_CARD_PRIORITY_DROPDOWN_OPTIONS: DropdownOption[] = BOARD_CARD_PRIORITY_OPTIONS.map((option) => ({
-  value: option,
-  label: BOARD_CARD_PRIORITY_LABELS[option],
-}));
 const BOARD_CARD_LABEL_COLORS = ["#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
 const BOARD_DUE_FILTER_OPTIONS: { value: ProjectBoardDueFilter; label: string }[] = [
   { value: "overdue", label: "Po termínu" },
