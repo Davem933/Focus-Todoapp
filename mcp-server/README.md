@@ -113,16 +113,17 @@ itself silently; you re-download only when you choose to.
 
 | Tool | Purpose |
 |---|---|
-| `create_task` | Create a task, optionally in a named list (creates the list if missing). |
-| `list_tasks` | List your tasks, optionally filtered by list name / completion. |
-| `update_task` | Change title, due date/time, priority, recurrence, or note. |
+| `create_task` | Create a plain to-do (optionally in a named list) **or** a kanban card on a board (pass `board_id`, optionally `board_column_key`/`assignee_id`). |
+| `list_tasks` | List tasks — filter by list name (to-dos) or by `board_id`/`board_column_key` (kanban cards). |
+| `update_task` | Change title, due date/time, priority, recurrence, note, or move a kanban card to another column / reassign it. |
 | `complete_task` | Mark a task done/undone. |
 | `delete_task` | Delete a task. |
 | `list_task_lists` / `create_task_list` | Manage task lists (seznamy). |
 | `list_teams` | List teams you belong to (needed to create a board). |
+| `list_team_members` | List a team's members (email, role, nickname) — e.g. to find an `assignee_id`. |
 | `create_board` | Create a board/project under a team, with default columns. |
 | `list_boards` / `update_board` / `delete_board` | Manage boards. |
-| `list_board_columns` | List a board's columns. |
+| `list_board_columns` | List a board's columns (use to find valid `board_column_key` values). |
 
 ## Notes
 
