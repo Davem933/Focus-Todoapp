@@ -15,7 +15,7 @@ In scope:
 - A day column per visible day, showing:
   - An "Celý den" (all-day) row above the hourly grid for tasks with `dueTime === null`.
   - Timed tasks (`dueTime` set) placed as a fixed 30-minute-tall block at their `dueTime`, in the correct day column.
-- Clicking empty space in an hour cell opens the task composer in "create" mode with `dueDate` and `dueTime` prefilled to that cell's day/hour (reusing the existing `ProjectCardComposerModal` and creation flow already wired for the month view's "+" button).
+- A small "+" button (visible on hover, matching the month view's per-day "+" button) in each hour cell opens the task composer in "create" mode with `dueDate` and `dueTime` prefilled to that cell's day/hour (reusing the existing `ProjectCardComposerModal` and creation flow already wired for the month view's "+" button).
 - Clicking an existing task block opens it for editing (same modal, same flow as month view's task click).
 - Prev/next navigation shifts the anchor date by the view's day count (1/4/7); Month view's prev/next continues to shift by calendar month, unchanged.
 - "Dnes" resets the anchor to the current date (Day/4-day/Week) or current month (Month), matching each view's semantics.
@@ -48,14 +48,14 @@ Verified the same way as the existing calendar utilities: a throwaway Node scrip
   - Header title shows the full Czech weekday + date for Day view, or a date range (first–last day, Czech month name) for 4-day/Week.
   - All-day row: for each visible day, list tasks matching that day with `dueTime === null` (from the same filtered task list already computed for Month view — the existing `taskIdsByDueDate`/filter logic is reused, just also grouping by whether `dueTime` is set).
   - Hourly grid: 24 rows (00–23), each row split into one column per visible day; a task with `dueTime` set renders as a positioned block in its hour row/day column, fixed-height (30 minutes' worth of row height).
-  - Clicking empty space in an hour cell calls a new `handleAddTaskAtTime(date, hour)`, mirroring `handleAddTask(date)` but also setting `cardComposerDueDate`/a new due-time composer field to that hour (e.g. `"09:00"`).
+  - Clicking the hour cell's "+" button calls a new `handleAddTaskAtHour(date, hour)`, mirroring `handleAddTask(date)` but also setting `cardComposerDueDate`/a new due-time composer field to that hour (e.g. `"09:00"`).
   - Clicking a task block calls the existing `handleOpenTask(taskId)` — unchanged.
 - The composer (`ProjectCardComposerModal`) itself is unchanged in this feature — it doesn't currently expose a due-time field, so due-time is set programmatically (from the clicked hour) but not editable inside the modal. This matches how the modal already doesn't expose board-column selection either. If precise due-time editing inside the modal is wanted later, that's a follow-up, not part of this feature.
 - Filter panel and its state (`filterAssigneeIds`, `filterPriorities`, `showCompletedTasks`) are unchanged and apply to whichever view is active.
 
 ## CSS
 
-New rules for the hourly grid: `.calendar-panel__view-dropdown`, `.calendar-panel__hourly-grid`, `.calendar-panel__hourly-day-column`, `.calendar-panel__all-day-row`, `.calendar-panel__hour-row`, `.calendar-panel__hour-label`, `.calendar-panel__hour-cell`, `.calendar-panel__timed-task`. Uses the same CSS custom properties (`--color-*`, `--radius-*`) as the rest of the calendar panel for theme consistency.
+New rules for the hourly grid: `.calendar-panel__view-dropdown`, `.calendar-panel__hourly-grid`, `.calendar-panel__hourly-day-headers`, `.calendar-panel__hourly-day-header`, `.calendar-panel__hourly-time-gutter`, `.calendar-panel__all-day-row`, `.calendar-panel__all-day-cell`, `.calendar-panel__hourly-body`, `.calendar-panel__hour-row`, `.calendar-panel__hour-label`, `.calendar-panel__hour-cell`, `.calendar-panel__hour-add-button`, `.calendar-panel__timed-task`. Uses the same CSS custom properties (`--color-*`, `--radius-*`) as the rest of the calendar panel for theme consistency.
 
 ## Error Handling
 
