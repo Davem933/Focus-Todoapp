@@ -13372,3 +13372,152 @@ input[type="checkbox"]:focus-visible {
   height: 10px;
   border-radius: 50%;
 }
+
+.calendar-panel__view-dropdown {
+  min-width: 110px;
+}
+
+.calendar-panel__hourly-grid {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.calendar-panel__hourly-time-gutter {
+  width: 64px;
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+  padding: 6px 8px;
+}
+
+.calendar-panel__hourly-day-headers {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-background-card);
+}
+
+.calendar-panel__hourly-day-header {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.calendar-panel__hourly-day-header[data-today="true"] {
+  color: var(--color-accent);
+}
+
+.calendar-panel__all-day-row {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  min-height: 32px;
+}
+
+.calendar-panel__all-day-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border-left: 1px solid var(--color-border);
+}
+
+.calendar-panel__all-day-cell:first-child {
+  border-left: none;
+}
+
+.calendar-panel__hourly-body {
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.calendar-panel__hour-row {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  min-height: 48px;
+}
+
+.calendar-panel__hour-label {
+  width: 64px;
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+  padding: 4px 8px;
+}
+
+.calendar-panel__hour-cell {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+  border-left: 1px solid var(--color-border);
+}
+
+.calendar-panel__hour-cell:hover {
+  background: var(--color-background-card-hover);
+}
+
+.calendar-panel__hour-cell:first-of-type {
+  border-left: none;
+}
+
+.calendar-panel__hour-add-button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  opacity: 0;
+  transition: var(--transition-fast);
+}
+
+.calendar-panel__hour-cell:hover .calendar-panel__hour-add-button,
+.calendar-panel__hour-add-button:focus-visible {
+  opacity: 1;
+}
+
+.calendar-panel__hour-add-button:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.calendar-panel__timed-task {
+  display: block;
+  width: 100%;
+  min-height: 30px;
+  font-size: 0.72rem;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.calendar-panel__timed-task:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
