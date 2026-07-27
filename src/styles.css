@@ -13092,6 +13092,7 @@ input[type="checkbox"]:focus-visible {
   justify-content: center;
   width: 28px;
   height: 28px;
+  padding: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-background-card);
@@ -13166,10 +13167,42 @@ input[type="checkbox"]:focus-visible {
   box-shadow: 0 0 0 1px var(--color-accent-soft);
 }
 
+.calendar-panel__day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .calendar-panel__day-number {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.calendar-panel__day-add-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  opacity: 0;
+  transition: var(--transition-fast);
+}
+
+.calendar-panel__day:hover .calendar-panel__day-add-button,
+.calendar-panel__day-add-button:focus-visible {
+  opacity: 1;
+}
+
+.calendar-panel__day-add-button:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .calendar-panel__day-tasks {
@@ -13183,11 +13216,19 @@ input[type="checkbox"]:focus-visible {
   font-size: 0.72rem;
   color: var(--color-accent);
   background: var(--color-accent-soft);
+  border: none;
   border-radius: var(--radius-sm);
   padding: 2px 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendar-panel__task:hover {
+  background: var(--color-accent);
+  color: #fff;
 }
 
 
