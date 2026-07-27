@@ -26,6 +26,16 @@ export function getCurrentYearMonth(): { year: number; month: number } {
   return { year: now.getFullYear(), month: now.getMonth() + 1 };
 }
 
+export function getAdjacentYearMonth(
+  year: number,
+  month: number,
+  delta: -1 | 1,
+): { year: number; month: number } {
+  const shifted = new Date(year, month - 1 + delta, 1);
+
+  return { year: shifted.getFullYear(), month: shifted.getMonth() + 1 };
+}
+
 function formatDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");

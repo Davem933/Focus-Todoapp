@@ -13080,6 +13080,44 @@ input[type="checkbox"]:focus-visible {
   text-transform: capitalize;
 }
 
+.calendar-panel__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-panel__nav-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-background-card);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.calendar-panel__nav-button:hover {
+  background: var(--color-background-card-hover);
+}
+
+.calendar-panel__today-button {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-background-card);
+  color: var(--color-text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.calendar-panel__today-button:hover {
+  background: var(--color-background-card-hover);
+}
+
 .calendar-panel__error {
   color: #ef4444;
   margin: 0;

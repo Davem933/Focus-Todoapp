@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CustomDropdown } from "../CustomDropdown";
 import type { DropdownOption } from "../CustomDropdown";
 import { loadProjectsForTeams } from "../../supabase/projectApi";
@@ -9,6 +10,7 @@ import { getTodayDateValue } from "../../tasks/dateUtils";
 import {
   CZECH_MONTH_NAMES,
   CZECH_WEEKDAY_LABELS,
+  getAdjacentYearMonth,
   getCurrentYearMonth,
   getMonthMatrix,
   groupTaskIdsByDueDate,
@@ -24,7 +26,19 @@ export function CalendarPanel({ teams, tasks }: CalendarPanelProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const { year, month } = useMemo(() => getCurrentYearMonth(), []);
+  const [{ year, month }, setYearMonth] = useState(() => getCurrentYearMonth());
+
+  function goToPreviousMonth() {
+    setYearMonth((current) => getAdjacentYearMonth(current.year, current.month, -1));
+  }
+
+  function goToNextMonth() {
+    setYearMonth((current) => getAdjacentYearMonth(current.year, current.month, 1));
+  }
+
+  function goToToday() {
+    setYearMonth(getCurrentYearMonth());
+  }
 
   useEffect(() => {
     let isCancelled = false;
@@ -104,9 +118,30 @@ export function CalendarPanel({ teams, tasks }: CalendarPanelProps) {
           ariaLabel="Vyber nástěnku pro kalendář"
           disabled={isLoading || dropdownOptions.length === 0}
         />
-        <h2 className="calendar-panel__title">
-          {CZECH_MONTH_NAMES[month - 1]} {year}
-        </h2>
+        <div className="calendar-panel__nav">
+          <button
+            className="calendar-panel__nav-button"
+            type="button"
+            aria-label="Předchozí měsíc"
+            onClick={goToPreviousMonth}
+          >
+            <ChevronLeft size={16} strokeWidth={2} />
+          </button>
+          <h2 className="calendar-panel__title">
+            {CZECH_MONTH_NAMES[month - 1]} {year}
+          </h2>
+          <button
+            className="calendar-panel__nav-button"
+            type="button"
+            aria-label="Následující měsíc"
+            onClick={goToNextMonth}
+          >
+            <ChevronRight size={16} strokeWidth={2} />
+          </button>
+          <button className="calendar-panel__today-button" type="button" onClick={goToToday}>
+            Dnes
+          </button>
+        </div>
       </header>
 
       {error ? <p className="calendar-panel__error">{error}</p> : null}
