@@ -36,6 +36,26 @@ export function getAdjacentYearMonth(
   return { year: shifted.getFullYear(), month: shifted.getMonth() + 1 };
 }
 
+export const CZECH_WEEKDAY_FULL_NAMES = [
+  "pondělí",
+  "úterý",
+  "středa",
+  "čtvrtek",
+  "pátek",
+  "sobota",
+  "neděle",
+];
+
+export function getWeekdayIndex(date: string): number {
+  const [year, month, day] = date.split("-").map(Number);
+
+  return (new Date(year, month - 1, day).getDay() + 6) % 7;
+}
+
+export function getWeekdayFullName(date: string): string {
+  return CZECH_WEEKDAY_FULL_NAMES[getWeekdayIndex(date)];
+}
+
 function formatDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -97,4 +117,21 @@ export function groupTaskIdsByDueDate(
   }
 
   return map;
+}
+
+export function shiftDate(date: string, days: number): string {
+  const [year, month, day] = date.split("-").map(Number);
+  const shifted = new Date(year, month - 1, day + days);
+
+  return formatDate(shifted);
+}
+
+export function getDateRange(anchorDate: string, days: number): string[] {
+  const dates: string[] = [];
+
+  for (let i = 0; i < days; i += 1) {
+    dates.push(shiftDate(anchorDate, i));
+  }
+
+  return dates;
 }
