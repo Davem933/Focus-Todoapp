@@ -1,18 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter, Plus, X } from "lucide-react";
 import { CustomDropdown } from "../CustomDropdown";
 import type { DropdownOption } from "../CustomDropdown";
 import { ProjectCardComposerModal } from "../ProjectCardComposerModal";
 import { loadProjectColumns, loadProjectsForTeams } from "../../supabase/projectApi";
 import { loadTeamMembers } from "../../supabase/teamApi";
 import type { Project, ProjectColumn } from "../../projects/projectTypes";
+import { toggleFilterValue } from "../../projects/projectBoardPreferences";
+import { getMemberDisplayName } from "../../teams/teamMemberDisplay";
 import type { Team, TeamMember } from "../../teams/teamTypes";
 import type { Task, TaskPriority, TaskSubtask, TaskUpdate } from "../../tasks/taskTypes";
 import { getTodayDateValue } from "../../tasks/dateUtils";
 import { createEntityId } from "../../tasks/idUtils";
 import { appendCardLabelValue, createCardLabels } from "../../tasks/cardLabels";
+import {
+  BOARD_CARD_PRIORITY_LABELS,
+  BOARD_CARD_PRIORITY_OPTIONS,
+  TASK_PRIORITY_COLORS as BOARD_CARD_PRIORITY_COLORS,
+} from "../../tasks/taskPriorityColors";
 import {
   CZECH_MONTH_NAMES,
   CZECH_WEEKDAY_LABELS,
@@ -50,7 +57,39 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
   const [cardComposerSubtaskTitle, setCardComposerSubtaskTitle] = useState("");
   const [cardComposerSubtasks, setCardComposerSubtasks] = useState<TaskSubtask[]>([]);
 
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterAssigneeIds, setFilterAssigneeIds] = useState<string[]>([]);
+  const [filterPriorities, setFilterPriorities] = useState<TaskPriority[]>([]);
+  const [showCompletedTasks, setShowCompletedTasks] = useState(true);
+  const filterPanelRef = useRef<HTMLDivElement | null>(null);
+
   const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
+
+  useEffect(() => {
+    if (!isFilterOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (filterPanelRef.current?.contains(target)) {
+        return;
+      }
+
+      setIsFilterOpen(false);
+    }
+
+    window.addEventListener("mousedown", handlePointerDown);
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [isFilterOpen]);
 
   function goToPreviousMonth() {
     setYearMonth((current) => getAdjacentYearMonth(current.year, current.month, -1));
@@ -161,13 +200,42 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
       return new Map<string, string[]>();
     }
 
-    const projectTasks = tasks.filter((task) => task.projectId === selectedProjectId);
+    const projectTasks = tasks.filter((task) => {
+      if (task.projectId !== selectedProjectId) {
+        return false;
+      }
+
+      if (!showCompletedTasks && task.completed) {
+        return false;
+      }
+
+      if (
+        filterAssigneeIds.length > 0 &&
+        (!task.assigneeId || !filterAssigneeIds.includes(task.assigneeId))
+      ) {
+        return false;
+      }
+
+      if (filterPriorities.length > 0 && !filterPriorities.includes(task.priority)) {
+        return false;
+      }
+
+      return true;
+    });
 
     return groupTaskIdsByDueDate(projectTasks);
-  }, [tasks, selectedProjectId]);
+  }, [tasks, selectedProjectId, filterAssigneeIds, filterPriorities, showCompletedTasks]);
 
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
   const composerColumn = projectColumns.find((column) => column.key === cardComposerColumnKey) ?? null;
+  const activeFilterCount =
+    filterAssigneeIds.length + filterPriorities.length + (showCompletedTasks ? 0 : 1);
+
+  function handleClearFilters() {
+    setFilterAssigneeIds([]);
+    setFilterPriorities([]);
+    setShowCompletedTasks(true);
+  }
 
   function resetCardComposer() {
     setCardComposerTaskId(null);
@@ -291,6 +359,86 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
           ariaLabel="Vyber nástěnku pro kalendář"
           disabled={isLoading || dropdownOptions.length === 0}
         />
+        <div className="project-detail__filter" ref={isFilterOpen ? filterPanelRef : null}>
+          <button
+            className="project-detail__filter-button"
+            type="button"
+            aria-expanded={isFilterOpen}
+            onClick={() => setIsFilterOpen((current) => !current)}
+          >
+            <Filter aria-hidden="true" size={15} />
+            <span>Filtr</span>
+            {activeFilterCount > 0 ? (
+              <span className="project-detail__filter-badge">{activeFilterCount}</span>
+            ) : null}
+          </button>
+          {activeFilterCount > 0 ? (
+            <button
+              className="project-detail__filter-clear"
+              type="button"
+              aria-label="Zrušit filtry"
+              onClick={handleClearFilters}
+            >
+              <X aria-hidden="true" size={12} />
+            </button>
+          ) : null}
+          {isFilterOpen ? (
+            <div className="project-detail__filter-panel" role="menu">
+              <div className="project-detail__filter-section">
+                <span>Přiřazeno</span>
+                {projectMembers.length === 0 ? (
+                  <p className="project-detail__filter-empty">Nástěnka nemá žádné členy.</p>
+                ) : (
+                  projectMembers.map((member) => (
+                    <label className="project-detail__filter-option" key={member.userId}>
+                      <input
+                        type="checkbox"
+                        checked={filterAssigneeIds.includes(member.userId)}
+                        onChange={() =>
+                          setFilterAssigneeIds((current) => toggleFilterValue(current, member.userId))
+                        }
+                      />
+                      <span>{getMemberDisplayName(member)}</span>
+                    </label>
+                  ))
+                )}
+              </div>
+
+              <div className="project-detail__filter-section">
+                <span>Priorita</span>
+                {BOARD_CARD_PRIORITY_OPTIONS.map((priorityOption) => (
+                  <label className="project-detail__filter-option" key={priorityOption}>
+                    <input
+                      type="checkbox"
+                      checked={filterPriorities.includes(priorityOption)}
+                      onChange={() =>
+                        setFilterPriorities((current) => toggleFilterValue(current, priorityOption))
+                      }
+                    />
+                    <i
+                      className="project-detail__filter-dot"
+                      aria-hidden="true"
+                      style={{ background: BOARD_CARD_PRIORITY_COLORS[priorityOption] }}
+                    />
+                    <span>{BOARD_CARD_PRIORITY_LABELS[priorityOption]}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="project-detail__filter-section">
+                <span>Stav</span>
+                <label className="project-detail__filter-option">
+                  <input
+                    type="checkbox"
+                    checked={showCompletedTasks}
+                    onChange={() => setShowCompletedTasks((current) => !current)}
+                  />
+                  <span>Zobrazit dokončené úkoly</span>
+                </label>
+              </div>
+            </div>
+          ) : null}
+        </div>
         <div className="calendar-panel__nav">
           <button
             className="calendar-panel__nav-button"
