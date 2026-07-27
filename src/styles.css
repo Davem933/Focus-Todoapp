@@ -13409,6 +13409,11 @@ input[type="checkbox"]:focus-visible {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--color-text-primary);
+  border-left: 1px solid var(--color-border);
+}
+
+.calendar-panel__hourly-time-gutter + .calendar-panel__hourly-day-header {
+  border-left: none;
 }
 
 .calendar-panel__hourly-day-header[data-today="true"] {
@@ -13430,13 +13435,14 @@ input[type="checkbox"]:focus-visible {
   border-left: 1px solid var(--color-border);
 }
 
-.calendar-panel__all-day-cell:first-child {
+.calendar-panel__hourly-time-gutter + .calendar-panel__all-day-cell {
   border-left: none;
 }
 
 .calendar-panel__hourly-body {
   max-height: 480px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .calendar-panel__hour-row {
@@ -13467,7 +13473,7 @@ input[type="checkbox"]:focus-visible {
   background: var(--color-background-card-hover);
 }
 
-.calendar-panel__hour-cell:first-of-type {
+.calendar-panel__hour-label + .calendar-panel__hour-cell {
   border-left: none;
 }
 

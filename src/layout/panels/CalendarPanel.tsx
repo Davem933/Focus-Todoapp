@@ -139,6 +139,23 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
     setAnchorDate(getTodayDateValue());
   }
 
+  function handleViewModeChange(nextViewMode: CalendarViewMode) {
+    if (viewMode === "month" && nextViewMode !== "month") {
+      const currentYearMonth = getCurrentYearMonth();
+      const isCurrentMonth = year === currentYearMonth.year && month === currentYearMonth.month;
+
+      setAnchorDate(
+        isCurrentMonth ? getTodayDateValue() : `${year}-${String(month).padStart(2, "0")}-01`,
+      );
+    } else if (viewMode !== "month" && nextViewMode === "month") {
+      const [anchorYear, anchorMonth] = anchorDate.split("-");
+
+      setYearMonth({ year: Number(anchorYear), month: Number(anchorMonth) });
+    }
+
+    setViewMode(nextViewMode);
+  }
+
   useEffect(() => {
     let isCancelled = false;
     const teamIds = teams.map((team) => team.id);
@@ -253,7 +270,14 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
       return `${getWeekdayFullName(firstDay)} ${Number(firstDayStr)}. ${CZECH_MONTH_NAMES[Number(firstMonthStr) - 1]} ${firstYear}`;
     }
 
-    return `${Number(firstDayStr)}. – ${Number(lastDayStr)}. ${CZECH_MONTH_NAMES[Number(lastMonthStr) - 1]} ${lastYear}`;
+    if (firstMonthStr === lastMonthStr && firstYear === lastYear) {
+      return `${Number(firstDayStr)}. – ${Number(lastDayStr)}. ${CZECH_MONTH_NAMES[Number(lastMonthStr) - 1]} ${lastYear}`;
+    }
+
+    const firstPart = `${Number(firstDayStr)}. ${CZECH_MONTH_NAMES[Number(firstMonthStr) - 1]}${firstYear === lastYear ? "" : ` ${firstYear}`}`;
+    const lastPart = `${Number(lastDayStr)}. ${CZECH_MONTH_NAMES[Number(lastMonthStr) - 1]} ${lastYear}`;
+
+    return `${firstPart} – ${lastPart}`;
   }, [viewMode, year, month, visibleDays]);
 
   useEffect(() => {
@@ -265,7 +289,7 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
     const rowHeight = hourlyBodyRef.current.scrollHeight / HOURS.length;
 
     hourlyBodyRef.current.scrollTop = Math.max(0, (scrollToHour - 1) * rowHeight);
-  }, [viewMode, anchorDate, visibleDays, today]);
+  }, [viewMode, anchorDate, visibleDays, today, selectedProjectId]);
 
   const filteredProjectTasks = useMemo(() => {
     if (!selectedProjectId) {
@@ -301,13 +325,43 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
     [filteredProjectTasks],
   );
 
+  const tasksByDueDate = useMemo(() => {
+    const map = new Map<string, Task[]>();
+
+    for (const task of filteredProjectTasks) {
+      if (!task.dueDate) {
+        continue;
+      }
+
+      const existing = map.get(task.dueDate);
+
+      if (existing) {
+        existing.push(task);
+      } else {
+        map.set(task.dueDate, [task]);
+      }
+    }
+
+    return map;
+  }, [filteredProjectTasks]);
+
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
   const composerColumn = projectColumns.find((column) => column.key === cardComposerColumnKey) ?? null;
   const activeFilterCount =
     filterAssigneeIds.length + filterPriorities.length + (showCompletedTasks ? 0 : 1);
 
   function getTasksForDate(date: string) {
-    return filteredProjectTasks.filter((task) => task.dueDate === date);
+    return tasksByDueDate.get(date) ?? [];
+  }
+
+  function getTaskHour(task: Task): number | null {
+    if (!task.dueTime) {
+      return null;
+    }
+
+    const hour = Number(task.dueTime.split(":")[0]);
+
+    return Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : null;
   }
 
   function handleClearFilters() {
@@ -531,7 +585,7 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
             className="calendar-panel__view-dropdown"
             value={viewMode}
             options={VIEW_MODE_OPTIONS}
-            onChange={(value) => setViewMode(value as CalendarViewMode)}
+            onChange={(value) => handleViewModeChange(value as CalendarViewMode)}
             ariaLabel="Vyber zobrazení kalendáře"
           />
           <button
@@ -632,7 +686,7 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
             {visibleDays.map((day) => (
               <div className="calendar-panel__all-day-cell" key={day}>
                 {getTasksForDate(day)
-                  .filter((task) => !task.dueTime)
+                  .filter((task) => getTaskHour(task) === null)
                   .map((task) => (
                     <button
                       className="calendar-panel__task"
@@ -653,7 +707,7 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
                 <div className="calendar-panel__hour-label">{String(hour).padStart(2, "0")}:00</div>
                 {visibleDays.map((day) => {
                   const hourTasks = getTasksForDate(day).filter(
-                    (task) => task.dueTime && Number(task.dueTime.split(":")[0]) === hour,
+                    (task) => getTaskHour(task) === hour,
                   );
 
                   return (
