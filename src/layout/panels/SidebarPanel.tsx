@@ -18,7 +18,6 @@ import {
   Pencil,
   Star,
   Sun,
-  Table2,
   Trash2,
   User,
   Users,
@@ -97,7 +96,6 @@ type SidebarPanelProps = {
   onOpenTeamsOverview: () => void;
   onOpenProjectsOverview: () => void;
   onOpenCalendar: () => void;
-  onOpenTable: () => void;
   onOpenNotes: () => void;
   onOpenProfile: () => void;
   notifications: Notification[];
@@ -107,11 +105,11 @@ type SidebarPanelProps = {
   isTeamsOverviewOpen: boolean;
   isProjectsOverviewOpen: boolean;
   isCalendarOpen: boolean;
-  isTableOpen: boolean;
   isNotesOpen: boolean;
   isProfileOpen: boolean;
   isMobileDrawer?: boolean;
   useTouchListActions?: boolean;
+  hideTopNav?: boolean;
 };
 
 type ListNavRowProps = {
@@ -168,7 +166,6 @@ export function SidebarPanel({
   onOpenTeamsOverview,
   onOpenProjectsOverview,
   onOpenCalendar,
-  onOpenTable,
   onOpenNotes,
   onOpenProfile,
   notifications,
@@ -178,11 +175,11 @@ export function SidebarPanel({
   isTeamsOverviewOpen,
   isProjectsOverviewOpen,
   isCalendarOpen,
-  isTableOpen,
   isNotesOpen,
   isProfileOpen,
   isMobileDrawer = false,
   useTouchListActions = isMobileDrawer,
+  hideTopNav = false,
 }: SidebarPanelProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newListName, setNewListName] = useState("");
@@ -581,14 +578,17 @@ export function SidebarPanel({
         data-mobile-drawer={isMobileDrawer}
         data-touch-actions={useTouchListActions}
       >
+        {!hideTopNav ? (
         <div className="sidebar-header">
           <div className="sidebar-header__title-row">
             <h1>DoNext</h1>
             {isGlobalAdmin ? <span className="sidebar-admin-badge">Global admin</span> : null}
           </div>
         </div>
+        ) : null}
         <div className="sidebar-content">
           <div className="sidebar-content__top">
+            {!hideTopNav ? (
             <section className="list-section workspace-section" aria-label="Pracovní prostor">
               <h2>Pracovní prostor</h2>
               <div className="workspace-mode-switch" role="tablist" aria-label="Režim práce">
@@ -607,9 +607,9 @@ export function SidebarPanel({
                 </button>
                 <button
                   className="workspace-mode-switch__item"
-                  data-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen || isCalendarOpen || isTableOpen || isNotesOpen}
+                  data-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen || isCalendarOpen || isNotesOpen}
                   role="tab"
-                  aria-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen || isCalendarOpen || isTableOpen || isNotesOpen}
+                  aria-selected={isTeamWorkspace || isTeamsOverviewOpen || isProjectsOverviewOpen || isCalendarOpen || isNotesOpen}
                   type="button"
                   onClick={selectTeamWorkspace}
                 >
@@ -619,7 +619,7 @@ export function SidebarPanel({
                   </small>
                 </button>
               </div>
-              {isTeamWorkspace || isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen || isCalendarOpen || isTableOpen || isNotesOpen ? (
+              {isTeamWorkspace || isWorkspaceHomeOpen || isTeamsOverviewOpen || isProjectsOverviewOpen || isCalendarOpen || isNotesOpen ? (
                 <nav className="list-nav workspace-nav" aria-label="Nabídka workspace">
                   <button
                     className="list-nav__item workspace-nav__item"
@@ -678,19 +678,6 @@ export function SidebarPanel({
                   </button>
                   <button
                     className="list-nav__item workspace-nav__item"
-                    data-selected={isTableOpen}
-                    type="button"
-                    onClick={onOpenTable}
-                  >
-                    <span className="list-nav__main">
-                      <span className="workspace-nav__icon" aria-hidden="true">
-                        <Table2 size={16} strokeWidth={1.9} />
-                      </span>
-                      <span className="list-nav__name">Tabulka</span>
-                    </span>
-                  </button>
-                  <button
-                    className="list-nav__item workspace-nav__item"
                     data-selected={isNotesOpen}
                     type="button"
                     onClick={onOpenNotes}
@@ -705,6 +692,7 @@ export function SidebarPanel({
                 </nav>
               ) : null}
             </section>
+            ) : null}
             {!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isCalendarOpen && !isNotesOpen ? (
             <section
               className="list-section list-section--system"
@@ -808,6 +796,7 @@ export function SidebarPanel({
           ) : null}
         </div>
         <div className="sidebar-actions">
+          {!hideTopNav ? (
           <div className="sidebar-actions__tools">
             <motion.button
               className="sidebar-theme-toggle"
@@ -864,6 +853,7 @@ export function SidebarPanel({
               <span className="sr-only">Profil</span>
             </button>
           </div>
+          ) : null}
 {!isTeamWorkspace && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isNotesOpen ? (
             <button
               className="list-nav__item list-nav__item--create"
