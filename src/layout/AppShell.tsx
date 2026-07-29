@@ -979,7 +979,6 @@ export function AppShell(props: AppShellProps) {
             activeTeamId={activeTeamId}
             teams={teams}
             countsByTeamId={countsByTeamId}
-            isWorkspaceHomeOpen={isWorkspaceHomeOpen}
             isTeamsOverviewOpen={isTeamsOverviewOpen}
             isProjectsOverviewOpen={isProjectsOverviewOpen}
             isProfileOpen={isProfileOpen}
@@ -988,7 +987,6 @@ export function AppShell(props: AppShellProps) {
             onMarkAllNotificationsAsRead={onMarkAllNotificationsAsRead}
             onSelectWorkspace={handleSelectWorkspace}
             onOpenTeamsOverview={handleOpenTeamsOverview}
-            onOpenWorkspaceHome={handleOpenWorkspaceHome}
             onOpenProjectsOverview={handleOpenProjectsOverview}
             onToggleTheme={onToggleTheme}
             onOpenProfile={handleOpenProfile}

@@ -1,4 +1,4 @@
-import { FolderKanban, Home, Moon, Sun, User, Users } from "lucide-react";
+import { FolderKanban, Moon, Sun, User, Users } from "lucide-react";
 import { NotificationPopover } from "../components/ui/notification-popover";
 import type { Notification } from "../components/ui/notification-popover";
 import type { Team } from "../teams/teamTypes";
@@ -10,7 +10,6 @@ type TopNavBarProps = {
   activeTeamId: string | null;
   teams: Team[];
   countsByTeamId: TaskTeamCounts;
-  isWorkspaceHomeOpen: boolean;
   isTeamsOverviewOpen: boolean;
   isProjectsOverviewOpen: boolean;
   isProfileOpen: boolean;
@@ -19,7 +18,6 @@ type TopNavBarProps = {
   onMarkAllNotificationsAsRead: () => void;
   onSelectWorkspace: (teamId: string | null) => void;
   onOpenTeamsOverview: () => void;
-  onOpenWorkspaceHome: () => void;
   onOpenProjectsOverview: () => void;
   onToggleTheme: () => void;
   onOpenProfile: () => void;
@@ -31,7 +29,6 @@ export function TopNavBar({
   activeTeamId,
   teams,
   countsByTeamId,
-  isWorkspaceHomeOpen,
   isTeamsOverviewOpen,
   isProjectsOverviewOpen,
   isProfileOpen,
@@ -40,7 +37,6 @@ export function TopNavBar({
   onMarkAllNotificationsAsRead,
   onSelectWorkspace,
   onOpenTeamsOverview,
-  onOpenWorkspaceHome,
   onOpenProjectsOverview,
   onToggleTheme,
   onOpenProfile,
@@ -99,15 +95,6 @@ export function TopNavBar({
         </button>
       </div>
       <nav className="app-shell__topnav-nav" aria-label="Hlavní navigace">
-        <button
-          className="app-shell__topnav-nav-item"
-          data-selected={isWorkspaceHomeOpen}
-          type="button"
-          onClick={onOpenWorkspaceHome}
-        >
-          <Home aria-hidden="true" size={16} strokeWidth={1.9} />
-          <span>Domů</span>
-        </button>
         <button
           className="app-shell__topnav-nav-item"
           data-selected={isTeamsOverviewOpen}
