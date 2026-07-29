@@ -13603,7 +13603,11 @@ input[type="checkbox"]:focus-visible {
 }
 
 .task-table__col-index {
-  display: flex;
+  white-space: nowrap;
+}
+
+.task-table__index-inner {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
 }

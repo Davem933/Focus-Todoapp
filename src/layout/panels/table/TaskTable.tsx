@@ -261,8 +261,10 @@ function TaskTableRow({
   return (
     <tr className="task-table__row">
       <td className="task-table__col-index">
-        <span className="task-table__row-number">{rowNumber}</span>
-        <span className="task-table__status-dot" data-state={status} aria-hidden="true" />
+        <span className="task-table__index-inner">
+          <span className="task-table__row-number">{rowNumber}</span>
+          <span className="task-table__status-dot" data-state={status} aria-hidden="true" />
+        </span>
       </td>
       <td className="task-table__col-name">
         {isEditingName ? (
