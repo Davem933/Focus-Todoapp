@@ -13517,7 +13517,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .table-toolbar__button[data-active="true"] {
-  border-color: #38bdf8;
+  border-color: var(--color-accent);
 }
 
 .table-toolbar__popover {
@@ -13536,7 +13536,7 @@ input[type="checkbox"]:focus-visible {
 }
 
 .table-toolbar__popover-option[data-selected="true"] {
-  color: #38bdf8;
+  color: var(--color-accent);
 }
 
 .table-toolbar__checkbox-row {
@@ -13568,7 +13568,7 @@ input[type="checkbox"]:focus-visible {
   padding: 6px 14px;
   border-radius: 6px;
   border: none;
-  background: #38bdf8;
+  background: var(--color-accent);
   color: #0b1220;
   font-weight: 600;
   font-size: 13px;
@@ -13617,8 +13617,8 @@ input[type="checkbox"]:focus-visible {
 
 .task-table__status-dot[data-state="in-progress"] {
   border-style: solid;
-  background: #38bdf8;
-  border-color: #38bdf8;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .task-table__status-dot[data-state="done"] {
@@ -13637,7 +13637,7 @@ input[type="checkbox"]:focus-visible {
 
 .task-table__name-input {
   background: transparent;
-  border: 1px solid #38bdf8;
+  border: 1px solid var(--color-accent);
   border-radius: 4px;
   color: inherit;
   font-size: 13px;
@@ -13678,6 +13678,10 @@ input[type="checkbox"]:focus-visible {
   color: #cbd5e1;
 }
 
+[data-theme="light"] .table-status-badge__pill {
+  color: #64748b;
+}
+
 .table-status-badge__pill[data-state="in-progress"] {
   border-style: solid;
   background: #2563eb;
@@ -13713,6 +13717,10 @@ input[type="checkbox"]:focus-visible {
 .table-assignee-avatar--empty {
   color: #7c8aa8;
   font-size: 12px;
+}
+
+[data-theme="light"] .table-assignee-avatar--empty {
+  color: #64748b;
 }
 
 .table-priority-flag {
