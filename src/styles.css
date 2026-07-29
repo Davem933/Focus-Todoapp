@@ -13660,9 +13660,42 @@ input[type="checkbox"]:focus-visible {
   opacity: 1;
 }
 
+.task-table__due-date {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: 13px;
+}
+
 .task-table__due-date[data-overdue="true"] {
   color: #f43f5e;
   font-weight: 600;
+}
+
+.table-assignee-dropdown .custom-dropdown__trigger,
+.table-priority-dropdown .custom-dropdown__trigger,
+.table-status-badge .custom-dropdown__trigger {
+  background: transparent;
+  border: none;
+  min-height: auto;
+  width: auto;
+  padding: 2px 0;
+}
+
+.table-assignee-dropdown .custom-dropdown__trigger:hover,
+.table-priority-dropdown .custom-dropdown__trigger:hover,
+.table-status-badge .custom-dropdown__trigger:hover {
+  background: transparent;
+  border: none;
+}
+
+.table-assignee-dropdown .custom-dropdown__trigger:focus-visible,
+.table-priority-dropdown .custom-dropdown__trigger:focus-visible,
+.table-status-badge .custom-dropdown__trigger:focus-visible {
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .task-table__group-header td {
