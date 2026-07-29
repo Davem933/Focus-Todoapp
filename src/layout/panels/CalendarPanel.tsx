@@ -500,115 +500,119 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
           ariaLabel="Vyber nástěnku pro kalendář"
           disabled={isLoading || dropdownOptions.length === 0}
         />
-        <div className="project-detail__filter" ref={isFilterOpen ? filterPanelRef : null}>
-          <button
-            className="project-detail__filter-button"
-            type="button"
-            aria-expanded={isFilterOpen}
-            onClick={() => setIsFilterOpen((current) => !current)}
-          >
-            <Filter aria-hidden="true" size={15} />
-            <span>Filtr</span>
-            {activeFilterCount > 0 ? (
-              <span className="project-detail__filter-badge">{activeFilterCount}</span>
-            ) : null}
-          </button>
-          {activeFilterCount > 0 ? (
-            <button
-              className="project-detail__filter-clear"
-              type="button"
-              aria-label="Zrušit filtry"
-              onClick={handleClearFilters}
-            >
-              <X aria-hidden="true" size={12} />
-            </button>
-          ) : null}
-          {isFilterOpen ? (
-            <div className="project-detail__filter-panel" role="menu">
-              <div className="project-detail__filter-section">
-                <span>Přiřazeno</span>
-                {projectMembers.length === 0 ? (
-                  <p className="project-detail__filter-empty">Nástěnka nemá žádné členy.</p>
-                ) : (
-                  projectMembers.map((member) => (
-                    <label className="project-detail__filter-option" key={member.userId}>
+        {selectedProjectId ? (
+          <>
+            <div className="project-detail__filter" ref={isFilterOpen ? filterPanelRef : null}>
+              <button
+                className="project-detail__filter-button"
+                type="button"
+                aria-expanded={isFilterOpen}
+                onClick={() => setIsFilterOpen((current) => !current)}
+              >
+                <Filter aria-hidden="true" size={15} />
+                <span>Filtr</span>
+                {activeFilterCount > 0 ? (
+                  <span className="project-detail__filter-badge">{activeFilterCount}</span>
+                ) : null}
+              </button>
+              {activeFilterCount > 0 ? (
+                <button
+                  className="project-detail__filter-clear"
+                  type="button"
+                  aria-label="Zrušit filtry"
+                  onClick={handleClearFilters}
+                >
+                  <X aria-hidden="true" size={12} />
+                </button>
+              ) : null}
+              {isFilterOpen ? (
+                <div className="project-detail__filter-panel" role="menu">
+                  <div className="project-detail__filter-section">
+                    <span>Přiřazeno</span>
+                    {projectMembers.length === 0 ? (
+                      <p className="project-detail__filter-empty">Nástěnka nemá žádné členy.</p>
+                    ) : (
+                      projectMembers.map((member) => (
+                        <label className="project-detail__filter-option" key={member.userId}>
+                          <input
+                            type="checkbox"
+                            checked={filterAssigneeIds.includes(member.userId)}
+                            onChange={() =>
+                              setFilterAssigneeIds((current) => toggleFilterValue(current, member.userId))
+                            }
+                          />
+                          <span>{getMemberDisplayName(member)}</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="project-detail__filter-section">
+                    <span>Priorita</span>
+                    {BOARD_CARD_PRIORITY_OPTIONS.map((priorityOption) => (
+                      <label className="project-detail__filter-option" key={priorityOption}>
+                        <input
+                          type="checkbox"
+                          checked={filterPriorities.includes(priorityOption)}
+                          onChange={() =>
+                            setFilterPriorities((current) => toggleFilterValue(current, priorityOption))
+                          }
+                        />
+                        <i
+                          className="project-detail__filter-dot"
+                          aria-hidden="true"
+                          style={{ background: BOARD_CARD_PRIORITY_COLORS[priorityOption] }}
+                        />
+                        <span>{BOARD_CARD_PRIORITY_LABELS[priorityOption]}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="project-detail__filter-section">
+                    <span>Stav</span>
+                    <label className="project-detail__filter-option">
                       <input
                         type="checkbox"
-                        checked={filterAssigneeIds.includes(member.userId)}
-                        onChange={() =>
-                          setFilterAssigneeIds((current) => toggleFilterValue(current, member.userId))
-                        }
+                        checked={showCompletedTasks}
+                        onChange={() => setShowCompletedTasks((current) => !current)}
                       />
-                      <span>{getMemberDisplayName(member)}</span>
+                      <span>Zobrazit dokončené úkoly</span>
                     </label>
-                  ))
-                )}
-              </div>
-
-              <div className="project-detail__filter-section">
-                <span>Priorita</span>
-                {BOARD_CARD_PRIORITY_OPTIONS.map((priorityOption) => (
-                  <label className="project-detail__filter-option" key={priorityOption}>
-                    <input
-                      type="checkbox"
-                      checked={filterPriorities.includes(priorityOption)}
-                      onChange={() =>
-                        setFilterPriorities((current) => toggleFilterValue(current, priorityOption))
-                      }
-                    />
-                    <i
-                      className="project-detail__filter-dot"
-                      aria-hidden="true"
-                      style={{ background: BOARD_CARD_PRIORITY_COLORS[priorityOption] }}
-                    />
-                    <span>{BOARD_CARD_PRIORITY_LABELS[priorityOption]}</span>
-                  </label>
-                ))}
-              </div>
-
-              <div className="project-detail__filter-section">
-                <span>Stav</span>
-                <label className="project-detail__filter-option">
-                  <input
-                    type="checkbox"
-                    checked={showCompletedTasks}
-                    onChange={() => setShowCompletedTasks((current) => !current)}
-                  />
-                  <span>Zobrazit dokončené úkoly</span>
-                </label>
-              </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
-        <div className="calendar-panel__nav">
-          <CustomDropdown
-            className="calendar-panel__view-dropdown"
-            value={viewMode}
-            options={VIEW_MODE_OPTIONS}
-            onChange={(value) => handleViewModeChange(value as CalendarViewMode)}
-            ariaLabel="Vyber zobrazení kalendáře"
-          />
-          <button
-            className="calendar-panel__nav-button"
-            type="button"
-            aria-label="Předchozí"
-            onClick={goToPrevious}
-          >
-            <ChevronLeft size={16} strokeWidth={2} />
-          </button>
-          <h2 className="calendar-panel__title">{headerTitle}</h2>
-          <button
-            className="calendar-panel__nav-button"
-            type="button"
-            aria-label="Následující"
-            onClick={goToNext}
-          >
-            <ChevronRight size={16} strokeWidth={2} />
-          </button>
-          <button className="calendar-panel__today-button" type="button" onClick={goToToday}>
-            Dnes
-          </button>
-        </div>
+            <div className="calendar-panel__nav">
+              <CustomDropdown
+                className="calendar-panel__view-dropdown"
+                value={viewMode}
+                options={VIEW_MODE_OPTIONS}
+                onChange={(value) => handleViewModeChange(value as CalendarViewMode)}
+                ariaLabel="Vyber zobrazení kalendáře"
+              />
+              <button
+                className="calendar-panel__nav-button"
+                type="button"
+                aria-label="Předchozí"
+                onClick={goToPrevious}
+              >
+                <ChevronLeft size={16} strokeWidth={2} />
+              </button>
+              <h2 className="calendar-panel__title">{headerTitle}</h2>
+              <button
+                className="calendar-panel__nav-button"
+                type="button"
+                aria-label="Následující"
+                onClick={goToNext}
+              >
+                <ChevronRight size={16} strokeWidth={2} />
+              </button>
+              <button className="calendar-panel__today-button" type="button" onClick={goToToday}>
+                Dnes
+              </button>
+            </div>
+          </>
+        ) : null}
       </header>
 
       {error ? <p className="calendar-panel__error">{error}</p> : null}
