@@ -1149,7 +1149,6 @@ export function AppShell(props: AppShellProps) {
                   handleSelectTask(newTaskId);
                 }
               }}
-              onOpenTask={(taskId) => handleSelectTask(taskId)}
               onDeleteTask={handleDeleteTaskAction}
               canDeleteTask={canDeleteTask}
             />

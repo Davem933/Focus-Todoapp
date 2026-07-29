@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Maximize2, Trash2 } from "lucide-react";
 import type { Task, TaskUpdate } from "../../../tasks/taskTypes";
 import type { ProjectColumn } from "../../../projects/projectTypes";
 import type { TeamMember } from "../../../teams/teamTypes";
@@ -289,8 +289,8 @@ function TaskTableRow({
           </button>
         )}
         <span className="task-table__row-actions">
-          <button type="button" onClick={() => onOpenTask(task.id)}>
-            Otevřit
+          <button type="button" onClick={() => onOpenTask(task.id)} aria-label="Otevrit ukol">
+            <Maximize2 size={14} aria-hidden="true" />
           </button>
           {canDeleteTask(task) ? (
             <button type="button" onClick={() => onDeleteTask(task.id)} aria-label="Smazat ukol">

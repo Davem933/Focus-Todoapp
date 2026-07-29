@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Task, TaskPriority, TaskUpdate } from "../../tasks/taskTypes";
+import type { FormEvent } from "react";
+import { AnimatePresence } from "framer-motion";
+import type { Task, TaskPriority, TaskSubtask, TaskUpdate } from "../../tasks/taskTypes";
 import type { Project, ProjectColumn } from "../../projects/projectTypes";
 import type { Team, TeamMember } from "../../teams/teamTypes";
 import type { ProjectCustomColumn, TaskCustomFieldValue } from "../../tasks/customFieldTypes";
@@ -12,7 +14,10 @@ import {
   setCustomFieldValue,
   MAX_CUSTOM_COLUMNS_PER_PROJECT,
 } from "../../supabase/projectCustomColumnApi";
+import { createEntityId } from "../../tasks/idUtils";
+import { appendCardLabelValue, createCardLabels } from "../../tasks/cardLabels";
 import { CustomDropdown } from "../CustomDropdown";
+import { ProjectCardComposerModal } from "../ProjectCardComposerModal";
 import { TableToolbar } from "./table/TableToolbar";
 import type { TableColumnVisibility, TableDueFilter, TableGroupBy } from "./table/TableToolbar";
 import { TaskTable } from "./table/TaskTable";
@@ -25,7 +30,6 @@ type TableViewPanelProps = {
   currentUserId: string | null;
   onUpdateTask: (taskId: string, patch: TaskUpdate) => void;
   onCreateTaskForBoard: (projectId: string) => void;
-  onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   canDeleteTask: (task: Task) => boolean;
 };
@@ -44,7 +48,6 @@ export function TableViewPanel({
   tasks,
   onUpdateTask,
   onCreateTaskForBoard,
-  onOpenTask,
   onDeleteTask,
   canDeleteTask,
 }: TableViewPanelProps) {
@@ -62,6 +65,18 @@ export function TableViewPanel({
   const [priorityFilter, setPriorityFilter] = useState<Set<TaskPriority>>(new Set());
   const [dueFilter, setDueFilter] = useState<TableDueFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [cardComposerTaskId, setCardComposerTaskId] = useState<string | null>(null);
+  const [cardComposerColumnKey, setCardComposerColumnKey] = useState<Task["boardColumnKey"] | null>(null);
+  const [cardComposerTitle, setCardComposerTitle] = useState("");
+  const [cardComposerNote, setCardComposerNote] = useState("");
+  const [cardComposerPriority, setCardComposerPriority] = useState<TaskPriority>("none");
+  const [cardComposerDueDate, setCardComposerDueDate] = useState("");
+  const [cardComposerLabels, setCardComposerLabels] = useState("");
+  const [cardComposerLabelInput, setCardComposerLabelInput] = useState("");
+  const [cardComposerAssigneeId, setCardComposerAssigneeId] = useState("");
+  const [cardComposerSubtaskTitle, setCardComposerSubtaskTitle] = useState("");
+  const [cardComposerSubtasks, setCardComposerSubtasks] = useState<TaskSubtask[]>([]);
 
   useEffect(() => {
     if (!activeTeamId) {
@@ -194,6 +209,85 @@ export function TableViewPanel({
     });
   }
 
+  function resetCardComposer() {
+    setCardComposerTaskId(null);
+    setCardComposerColumnKey(null);
+    setCardComposerTitle("");
+    setCardComposerNote("");
+    setCardComposerPriority("none");
+    setCardComposerDueDate("");
+    setCardComposerLabels("");
+    setCardComposerLabelInput("");
+    setCardComposerAssigneeId("");
+    setCardComposerSubtaskTitle("");
+    setCardComposerSubtasks([]);
+  }
+
+  function handleOpenTaskInComposer(taskId: string) {
+    const task = boardTasks.find((entry) => entry.id === taskId);
+
+    if (!task) {
+      return;
+    }
+
+    setCardComposerTaskId(task.id);
+    setCardComposerColumnKey(task.boardColumnKey);
+    setCardComposerTitle(task.title);
+    setCardComposerNote(task.note);
+    setCardComposerPriority(task.priority);
+    setCardComposerDueDate(task.dueDate ?? "");
+    setCardComposerLabels(task.labels.map((label) => label.name).join(", "));
+    setCardComposerAssigneeId(task.assigneeId ?? "");
+    setCardComposerSubtaskTitle("");
+    setCardComposerSubtasks(task.subtasks.map((subtask) => ({ ...subtask })));
+  }
+
+  function handleAddComposerSubtask() {
+    const title = cardComposerSubtaskTitle.trim();
+
+    if (!title) {
+      return;
+    }
+
+    setCardComposerSubtasks((current) => [...current, { id: createEntityId(), title, completed: false }]);
+    setCardComposerSubtaskTitle("");
+  }
+
+  function handleToggleComposerSubtask(subtaskId: string) {
+    setCardComposerSubtasks((current) =>
+      current.map((subtask) => (subtask.id === subtaskId ? { ...subtask, completed: !subtask.completed } : subtask)),
+    );
+  }
+
+  function handleAddComposerLabel(rawValue: string) {
+    setCardComposerLabels(appendCardLabelValue(cardComposerLabels, rawValue));
+    setCardComposerLabelInput("");
+  }
+
+  function handleSubmitComposer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
+
+    if (!cardComposerTaskId || !selectedProject || !cardComposerColumnKey || !cardComposerTitle.trim()) {
+      return;
+    }
+
+    onUpdateTask(cardComposerTaskId, {
+      assigneeId: cardComposerAssigneeId || null,
+      boardColumnKey: cardComposerColumnKey,
+      dueDate: cardComposerDueDate || null,
+      labels: createCardLabels(cardComposerLabels),
+      note: cardComposerNote,
+      priority: cardComposerPriority,
+      projectId: selectedProject.id,
+      subtasks: cardComposerSubtasks,
+      teamId: selectedProject.teamId,
+      title: cardComposerTitle,
+    });
+    resetCardComposer();
+  }
+
   if (projects.length === 0) {
     return (
       <div className="app-panel view-placeholder">
@@ -241,7 +335,7 @@ export function TableViewPanel({
         groupBy={groupBy}
         onUpdateTask={onUpdateTask}
         onSetCustomFieldValue={handleSetCustomFieldValue}
-        onOpenTask={onOpenTask}
+        onOpenTask={handleOpenTaskInComposer}
         onDeleteTask={onDeleteTask}
         canDeleteTask={canDeleteTask}
         canAddCustomColumn={customColumns.length < MAX_CUSTOM_COLUMNS_PER_PROJECT}
@@ -250,6 +344,39 @@ export function TableViewPanel({
       {isAddColumnOpen ? (
         <CustomColumnModal onClose={() => setIsAddColumnOpen(false)} onSubmit={handleAddCustomColumn} />
       ) : null}
+      <AnimatePresence>
+        {cardComposerTaskId && cardComposerColumnKey ? (
+          <ProjectCardComposerModal
+            actionLabel="Ulozit kartu"
+            assigneeId={cardComposerAssigneeId}
+            columnTitle={columns.find((column) => column.key === cardComposerColumnKey)?.title ?? "Sloupec"}
+            dueDate={cardComposerDueDate}
+            labelInput={cardComposerLabelInput}
+            labels={cardComposerLabels}
+            isEditing
+            members={members}
+            note={cardComposerNote}
+            priority={cardComposerPriority}
+            projectName={projects.find((project) => project.id === selectedProjectId)?.name ?? ""}
+            subtaskTitle={cardComposerSubtaskTitle}
+            subtasks={cardComposerSubtasks}
+            title={cardComposerTitle}
+            onAddSubtask={handleAddComposerSubtask}
+            onAssigneeChange={setCardComposerAssigneeId}
+            onClose={resetCardComposer}
+            onDueDateChange={setCardComposerDueDate}
+            onLabelInputChange={setCardComposerLabelInput}
+            onAddLabel={handleAddComposerLabel}
+            onLabelsChange={setCardComposerLabels}
+            onNoteChange={setCardComposerNote}
+            onPriorityChange={setCardComposerPriority}
+            onSubtaskTitleChange={setCardComposerSubtaskTitle}
+            onSubmit={handleSubmitComposer}
+            onToggleSubtask={handleToggleComposerSubtask}
+            onTitleChange={setCardComposerTitle}
+          />
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
