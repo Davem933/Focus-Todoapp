@@ -107,10 +107,12 @@ export function TableViewPanel({
     loadTeamMembers(project.teamId).then(setMembers).catch(() => setMembers([]));
   }, [projects, selectedProjectId]);
 
-  const boardTasks = useMemo(
-    () => tasks.filter((task) => task.projectId === selectedProjectId),
-    [tasks, selectedProjectId],
-  );
+  const boardTasks = useMemo(() => {
+    // Global task state is newest-first (App.tsx prepends new tasks), but the
+    // table should show new tasks at the bottom, so reverse to oldest-first.
+    const tasksForBoard = tasks.filter((task) => task.projectId === selectedProjectId);
+    return tasksForBoard.slice().reverse();
+  }, [tasks, selectedProjectId]);
 
   const filteredTasks = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
