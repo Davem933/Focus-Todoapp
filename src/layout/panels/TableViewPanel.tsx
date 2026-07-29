@@ -1,263 +1,259 @@
 import { useEffect, useMemo, useState } from "react";
-import { CustomDropdown } from "../CustomDropdown";
-import type { DropdownOption } from "../CustomDropdown";
-import { loadProjectColumns, loadProjectsForTeams } from "../../supabase/projectApi";
-import { loadTeamMembers } from "../../supabase/teamApi";
+import type { Task, TaskPriority, TaskUpdate } from "../../tasks/taskTypes";
 import type { Project, ProjectColumn } from "../../projects/projectTypes";
 import type { Team, TeamMember } from "../../teams/teamTypes";
-import type { Task } from "../../tasks/taskTypes";
-import { getMemberInitials } from "../../teams/teamMemberDisplay";
-import { TASK_PRIORITY_COLORS } from "../../tasks/taskPriorityColors";
-import { getTodayDateValue } from "../../tasks/dateUtils";
+import type { ProjectCustomColumn, TaskCustomFieldValue } from "../../tasks/customFieldTypes";
+import { loadProjectsForTeams, loadProjectColumns } from "../../supabase/projectApi";
+import { loadTeamMembers } from "../../supabase/teamApi";
 import {
-  filterProjectTasks,
-  getDefaultProjectBoardPreferences,
-  loadProjectBoardPreferences,
-  saveProjectBoardPreferences,
-  sortProjectTasks,
-  type ProjectBoardPreferences,
-} from "../../projects/projectBoardPreferences";
-import { ProjectBoardToolbar } from "../../projects/ProjectBoardToolbar";
+  createCustomColumn,
+  loadCustomColumns,
+  loadCustomFieldValues,
+  setCustomFieldValue,
+  MAX_CUSTOM_COLUMNS_PER_PROJECT,
+} from "../../supabase/projectCustomColumnApi";
+import { CustomDropdown } from "../CustomDropdown";
+import { TableToolbar } from "./table/TableToolbar";
+import type { TableColumnVisibility, TableDueFilter, TableGroupBy } from "./table/TableToolbar";
+import { TaskTable } from "./table/TaskTable";
+import { CustomColumnModal } from "./table/CustomColumnModal";
 
 type TableViewPanelProps = {
   teams: Team[];
+  activeTeamId: string | null;
   tasks: Task[];
-  onOpenTask: (projectId: string, taskId: string) => void;
+  currentUserId: string | null;
+  onUpdateTask: (taskId: string, patch: TaskUpdate) => void;
+  onCreateTask: (title: string, options?: Record<string, unknown>) => void;
+  onOpenTask: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
+  canDeleteTask: (task: Task) => boolean;
 };
 
-export function TableViewPanel({ teams, tasks, onOpenTask }: TableViewPanelProps) {
-  const [boards, setBoards] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+const DEFAULT_VISIBILITY: TableColumnVisibility = {
+  assignee: true,
+  status: true,
+  dueDate: true,
+  priority: true,
+  custom: {},
+};
+
+export function TableViewPanel({
+  teams,
+  activeTeamId,
+  tasks,
+  onUpdateTask,
+  onOpenTask,
+  onDeleteTask,
+  canDeleteTask,
+}: TableViewPanelProps) {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [columns, setColumns] = useState<ProjectColumn[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [preferences, setPreferences] = useState<ProjectBoardPreferences>(
-    getDefaultProjectBoardPreferences(),
-  );
+  const [customColumns, setCustomColumns] = useState<ProjectCustomColumn[]>([]);
+  const [customFieldValues, setCustomFieldValues] = useState<TaskCustomFieldValue[]>([]);
+  const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
+
+  const [visibility, setVisibility] = useState<TableColumnVisibility>(DEFAULT_VISIBILITY);
+  const [groupBy, setGroupBy] = useState<TableGroupBy>("none");
+  const [showClosed, setShowClosed] = useState(true);
+  const [assigneeFilter, setAssigneeFilter] = useState<Set<string>>(new Set());
+  const [priorityFilter, setPriorityFilter] = useState<Set<TaskPriority>>(new Set());
+  const [dueFilter, setDueFilter] = useState<TableDueFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    let isCancelled = false;
-    const teamIds = teams.map((team) => team.id);
-
-    async function loadBoards() {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const nextBoards = await loadProjectsForTeams(teamIds);
-
-        if (!isCancelled) {
-          setBoards(nextBoards);
-        }
-      } catch (loadError) {
-        if (!isCancelled) {
-          setBoards([]);
-          setError(
-            loadError instanceof Error ? loadError.message : "Nástěnky se nepodařilo načíst.",
-          );
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    if (teamIds.length === 0) {
-      setBoards([]);
-      setError(null);
+    if (!activeTeamId) {
+      setProjects([]);
       return;
     }
 
-    void loadBoards();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [teams]);
+    loadProjectsForTeams([activeTeamId]).then(setProjects).catch(() => setProjects([]));
+  }, [activeTeamId]);
 
   useEffect(() => {
-    if (selectedBoardId && !boards.some((board) => board.id === selectedBoardId)) {
-      setSelectedBoardId(null);
+    if (projects.length === 0) {
+      setSelectedProjectId(null);
+      return;
     }
-  }, [boards, selectedBoardId]);
 
-  const selectedBoard = boards.find((board) => board.id === selectedBoardId) ?? null;
+    if (!selectedProjectId || !projects.some((project) => project.id === selectedProjectId)) {
+      setSelectedProjectId(projects[0].id);
+    }
+  }, [projects, selectedProjectId]);
 
   useEffect(() => {
-    if (!selectedBoard) {
+    if (!selectedProjectId) {
       setColumns([]);
+      setCustomColumns([]);
+      setCustomFieldValues([]);
+      return;
+    }
+
+    loadProjectColumns(selectedProjectId).then(setColumns).catch(() => setColumns([]));
+    loadCustomColumns(selectedProjectId).then(setCustomColumns).catch(() => setCustomColumns([]));
+    loadCustomFieldValues(selectedProjectId).then(setCustomFieldValues).catch(() => setCustomFieldValues([]));
+  }, [selectedProjectId]);
+
+  useEffect(() => {
+    const project = projects.find((entry) => entry.id === selectedProjectId);
+
+    if (!project) {
       setMembers([]);
       return;
     }
 
-    let isCancelled = false;
-    const board = selectedBoard;
-    setPreferences(loadProjectBoardPreferences(board.id));
+    loadTeamMembers(project.teamId).then(setMembers).catch(() => setMembers([]));
+  }, [projects, selectedProjectId]);
 
-    async function loadBoardDetails() {
-      setIsLoading(true);
-      setError(null);
+  const boardTasks = useMemo(
+    () => tasks.filter((task) => task.projectId === selectedProjectId),
+    [tasks, selectedProjectId],
+  );
 
-      try {
-        const [nextColumns, nextMembers] = await Promise.all([
-          loadProjectColumns(board.id),
-          loadTeamMembers(board.teamId),
-        ]);
+  const filteredTasks = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
 
-        if (!isCancelled) {
-          setColumns(nextColumns);
-          setMembers(nextMembers);
-        }
-      } catch (loadError) {
-        if (!isCancelled) {
-          setColumns([]);
-          setMembers([]);
-          setError(
-            loadError instanceof Error ? loadError.message : "Detail nástěnky se nepodařilo načíst.",
-          );
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
+    return boardTasks.filter((task) => {
+      if (!showClosed && task.boardColumnKey === "done") {
+        return false;
       }
-    }
 
-    void loadBoardDetails();
+      if (assigneeFilter.size > 0 && (!task.assigneeId || !assigneeFilter.has(task.assigneeId))) {
+        return false;
+      }
 
-    return () => {
-      isCancelled = true;
-    };
-  }, [selectedBoard]);
+      if (priorityFilter.size > 0 && !priorityFilter.has(task.priority)) {
+        return false;
+      }
 
-  useEffect(() => {
-    if (!selectedBoard) {
+      if (dueFilter === "overdue" && !(task.dueDate && new Date(task.dueDate + "T23:59:59") < new Date() && !task.completed)) {
+        return false;
+      }
+
+      if (dueFilter === "no_date" && task.dueDate) {
+        return false;
+      }
+
+      if (query && !task.title.toLowerCase().includes(query)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [boardTasks, showClosed, assigneeFilter, priorityFilter, dueFilter, searchQuery]);
+
+  function toggleAssigneeFilter(userId: string) {
+    setAssigneeFilter((current) => {
+      const next = new Set(current);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  }
+
+  function togglePriorityFilter(priority: TaskPriority) {
+    setPriorityFilter((current) => {
+      const next = new Set(current);
+      if (next.has(priority)) {
+        next.delete(priority);
+      } else {
+        next.add(priority);
+      }
+      return next;
+    });
+  }
+
+  function toggleColumnVisible(key: string) {
+    setVisibility((current) => {
+      if (key === "assignee" || key === "status" || key === "dueDate" || key === "priority") {
+        return { ...current, [key]: !current[key] };
+      }
+
+      return { ...current, custom: { ...current.custom, [key]: !(current.custom[key] ?? true) } };
+    });
+  }
+
+  async function handleAddCustomColumn(title: string, fieldType: "text" | "select", options: { value: string; label: string }[]) {
+    if (!selectedProjectId) {
       return;
     }
 
-    saveProjectBoardPreferences(selectedBoard.id, preferences);
-  }, [selectedBoard, preferences]);
+    const created = await createCustomColumn(selectedProjectId, title, fieldType, options);
+    setCustomColumns((current) => [...current, created]);
+    setIsAddColumnOpen(false);
+  }
 
-  const dropdownOptions: DropdownOption[] = boards.map((board) => ({
-    value: board.id,
-    label: board.name,
-  }));
+  async function handleSetCustomFieldValue(taskId: string, columnId: string, value: string | null) {
+    await setCustomFieldValue(taskId, columnId, value);
+    setCustomFieldValues((current) => {
+      const withoutExisting = current.filter((entry) => !(entry.taskId === taskId && entry.columnId === columnId));
+      return [...withoutExisting, { taskId, columnId, value }];
+    });
+  }
 
-  const boardTasks = useMemo(() => {
-    if (!selectedBoard) {
-      return [];
-    }
-
-    return tasks.filter((task) => task.projectId === selectedBoard.id && !task.isArchived);
-  }, [tasks, selectedBoard]);
-
-  const availableLabels = useMemo(
-    () => Array.from(new Map(boardTasks.flatMap((task) => task.labels).map((label) => [label.id, label])).values()),
-    [boardTasks],
-  );
-
-  const today = getTodayDateValue();
-  const filteredTasks = filterProjectTasks(boardTasks, preferences.filters, today);
-  const sortedTasks = sortProjectTasks(filteredTasks, preferences.sort);
-  const columnByKey = new Map(columns.map((column) => [column.key, column]));
-  const memberById = new Map(members.map((member) => [member.userId, member]));
+  if (projects.length === 0) {
+    return (
+      <div className="app-panel view-placeholder">
+        <h2>Tabulka</h2>
+        <p>Tento tym zatim nema zadnou nastenku. Vytvorte ji v prehledu projektu.</p>
+      </div>
+    );
+  }
 
   return (
-    <section className="app-panel table-view" aria-label="Tabulka úkolů">
-      <header className="table-view__header">
+    <div className="app-panel table-view-panel">
+      <div className="table-view-panel__header">
         <CustomDropdown
-          value={selectedBoardId ?? ""}
-          options={dropdownOptions}
-          onChange={(value) => setSelectedBoardId(value)}
-          placeholder="Vyber nástěnku"
-          ariaLabel="Vyber nástěnku pro tabulku"
-          disabled={isLoading || dropdownOptions.length === 0}
+          className="table-view-panel__board-select"
+          value={selectedProjectId ?? ""}
+          options={projects.map((project) => ({ value: project.id, label: project.name }))}
+          onChange={setSelectedProjectId}
+          ariaLabel="Vyber nastenky"
         />
-      </header>
-
-      {error ? <p className="table-view__error">{error}</p> : null}
-
-      {!selectedBoard ? (
-        <p className="table-view__empty">Vyber nástěnku pro zobrazení úkolů.</p>
-      ) : (
-        <>
-          <ProjectBoardToolbar
-            preferences={preferences}
-            onPreferencesChange={setPreferences}
-            members={members}
-            availableLabels={availableLabels}
-          />
-
-          {sortedTasks.length === 0 ? (
-            <p className="table-view__empty">Tato nástěnka nemá žádné úkoly.</p>
-          ) : (
-            <div className="table-view__table-wrap">
-              <table className="table-view__table">
-                <thead>
-                  <tr>
-                    <th>Název</th>
-                    <th>Přiřazeno</th>
-                    <th>Stav</th>
-                    <th>Termín</th>
-                    <th>Priorita</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedTasks.map((task) => {
-                    const assignee = task.assigneeId ? memberById.get(task.assigneeId) : null;
-                    const statusLabel = columnByKey.get(task.boardColumnKey)?.title ?? task.boardColumnKey;
-
-                    return (
-                      <tr
-                        className="table-view__row"
-                        key={task.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => onOpenTask(selectedBoard.id, task.id)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            onOpenTask(selectedBoard.id, task.id);
-                          }
-                        }}
-                      >
-                        <td className="table-view__cell-name">
-                          <span
-                            className="table-view__completed-dot"
-                            data-completed={task.completed ? "true" : "false"}
-                            aria-hidden="true"
-                          />
-                          <span className="table-view__title">{task.title}</span>
-                        </td>
-                        <td>
-                          {assignee ? (
-                            <span className="table-view__assignee" title={assignee.email}>
-                              {getMemberInitials(assignee)}
-                            </span>
-                          ) : (
-                            <span className="table-view__cell-empty">—</span>
-                          )}
-                        </td>
-                        <td>{statusLabel}</td>
-                        <td>{task.dueDate ?? <span className="table-view__cell-empty">—</span>}</td>
-                        <td>
-                          <span
-                            className="table-view__priority-dot"
-                            aria-hidden="true"
-                            style={{ background: TASK_PRIORITY_COLORS[task.priority] }}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
-      )}
-    </section>
+      </div>
+      <TableToolbar
+        members={members}
+        customColumns={customColumns}
+        visibility={visibility}
+        onToggleColumnVisible={toggleColumnVisible}
+        groupBy={groupBy}
+        onGroupByChange={setGroupBy}
+        showClosed={showClosed}
+        onToggleShowClosed={() => setShowClosed((current) => !current)}
+        assigneeFilter={assigneeFilter}
+        onToggleAssigneeFilter={toggleAssigneeFilter}
+        priorityFilter={priorityFilter}
+        onTogglePriorityFilter={togglePriorityFilter}
+        dueFilter={dueFilter}
+        onDueFilterChange={setDueFilter}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        onAddTask={() => selectedProjectId && onOpenTask("")}
+        canAddCustomColumn={customColumns.length < MAX_CUSTOM_COLUMNS_PER_PROJECT}
+        onOpenAddColumn={() => setIsAddColumnOpen(true)}
+      />
+      <TaskTable
+        tasks={filteredTasks}
+        columns={columns}
+        members={members}
+        customColumns={customColumns}
+        customFieldValues={customFieldValues}
+        visibility={visibility}
+        groupBy={groupBy}
+        onUpdateTask={onUpdateTask}
+        onSetCustomFieldValue={handleSetCustomFieldValue}
+        onOpenTask={onOpenTask}
+        onDeleteTask={onDeleteTask}
+        canDeleteTask={canDeleteTask}
+      />
+      {isAddColumnOpen ? (
+        <CustomColumnModal onClose={() => setIsAddColumnOpen(false)} onSubmit={handleAddCustomColumn} />
+      ) : null}
+    </div>
   );
 }
