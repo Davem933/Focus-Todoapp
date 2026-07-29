@@ -25,6 +25,8 @@ type TaskTableProps = {
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   canDeleteTask: (task: Task) => boolean;
+  canAddCustomColumn: boolean;
+  onOpenAddColumn: () => void;
 };
 
 function formatDueDate(dueDate: string | null): { label: string; isOverdue: boolean } {
@@ -86,6 +88,8 @@ export function TaskTable({
   onOpenTask,
   onDeleteTask,
   canDeleteTask,
+  canAddCustomColumn,
+  onOpenAddColumn,
 }: TaskTableProps) {
   const groups = groupTasks(tasks, groupBy, columns, members);
   let rowNumber = 0;
@@ -106,7 +110,13 @@ export function TaskTable({
               .map((column) => (
                 <th key={column.id}>{column.title}</th>
               ))}
-            <th className="task-table__col-add">+</th>
+            <th className="task-table__col-add">
+              {canAddCustomColumn ? (
+                <button type="button" onClick={onOpenAddColumn} aria-label="Pridat sloupec">
+                  +
+                </button>
+              ) : null}
+            </th>
           </tr>
         </thead>
         <tbody>

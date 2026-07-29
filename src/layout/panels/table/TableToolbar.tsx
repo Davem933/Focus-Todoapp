@@ -32,8 +32,6 @@ type TableToolbarProps = {
   onToggleColumnVisible: (key: string) => void;
   groupBy: TableGroupBy;
   onGroupByChange: (groupBy: TableGroupBy) => void;
-  showClosed: boolean;
-  onToggleShowClosed: () => void;
   assigneeFilter: Set<string>;
   onToggleAssigneeFilter: (userId: string) => void;
   priorityFilter: Set<TaskPriority>;
@@ -43,8 +41,6 @@ type TableToolbarProps = {
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   onAddTask: () => void;
-  canAddCustomColumn: boolean;
-  onOpenAddColumn: () => void;
 };
 
 type OpenPopover = "group" | "shown" | "filter" | "assignee" | null;
@@ -56,8 +52,6 @@ export function TableToolbar({
   onToggleColumnVisible,
   groupBy,
   onGroupByChange,
-  showClosed,
-  onToggleShowClosed,
   assigneeFilter,
   onToggleAssigneeFilter,
   priorityFilter,
@@ -67,8 +61,6 @@ export function TableToolbar({
   searchQuery,
   onSearchQueryChange,
   onAddTask,
-  canAddCustomColumn,
-  onOpenAddColumn,
 }: TableToolbarProps) {
   const [openPopover, setOpenPopover] = useState<OpenPopover>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -189,10 +181,6 @@ export function TableToolbar({
         ) : null}
       </div>
 
-      <button type="button" className="table-toolbar__button" data-active={showClosed} onClick={onToggleShowClosed}>
-        Closed
-      </button>
-
       <div className="table-toolbar__group">
         <button
           type="button"
@@ -226,13 +214,6 @@ export function TableToolbar({
           placeholder="Hledat ukoly"
         />
       </label>
-
-      {canAddCustomColumn ? (
-        <button type="button" className="table-toolbar__button" onClick={onOpenAddColumn}>
-          <Plus size={14} aria-hidden="true" />
-          Sloupec
-        </button>
-      ) : null}
 
       <button type="button" className="table-toolbar__add-task" onClick={onAddTask}>
         <Plus size={16} aria-hidden="true" />

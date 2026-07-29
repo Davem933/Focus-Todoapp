@@ -58,7 +58,6 @@ export function TableViewPanel({
 
   const [visibility, setVisibility] = useState<TableColumnVisibility>(DEFAULT_VISIBILITY);
   const [groupBy, setGroupBy] = useState<TableGroupBy>("none");
-  const [showClosed, setShowClosed] = useState(true);
   const [assigneeFilter, setAssigneeFilter] = useState<Set<string>>(new Set());
   const [priorityFilter, setPriorityFilter] = useState<Set<TaskPriority>>(new Set());
   const [dueFilter, setDueFilter] = useState<TableDueFilter>("all");
@@ -117,10 +116,6 @@ export function TableViewPanel({
     const query = searchQuery.trim().toLowerCase();
 
     return boardTasks.filter((task) => {
-      if (!showClosed && task.boardColumnKey === "done") {
-        return false;
-      }
-
       if (assigneeFilter.size > 0 && (!task.assigneeId || !assigneeFilter.has(task.assigneeId))) {
         return false;
       }
@@ -143,7 +138,7 @@ export function TableViewPanel({
 
       return true;
     });
-  }, [boardTasks, showClosed, assigneeFilter, priorityFilter, dueFilter, searchQuery]);
+  }, [boardTasks, assigneeFilter, priorityFilter, dueFilter, searchQuery]);
 
   function toggleAssigneeFilter(userId: string) {
     setAssigneeFilter((current) => {
@@ -224,8 +219,6 @@ export function TableViewPanel({
         onToggleColumnVisible={toggleColumnVisible}
         groupBy={groupBy}
         onGroupByChange={setGroupBy}
-        showClosed={showClosed}
-        onToggleShowClosed={() => setShowClosed((current) => !current)}
         assigneeFilter={assigneeFilter}
         onToggleAssigneeFilter={toggleAssigneeFilter}
         priorityFilter={priorityFilter}
@@ -235,8 +228,6 @@ export function TableViewPanel({
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         onAddTask={() => selectedProjectId && onCreateTaskForBoard(selectedProjectId)}
-        canAddCustomColumn={customColumns.length < MAX_CUSTOM_COLUMNS_PER_PROJECT}
-        onOpenAddColumn={() => setIsAddColumnOpen(true)}
       />
       <TaskTable
         tasks={filteredTasks}
@@ -251,6 +242,8 @@ export function TableViewPanel({
         onOpenTask={onOpenTask}
         onDeleteTask={onDeleteTask}
         canDeleteTask={canDeleteTask}
+        canAddCustomColumn={customColumns.length < MAX_CUSTOM_COLUMNS_PER_PROJECT}
+        onOpenAddColumn={() => setIsAddColumnOpen(true)}
       />
       {isAddColumnOpen ? (
         <CustomColumnModal onClose={() => setIsAddColumnOpen(false)} onSubmit={handleAddCustomColumn} />
