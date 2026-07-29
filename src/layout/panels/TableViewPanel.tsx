@@ -24,7 +24,7 @@ type TableViewPanelProps = {
   tasks: Task[];
   currentUserId: string | null;
   onUpdateTask: (taskId: string, patch: TaskUpdate) => void;
-  onCreateTask: (title: string, options?: Record<string, unknown>) => void;
+  onCreateTaskForBoard: (projectId: string) => void;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   canDeleteTask: (task: Task) => boolean;
@@ -43,6 +43,7 @@ export function TableViewPanel({
   activeTeamId,
   tasks,
   onUpdateTask,
+  onCreateTaskForBoard,
   onOpenTask,
   onDeleteTask,
   canDeleteTask,
@@ -233,7 +234,7 @@ export function TableViewPanel({
         onDueFilterChange={setDueFilter}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
-        onAddTask={() => selectedProjectId && onOpenTask("")}
+        onAddTask={() => selectedProjectId && onCreateTaskForBoard(selectedProjectId)}
         canAddCustomColumn={customColumns.length < MAX_CUSTOM_COLUMNS_PER_PROJECT}
         onOpenAddColumn={() => setIsAddColumnOpen(true)}
       />

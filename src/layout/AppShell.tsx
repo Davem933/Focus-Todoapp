@@ -90,6 +90,7 @@ import {
 } from "../tasks/taskPriorityColors";
 import { appendCardLabelValue, createCardLabels } from "../tasks/cardLabels";
 import { ProjectCardComposerModal } from "./ProjectCardComposerModal";
+import { TableViewPanel } from "./panels/TableViewPanel";
 
 type CreateTaskOptions = {
   assigneeId?: string | null;
@@ -1135,10 +1136,23 @@ export function AppShell(props: AppShellProps) {
               onUpdateTask={onUpdateTask}
             />
           ) : isTableOpen ? (
-            <div className="app-panel view-placeholder">
-              <h2>Tabulka</h2>
-              <p>Tabulkové zobrazení se připravuje.</p>
-            </div>
+            <TableViewPanel
+              teams={teams}
+              activeTeamId={activeTeamId}
+              tasks={allTasks}
+              currentUserId={currentUserId}
+              onUpdateTask={onUpdateTask}
+              onCreateTaskForBoard={(projectId) => {
+                const newTaskId = handleCreateTask("Novy ukol", { projectId, boardColumnKey: "todo" });
+
+                if (newTaskId) {
+                  handleSelectTask(newTaskId);
+                }
+              }}
+              onOpenTask={(taskId) => handleSelectTask(taskId)}
+              onDeleteTask={handleDeleteTaskAction}
+              canDeleteTask={canDeleteTask}
+            />
           ) : isGanttOpen ? (
             <div className="app-panel view-placeholder">
               <h2>Gantt diagram</h2>
