@@ -13988,6 +13988,7 @@ input[type="checkbox"]:focus-visible {
 
 .list-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 13px;
 }
@@ -13999,6 +14000,34 @@ input[type="checkbox"]:focus-visible {
   font-weight: 600;
 }
 
+.list-table__col-index {
+  width: 40px;
+}
+
+.list-table__col-name {
+  width: 28%;
+}
+
+.list-table thead th:nth-child(3) {
+  width: 16%;
+}
+
+.list-table thead th:nth-child(4) {
+  width: 12%;
+}
+
+.list-table thead th:nth-child(5) {
+  width: 12%;
+}
+
+.list-table thead th:nth-child(6) {
+  width: 14%;
+}
+
+.list-table__col-add {
+  width: 32px;
+}
+
 .list-row td {
   padding: 6px 10px;
   border-bottom: 1px solid var(--color-border, #2a2d34);
@@ -14006,6 +14035,16 @@ input[type="checkbox"]:focus-visible {
 
 .list-row__col-index {
   white-space: nowrap;
+}
+
+.list-row__col-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-row__col-add {
+  width: 32px;
 }
 
 .list-row__index-inner {

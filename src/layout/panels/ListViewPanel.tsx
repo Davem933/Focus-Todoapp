@@ -126,16 +126,36 @@ export function ListViewPanel({
     filteredTasks,
   } = useProjectViewFilters(boardTasks);
 
+  const sortedColumns = useMemo(() => columns.slice().sort((a, b) => a.position - b.position), [columns]);
+
   const groups = useMemo(() => {
-    return columns
-      .slice()
-      .sort((a, b) => a.position - b.position)
-      .filter((column) => closedVisible || classifyColumnState(column.key, columns) !== "done")
-      .map((column) => ({
-        column,
-        tasks: filteredTasks.filter((task) => task.boardColumnKey === column.key),
-      }));
-  }, [columns, filteredTasks, closedVisible]);
+    const visibleColumns = sortedColumns.filter(
+      (column) => closedVisible || classifyColumnState(column.key, columns) !== "done",
+    );
+    const knownKeys = new Set(sortedColumns.map((column) => column.key));
+    const baseGroups = visibleColumns.map((column) => ({
+      column,
+      tasks: filteredTasks.filter((task) => task.boardColumnKey === column.key),
+    }));
+
+    const orphanedTasks = filteredTasks.filter((task) => !knownKeys.has(task.boardColumnKey));
+
+    if (orphanedTasks.length === 0) {
+      return baseGroups;
+    }
+
+    const uncategorizedColumn: ProjectColumn = {
+      id: "__uncategorized",
+      projectId: selectedProjectId ?? "",
+      key: "__uncategorized",
+      title: "Nezařazeno",
+      position: Number.MAX_SAFE_INTEGER,
+      createdAt: "",
+      updatedAt: "",
+    };
+
+    return [...baseGroups, { column: uncategorizedColumn, tasks: orphanedTasks }];
+  }, [sortedColumns, columns, filteredTasks, closedVisible, selectedProjectId]);
 
   function toggleColumnVisible(columnId: string) {
     setColumnsVisible((current) => ({ ...current, [columnId]: !(current[columnId] ?? true) }));
@@ -310,8 +330,19 @@ export function ListViewPanel({
         onSearchQueryChange={setSearchQuery}
         canAddCustomColumn={canAddCustomColumn}
         onOpenAddColumn={() => setIsAddColumnOpen(true)}
-        onAddTask={() => selectedProjectId && onCreateTaskForBoard(selectedProjectId)}
+        onAddTask={() => {
+          if (!selectedProjectId || sortedColumns.length === 0) {
+            return;
+          }
+
+          onCreateTaskForBoard(selectedProjectId, sortedColumns[0].key);
+        }}
       />
+      {groups.length === 0 ? (
+        <div className="app-panel view-placeholder">
+          <p>Tato nastenka zatim nema zadne sloupce nebo ukoly k zobrazeni.</p>
+        </div>
+      ) : null}
       <div className="list-view-panel__groups">
         {groups.map(({ column, tasks: groupTasks }) => (
           <ListGroup
@@ -330,7 +361,15 @@ export function ListViewPanel({
             onSetCustomFieldValue={handleSetCustomFieldValue}
             onOpenTask={handleOpenTaskInComposer}
             onToggleSubtask={handleToggleSubtask}
-            onAddTask={(columnKey) => selectedProjectId && onCreateTaskForBoard(selectedProjectId, columnKey)}
+            onAddTask={(columnKey) => {
+              if (!selectedProjectId) {
+                return;
+              }
+
+              const targetColumnKey =
+                columnKey === "__uncategorized" && sortedColumns.length > 0 ? sortedColumns[0].key : columnKey;
+              onCreateTaskForBoard(selectedProjectId, targetColumnKey);
+            }}
             onOpenAddColumn={() => setIsAddColumnOpen(true)}
           />
         ))}
