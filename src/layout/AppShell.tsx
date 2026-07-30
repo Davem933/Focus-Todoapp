@@ -91,6 +91,7 @@ import {
 import { appendCardLabelValue, createCardLabels } from "../tasks/cardLabels";
 import { ProjectCardComposerModal } from "./ProjectCardComposerModal";
 import { TableViewPanel } from "./panels/TableViewPanel";
+import { ListViewPanel } from "./panels/ListViewPanel";
 
 type CreateTaskOptions = {
   assigneeId?: string | null;
@@ -213,6 +214,7 @@ export function AppShell(props: AppShellProps) {
   const [isTeamsOverviewOpen, setIsTeamsOverviewOpen] = useState(false);
   const [isProjectsOverviewOpen, setIsProjectsOverviewOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isListOpen, setIsListOpen] = useState(false);
   const [isTableOpen, setIsTableOpen] = useState(false);
   const [isGanttOpen, setIsGanttOpen] = useState(false);
   const [isDashboardViewOpen, setIsDashboardViewOpen] = useState(false);
@@ -230,6 +232,7 @@ export function AppShell(props: AppShellProps) {
       isTeamsOverviewOpen ||
       isProjectsOverviewOpen ||
       isCalendarOpen ||
+      isListOpen ||
       isTableOpen ||
       isGanttOpen ||
       isDashboardViewOpen ||
@@ -573,6 +576,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsListOpen(false);
     setIsTableOpen(false);
     setIsGanttOpen(false);
     setIsDashboardViewOpen(false);
@@ -590,6 +594,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(true);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsListOpen(false);
     setIsTableOpen(false);
     setIsGanttOpen(false);
     setIsDashboardViewOpen(false);
@@ -607,6 +612,7 @@ export function AppShell(props: AppShellProps) {
     setIsProjectsOverviewOpen(true);
     setIsTeamsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsListOpen(false);
     setIsTableOpen(false);
     setIsGanttOpen(false);
     setIsDashboardViewOpen(false);
@@ -626,6 +632,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(true);
+    setIsListOpen(false);
     setIsTableOpen(false);
     setIsGanttOpen(false);
     setIsDashboardViewOpen(false);
@@ -639,12 +646,33 @@ export function AppShell(props: AppShellProps) {
     }
   }
 
+  function handleOpenList() {
+    onClearTaskSelection();
+    setIsWorkspaceHomeOpen(false);
+    setIsTeamsOverviewOpen(false);
+    setIsProjectsOverviewOpen(false);
+    setIsCalendarOpen(false);
+    setIsListOpen(true);
+    setIsTableOpen(false);
+    setIsGanttOpen(false);
+    setIsDashboardViewOpen(false);
+    setIsNotesOpen(false);
+    setIsProfileOpen(false);
+    setViewTabs((prev) => (prev.includes("list") ? prev : [...prev, "list"]));
+    setHasOpenedViewTabs(true);
+
+    if (isMobileLayout) {
+      setIsSidebarOpen(false);
+    }
+  }
+
   function handleOpenTable() {
     onClearTaskSelection();
     setIsWorkspaceHomeOpen(false);
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsListOpen(false);
     setIsTableOpen(true);
     setIsGanttOpen(false);
     setIsDashboardViewOpen(false);
@@ -664,6 +692,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsListOpen(false);
     setIsTableOpen(false);
     setIsGanttOpen(true);
     setIsDashboardViewOpen(false);
@@ -683,6 +712,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsListOpen(false);
     setIsTableOpen(false);
     setIsGanttOpen(false);
     setIsDashboardViewOpen(true);
@@ -701,6 +731,8 @@ export function AppShell(props: AppShellProps) {
       handleOpenDashboardView();
     } else if (kind === "calendar") {
       handleOpenCalendar();
+    } else if (kind === "list") {
+      handleOpenList();
     } else if (kind === "table") {
       handleOpenTable();
     } else if (kind === "notes") {
@@ -725,6 +757,8 @@ export function AppShell(props: AppShellProps) {
       setIsDashboardViewOpen(false);
     } else if (kind === "calendar" && isCalendarOpen) {
       setIsCalendarOpen(false);
+    } else if (kind === "list" && isListOpen) {
+      setIsListOpen(false);
     } else if (kind === "table" && isTableOpen) {
       setIsTableOpen(false);
     } else if (kind === "gantt" && isGanttOpen) {
@@ -751,6 +785,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsListOpen(false);
     setIsTableOpen(false);
     setIsGanttOpen(false);
     setIsDashboardViewOpen(false);
@@ -771,6 +806,7 @@ export function AppShell(props: AppShellProps) {
     setIsTeamsOverviewOpen(false);
     setIsProjectsOverviewOpen(false);
     setIsCalendarOpen(false);
+    setIsListOpen(false);
     setIsTableOpen(false);
     setIsGanttOpen(false);
     setIsDashboardViewOpen(false);
@@ -946,6 +982,7 @@ export function AppShell(props: AppShellProps) {
     isTeamsOverviewOpen ||
     isProjectsOverviewOpen ||
     isCalendarOpen ||
+    isListOpen ||
     isTableOpen ||
     isGanttOpen ||
     isDashboardViewOpen ||
@@ -957,13 +994,15 @@ export function AppShell(props: AppShellProps) {
     ? "dashboard"
     : isCalendarOpen
       ? "calendar"
-      : isTableOpen
-        ? "table"
-        : isGanttOpen
-          ? "gantt"
-          : isNotesOpen
-            ? "notes"
-            : null;
+      : isListOpen
+        ? "list"
+        : isTableOpen
+          ? "table"
+          : isGanttOpen
+            ? "gantt"
+            : isNotesOpen
+              ? "notes"
+              : null;
 
   return (
     <div
@@ -1133,6 +1172,24 @@ export function AppShell(props: AppShellProps) {
               onCreateTask={handleCreateTask}
               onUpdateTask={onUpdateTask}
             />
+          ) : isListOpen ? (
+            <ListViewPanel
+              teams={teams}
+              activeTeamId={activeTeamId}
+              tasks={allTasks}
+              currentUserId={currentUserId}
+              onUpdateTask={onUpdateTask}
+              onCreateTaskForBoard={(projectId, boardColumnKey) => {
+                const newTaskId = handleCreateTask("Novy ukol", {
+                  projectId,
+                  boardColumnKey: boardColumnKey ?? "todo",
+                });
+
+                if (newTaskId) {
+                  handleSelectTask(newTaskId);
+                }
+              }}
+            />
           ) : isTableOpen ? (
             <TableViewPanel
               teams={teams}
@@ -1220,7 +1277,7 @@ export function AppShell(props: AppShellProps) {
           />
           )
         ) : null}
-        {!isWorkspaceHomeOpen && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isCalendarOpen && !isTableOpen && !isGanttOpen && !isDashboardViewOpen && !isNotesOpen && !isProfileOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
+        {!isWorkspaceHomeOpen && !isTeamsOverviewOpen && !isProjectsOverviewOpen && !isCalendarOpen && !isListOpen && !isTableOpen && !isGanttOpen && !isDashboardViewOpen && !isNotesOpen && !isProfileOpen && isPanelVisible(layout.visiblePanels, "detail") ? (
           <DetailPanel
             task={selectedTask}
             lists={lists}

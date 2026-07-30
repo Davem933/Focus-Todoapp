@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { DragEvent } from "react";
-import { BarChart3, CalendarDays, ChartGantt, NotebookText, Plus, Table2, X } from "lucide-react";
+import { BarChart3, CalendarDays, ChartGantt, List, NotebookText, Plus, Table2, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export type ViewTabKind = "calendar" | "table" | "dashboard" | "gantt" | "notes";
+export type ViewTabKind = "list" | "calendar" | "table" | "dashboard" | "gantt" | "notes";
 
 const VIEW_TAB_CONFIG: Record<ViewTabKind, { label: string; Icon: LucideIcon }> = {
+  list: { label: "Seznam", Icon: List },
   calendar: { label: "Kalendář", Icon: CalendarDays },
   table: { label: "Tabulka", Icon: Table2 },
   dashboard: { label: "Dashboard", Icon: BarChart3 },
@@ -13,7 +14,7 @@ const VIEW_TAB_CONFIG: Record<ViewTabKind, { label: string; Icon: LucideIcon }> 
   notes: { label: "Poznámky", Icon: NotebookText },
 };
 
-const VIEW_TAB_ORDER: ViewTabKind[] = ["calendar", "table", "dashboard", "gantt", "notes"];
+const VIEW_TAB_ORDER: ViewTabKind[] = ["list", "calendar", "table", "dashboard", "gantt", "notes"];
 
 type ViewTabsBarProps = {
   tabs: ViewTabKind[];
