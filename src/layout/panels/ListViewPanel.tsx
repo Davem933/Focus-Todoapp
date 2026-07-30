@@ -48,8 +48,6 @@ export function ListViewPanel({
   const [customFieldValues, setCustomFieldValues] = useState<TaskCustomFieldValue[]>([]);
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
 
-  const [columnsVisible, setColumnsVisible] = useState<Record<string, boolean>>({});
-  const [subtasksVisible, setSubtasksVisible] = useState(false);
   const [closedVisible, setClosedVisible] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
@@ -156,10 +154,6 @@ export function ListViewPanel({
 
     return [...baseGroups, { column: uncategorizedColumn, tasks: orphanedTasks }];
   }, [sortedColumns, columns, filteredTasks, closedVisible, selectedProjectId]);
-
-  function toggleColumnVisible(columnId: string) {
-    setColumnsVisible((current) => ({ ...current, [columnId]: !(current[columnId] ?? true) }));
-  }
 
   function toggleGroupCollapsed(columnKey: string) {
     setCollapsedGroups((current) => {
@@ -297,7 +291,6 @@ export function ListViewPanel({
     );
   }
 
-  const visibleCustomColumns = customColumns.filter((column) => columnsVisible[column.id] ?? true);
   const canAddCustomColumn = customColumns.length < MAX_CUSTOM_COLUMNS_PER_PROJECT;
 
   return (
@@ -313,11 +306,6 @@ export function ListViewPanel({
       </div>
       <ListToolbar
         members={members}
-        customColumns={customColumns}
-        columnsVisible={columnsVisible}
-        onToggleColumnVisible={toggleColumnVisible}
-        subtasksVisible={subtasksVisible}
-        onToggleSubtasksVisible={() => setSubtasksVisible((current) => !current)}
         closedVisible={closedVisible}
         onToggleClosedVisible={() => setClosedVisible((current) => !current)}
         assigneeFilter={assigneeFilter}
@@ -328,8 +316,6 @@ export function ListViewPanel({
         onDueFilterChange={setDueFilter}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
-        canAddCustomColumn={canAddCustomColumn}
-        onOpenAddColumn={() => setIsAddColumnOpen(true)}
         onAddTask={() => {
           if (!selectedProjectId || sortedColumns.length === 0) {
             return;
@@ -351,9 +337,9 @@ export function ListViewPanel({
             tasks={groupTasks}
             columns={columns}
             members={members}
-            customColumns={visibleCustomColumns}
+            customColumns={customColumns}
             customFieldValues={customFieldValues}
-            subtasksVisible={subtasksVisible}
+            subtasksVisible
             isCollapsed={collapsedGroups.has(column.key)}
             canAddCustomColumn={canAddCustomColumn}
             onToggleCollapsed={toggleGroupCollapsed}
