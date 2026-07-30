@@ -22,6 +22,7 @@ import { TableToolbar } from "./table/TableToolbar";
 import type { TableColumnVisibility, TableDueFilter, TableGroupBy } from "./table/TableToolbar";
 import { TaskTable } from "./table/TaskTable";
 import { CustomColumnModal } from "./table/CustomColumnModal";
+import { useProjectViewFilters } from "./shared/useProjectViewFilters";
 
 type TableViewPanelProps = {
   teams: Team[];
@@ -61,10 +62,6 @@ export function TableViewPanel({
 
   const [visibility, setVisibility] = useState<TableColumnVisibility>(DEFAULT_VISIBILITY);
   const [groupBy, setGroupBy] = useState<TableGroupBy>("none");
-  const [assigneeFilter, setAssigneeFilter] = useState<Set<string>>(new Set());
-  const [priorityFilter, setPriorityFilter] = useState<Set<TaskPriority>>(new Set());
-  const [dueFilter, setDueFilter] = useState<TableDueFilter>("all");
-  const [searchQuery, setSearchQuery] = useState("");
 
   const [cardComposerTaskId, setCardComposerTaskId] = useState<string | null>(null);
   const [cardComposerColumnKey, setCardComposerColumnKey] = useState<Task["boardColumnKey"] | null>(null);
@@ -129,57 +126,17 @@ export function TableViewPanel({
     return tasksForBoard.slice().reverse();
   }, [tasks, selectedProjectId]);
 
-  const filteredTasks = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    return boardTasks.filter((task) => {
-      if (assigneeFilter.size > 0 && (!task.assigneeId || !assigneeFilter.has(task.assigneeId))) {
-        return false;
-      }
-
-      if (priorityFilter.size > 0 && !priorityFilter.has(task.priority)) {
-        return false;
-      }
-
-      if (dueFilter === "overdue" && !(task.dueDate && new Date(task.dueDate + "T23:59:59") < new Date() && !task.completed)) {
-        return false;
-      }
-
-      if (dueFilter === "no_date" && task.dueDate) {
-        return false;
-      }
-
-      if (query && !task.title.toLowerCase().includes(query)) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [boardTasks, assigneeFilter, priorityFilter, dueFilter, searchQuery]);
-
-  function toggleAssigneeFilter(userId: string) {
-    setAssigneeFilter((current) => {
-      const next = new Set(current);
-      if (next.has(userId)) {
-        next.delete(userId);
-      } else {
-        next.add(userId);
-      }
-      return next;
-    });
-  }
-
-  function togglePriorityFilter(priority: TaskPriority) {
-    setPriorityFilter((current) => {
-      const next = new Set(current);
-      if (next.has(priority)) {
-        next.delete(priority);
-      } else {
-        next.add(priority);
-      }
-      return next;
-    });
-  }
+  const {
+    assigneeFilter,
+    toggleAssigneeFilter,
+    priorityFilter,
+    togglePriorityFilter,
+    dueFilter,
+    setDueFilter,
+    searchQuery,
+    setSearchQuery,
+    filteredTasks,
+  } = useProjectViewFilters(boardTasks);
 
   function toggleColumnVisible(key: string) {
     setVisibility((current) => {
