@@ -14001,7 +14001,8 @@ input[type="checkbox"]:focus-visible {
 }
 
 .list-table__col-index {
-  width: 40px;
+  width: 32px;
+  padding-right: 4px;
 }
 
 .list-table__col-name {
@@ -14035,6 +14036,7 @@ input[type="checkbox"]:focus-visible {
 
 .list-row__col-index {
   white-space: nowrap;
+  padding-right: 4px;
 }
 
 .list-row__col-name {
