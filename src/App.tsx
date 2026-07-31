@@ -133,7 +133,6 @@ export function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authMessage, setAuthMessage] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [isAuthSessionChecked, setIsAuthSessionChecked] = useState(!supabase);
   const [isCloudUploadLoading, setIsCloudUploadLoading] = useState(false);
   const [isCloudReady, setIsCloudReady] = useState(false);
@@ -183,11 +182,7 @@ export function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setIsPasswordRecovery(true);
-      }
-
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthUser(session?.user ?? null);
       setAuthRole(null);
       setIsAuthSessionChecked(true);
@@ -1137,53 +1132,6 @@ export function App() {
     setIsAuthLoading(false);
   }
 
-  async function handleRequestPasswordReset(email: string) {
-    if (!supabase) {
-      setAuthError("Supabase není nakonfigurovaný.");
-      return;
-    }
-
-    setIsAuthLoading(true);
-    setAuthError(null);
-    setAuthMessage(null);
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-
-    if (error) {
-      setAuthError(error.message);
-    } else {
-      setAuthMessage(
-        "Pokud účet s tímto e-mailem existuje, poslali jsme na něj odkaz pro obnovení hesla.",
-      );
-    }
-
-    setIsAuthLoading(false);
-  }
-
-  async function handleUpdatePassword(newPassword: string) {
-    if (!supabase) {
-      setAuthError("Supabase není nakonfigurovaný.");
-      return;
-    }
-
-    setIsAuthLoading(true);
-    setAuthError(null);
-    setAuthMessage(null);
-
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-
-    if (error) {
-      setAuthError(error.message);
-    } else {
-      setIsPasswordRecovery(false);
-      setAuthMessage("Heslo je nastavené. Jsi přihlášen/a.");
-    }
-
-    setIsAuthLoading(false);
-  }
-
   async function handleSignOut() {
     if (!supabase) {
       return;
@@ -1559,30 +1507,6 @@ export function App() {
     );
   }
 
-  if (isPasswordRecovery) {
-    return (
-      <AuthWidget
-        authError={authError}
-        authMessage={authMessage}
-        isAuthLoading={isAuthLoading}
-        isAutoSyncing={isAutoSyncing}
-        isCloudReady={isCloudReady}
-        isCloudUploadLoading={isCloudUploadLoading}
-        isPasswordRecovery
-        user={authUser}
-        variant="screen"
-        onSignIn={handleSignIn}
-        onSignOut={handleSignOut}
-        onSignUp={handleSignUp}
-        onRequestPasswordReset={handleRequestPasswordReset}
-        onUpdatePassword={handleUpdatePassword}
-        onDownloadCloudData={handleDownloadCloudData}
-        onSaveLocalChanges={handleSaveLocalChangesToCloud}
-        onUploadLocalData={handleUploadLocalDataToCloud}
-      />
-    );
-  }
-
   if (!authUser) {
     return (
       <AuthWidget
@@ -1597,8 +1521,6 @@ export function App() {
         onSignIn={handleSignIn}
         onSignOut={handleSignOut}
         onSignUp={handleSignUp}
-        onRequestPasswordReset={handleRequestPasswordReset}
-        onUpdatePassword={handleUpdatePassword}
         onDownloadCloudData={handleDownloadCloudData}
         onSaveLocalChanges={handleSaveLocalChangesToCloud}
         onUploadLocalData={handleUploadLocalDataToCloud}
