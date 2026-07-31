@@ -139,20 +139,12 @@ export function WorkspaceHomePanel({
   );
   const activity = isActivityExpanded ? allActivity : allActivity.slice(0, 5);
   const hasMoreActivity = canExpandActivity && allActivity.length > 5;
-  const welcomeSummary = getWorkspaceWelcomeSummary({
-    activeProjects: activeProjects.length,
-    dueTodayCount,
-    memberCount: members.length,
-    overdueCount,
-  });
 
   return (
     <section className="app-panel workspace-home" aria-label="Domov pracovního prostoru">
       <div className="workspace-home__hero">
         <div>
-          <span className="workspace-home__eyebrow">Přehled pracovního prostoru</span>
           <h2>Vítej zpět{welcomeName ? `, ${welcomeName}` : ""}</h2>
-          <p>{welcomeSummary}</p>
         </div>
       </div>
 
@@ -377,34 +369,6 @@ function MetricCard({
   );
 }
 
-function getWorkspaceWelcomeSummary({
-  activeProjects,
-  dueTodayCount,
-  memberCount,
-  overdueCount,
-}: {
-  activeProjects: number;
-  dueTodayCount: number;
-  memberCount: number;
-  overdueCount: number;
-}) {
-  if (activeProjects === 0 && dueTodayCount === 0 && overdueCount === 0) {
-    return memberCount > 0
-      ? "Tým je připravený. Teď chybí už jen nástěnky a první úkoly."
-      : "Začni sestavením týmu a první nástěnky.";
-  }
-
-  if (overdueCount > 0) {
-    return "Běží " + formatBoardCount(activeProjects) + " a " + formatTaskCount(overdueCount) + " je po termínu.";
-  }
-
-  if (dueTodayCount > 0) {
-    return "Běží " + formatBoardCount(activeProjects) + " a dnes čeká " + formatTaskCount(dueTodayCount) + ".";
-  }
-
-  return "Běží " + formatBoardCount(activeProjects) + " a tým má otevřené " + formatTaskCount(Math.max(activeProjects, 1)) + ".";
-}
-
 function buildWorkspaceActivityItems(
   tasks: Task[],
   memberById: Map<string, TeamMember>,
@@ -570,14 +534,3 @@ function formatTaskCount(count: number) {
   return count + " úkolů";
 }
 
-function formatBoardCount(count: number) {
-  if (count === 1) {
-    return "1 nástěnka";
-  }
-
-  if (count >= 2 && count <= 4) {
-    return count + " nástěnky";
-  }
-
-  return count + " nástěnek";
-}

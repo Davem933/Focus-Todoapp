@@ -2325,8 +2325,7 @@ function TeamsOverviewPanel({
             <div className="team-create-flow__header">
               <div className="team-create-flow__heading">
                 <div>
-                  <h2 id="team-create-title">{editingTeamId ? "Upravit tým" : "Vytvořit tým"}</h2>
-                  <p>{editingTeamId ? "Uprav zaměření týmu a doplň členy kdykoliv později." : "Definuj tým, nastav základní kontext a rovnou přidej registrované členy."}</p>
+                  <p id="team-create-title">{editingTeamId ? "Uprav zaměření týmu a doplň členy kdykoliv později." : "Definuj tým, nastav základní kontext a rovnou přidej registrované členy."}</p>
                 </div>
               </div>
               <motion.button
@@ -3265,8 +3264,7 @@ function ProjectsOverviewPanel({
       >
         <div className="team-create-flow__header">
           <div>
-            <span>{editingProjectId ? "Upravit nástěnku" : "Vytvořit nástěnku"}</span>
-            <h2 id="nastenka-create-title">{editingProjectId ? "Upravit nástěnku" : "Nová nástěnka"}</h2>
+            <span id="nastenka-create-title" className="team-create-flow__staging-title">{editingProjectId ? "Upravit nástěnku" : "Vytvořit nástěnku"}</span>
             <p>{editingProjectId ? "Uprav cíl, termín a tým nástěnky." : "Nastav cíl, časový rámec a tým, který bude na nástěnce pracovat."}</p>
           </div>
           <button
