@@ -221,3 +221,112 @@ function formatLocalTime(date: Date): string {
   const minutes = String(date.getMinutes()).padStart(2, "0");
   return `${hours}:${minutes}`;
 }
+
+export type DailyBriefingTaskInput = {
+  title: string;
+  priority: TaskPriority;
+  dueLabel: string;
+};
+
+export type DailyBriefing = {
+  pozdravAUvod: string;
+  hlavniBodDne: string;
+  doporucenePoradi: string[];
+  povzbuzeni: string;
+};
+
+export async function generateDailyBriefingWithGroq(
+  tasks: DailyBriefingTaskInput[],
+): Promise<DailyBriefing> {
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Groq API key is not configured");
+  }
+
+  const response = await fetch(GROQ_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      messages: [{ role: "user", content: buildDailyBriefingPrompt(tasks) }],
+      response_format: { type: "json_object" },
+      temperature: 0.4,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Groq request failed with status ${response.status}`);
+  }
+
+  const data: unknown = await response.json();
+  const rawText = extractResponseText(data);
+
+  if (!rawText) {
+    throw new Error("Groq response did not contain any text");
+  }
+
+  return validateDailyBriefingResult(JSON.parse(rawText));
+}
+
+function buildDailyBriefingPrompt(tasks: DailyBriefingTaskInput[]): string {
+  const taskLines =
+    tasks.length > 0
+      ? tasks
+          .map((task) => `- "${task.title}" (priorita: ${task.priority}, stav: ${task.dueLabel})`)
+          .join("\n")
+      : "(zadny nalehavy ukol)";
+
+  return `Jsi pozitivni a profesionalni osobni asistent. Na zaklade seznamu ukolu nize vygeneruj kratky ranni briefing v cestine.
+
+Seznam ukolu (celkem ${tasks.length}):
+${taskLines}
+
+Zohledni pocet ukolu a to, co nejvice hori (vysoka priorita a/nebo skluz po terminu).
+
+Vrat POUZE JSON (bez markdown, bez vysvetleni) v presne tomto tvaru (priklad je jen ukazka struktury, text vygeneruj vlastni podle zadanych ukolu):
+{
+  "pozdrav_a_uvod": "string, napr.: Dobré ráno! Dnes tě čeká pět úkolů.",
+  "hlavni_bod_dne": "string, jedna veta zduraznujici co je dnes nejdulezitejsi nebo co nejvice hori",
+  "doporucene_poradi": ["1. ...", "2. ..."],
+  "povzbuzeni": "string, kratka motivacni veta na zaver"
+}
+
+Pravidla:
+- Cely text MUSI byt spravnou cestinou VCETNE diakritiky (á, č, ď, é, ě, í, ň, ó, ř, š, ť, ú, ů, ý, ž) - nepis text bez diakritiky.
+- Priklad v uvozovkach vyse je jen ukazka formatu, jeho zneni doslovne neopisuj.
+- "doporucene_poradi" obsahuje 2 az 5 kroku, serazene podle priority/nalehavosti.
+- Ton je pozitivni, strucny a vecny, zadne zbytecne fraze.`;
+}
+
+function validateDailyBriefingResult(value: unknown): DailyBriefing {
+  if (typeof value !== "object" || value === null) {
+    throw new Error("Groq response is not an object");
+  }
+
+  const record = value as Record<string, unknown>;
+  const pozdravAUvod = typeof record.pozdrav_a_uvod === "string" ? record.pozdrav_a_uvod.trim() : "";
+
+  if (!pozdravAUvod) {
+    throw new Error("Groq response is missing pozdrav_a_uvod");
+  }
+
+  const doporucenePoradiRaw = record.doporucene_poradi;
+  const doporucenePoradi = Array.isArray(doporucenePoradiRaw)
+    ? doporucenePoradiRaw
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+        .slice(0, 5)
+    : [];
+
+  return {
+    pozdravAUvod,
+    hlavniBodDne: typeof record.hlavni_bod_dne === "string" ? record.hlavni_bod_dne.trim() : "",
+    doporucenePoradi,
+    povzbuzeni: typeof record.povzbuzeni === "string" ? record.povzbuzeni.trim() : "",
+  };
+}

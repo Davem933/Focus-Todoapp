@@ -7,7 +7,7 @@ import type {
   TouchEvent,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { BarChart3, Bell, CheckCircle2, FolderKanban, Loader2, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Trash2, UserPlus, Users, Wand2, X } from "lucide-react";
+import { BarChart3, Bell, CheckCircle2, FolderKanban, Loader2, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Sunrise, Trash2, UserPlus, Users, Wand2, X } from "lucide-react";
 import { useAppLayout } from "./useAppLayout";
 import { CustomDropdown } from "./CustomDropdown";
 import type { VisiblePanel } from "./layoutTypes";
@@ -58,7 +58,8 @@ import {
 import { QuickCaptureFab } from "./quickCapture/QuickCaptureFab";
 import { QuickCaptureModal } from "./quickCapture/QuickCaptureModal";
 import { Toast } from "../components/Toast";
-import { generateSubtasksWithGroq } from "../tasks/groqService";
+import { summarizeDailyBriefingTasks } from "../tasks/dailyBriefing";
+import { generateDailyBriefingWithGroq, generateSubtasksWithGroq, type DailyBriefing } from "../tasks/groqService";
 import {
   archiveProjectColumn,
   createProjectColumn,
@@ -1357,6 +1358,7 @@ export function AppShell(props: AppShellProps) {
       {isDashboardOpen ? (
         <DashboardOverlay
           summary={dashboardSummary}
+          tasks={listVisibleTasks}
           onClose={handleCloseDashboard}
         />
       ) : null}
@@ -3984,10 +3986,16 @@ function buildTeamOverviewRows(
 
 type DashboardOverlayProps = {
   summary: DashboardSummary;
+  tasks: Task[];
   onClose: () => void;
 };
 
-function DashboardOverlay({ summary, onClose }: DashboardOverlayProps) {
+type BriefingPhase = "idle" | "loading" | "ready" | "error";
+
+function DashboardOverlay({ summary, tasks, onClose }: DashboardOverlayProps) {
+  const [briefingPhase, setBriefingPhase] = useState<BriefingPhase>("idle");
+  const [briefing, setBriefing] = useState<DailyBriefing | null>(null);
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -3998,6 +4006,35 @@ function DashboardOverlay({ summary, onClose }: DashboardOverlayProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
+
+  async function handleGenerateBriefing() {
+    if (briefingPhase === "loading") {
+      return;
+    }
+
+    setBriefingPhase("loading");
+
+    const taskSummaries = summarizeDailyBriefingTasks(tasks);
+
+    if (taskSummaries.length === 0) {
+      setBriefing({
+        pozdravAUvod: "Dobré ráno! Dnes nemáš žádné naléhavé ani zpožděné úkoly.",
+        hlavniBodDne: "Můžeš se v klidu věnovat tomu, co tě dnes čeká.",
+        doporucenePoradi: [],
+        povzbuzeni: "Užij si klidný den!",
+      });
+      setBriefingPhase("ready");
+      return;
+    }
+
+    try {
+      const generatedBriefing = await generateDailyBriefingWithGroq(taskSummaries);
+      setBriefing(generatedBriefing);
+      setBriefingPhase("ready");
+    } catch {
+      setBriefingPhase("error");
+    }
+  }
 
   return (
     <div className="dashboard-overlay" role="presentation">
@@ -4040,6 +4077,58 @@ function DashboardOverlay({ summary, onClose }: DashboardOverlayProps) {
             <strong>{summary.remainingText}</strong>
             <span>{summary.progressText}</span>
           </div>
+        </div>
+        <div className="dashboard-overlay__briefing">
+          <div className="dashboard-overlay__briefing-header">
+            <Sunrise size={18} aria-hidden="true" />
+            <strong>Ranní shrnutí</strong>
+          </div>
+
+          {briefingPhase === "idle" ? (
+            <button
+              type="button"
+              className="dashboard-overlay__briefing-generate"
+              onClick={handleGenerateBriefing}
+            >
+              <Wand2 size={15} aria-hidden="true" />
+              Vygenerovat ranní shrnutí
+            </button>
+          ) : null}
+
+          {briefingPhase === "loading" ? (
+            <div className="dashboard-overlay__briefing-skeleton" aria-live="polite" aria-busy="true">
+              <Loader2 className="icon-spin" data-spinning="true" size={16} aria-hidden="true" />
+              <span>Připravuji tvé ranní shrnutí…</span>
+            </div>
+          ) : null}
+
+          {briefingPhase === "error" ? (
+            <p className="dashboard-overlay__briefing-error">
+              Shrnutí se nepodařilo načíst, ale tvé úkoly jsou připraveny níže.
+            </p>
+          ) : null}
+
+          {briefingPhase === "ready" && briefing ? (
+            <div className="dashboard-overlay__briefing-content">
+              <p className="dashboard-overlay__briefing-intro">{briefing.pozdravAUvod}</p>
+              {briefing.hlavniBodDne ? (
+                <p className="dashboard-overlay__briefing-highlight">
+                  <Sparkle size={14} aria-hidden="true" />
+                  <strong>{briefing.hlavniBodDne}</strong>
+                </p>
+              ) : null}
+              {briefing.doporucenePoradi.length > 0 ? (
+                <ul className="dashboard-overlay__briefing-steps">
+                  {briefing.doporucenePoradi.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {briefing.povzbuzeni ? (
+                <p className="dashboard-overlay__briefing-cheer">{briefing.povzbuzeni}</p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <div className="dashboard-overlay__metric-row">
           <DashboardMetric label="Po term?nu" value={summary.overdueCount} tone="danger" />
