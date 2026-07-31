@@ -55,6 +55,8 @@ import {
   updateTeamMemberRole,
   type UserSearchResult,
 } from "../supabase/teamApi";
+import { QuickCaptureFab } from "./quickCapture/QuickCaptureFab";
+import { QuickCaptureModal } from "./quickCapture/QuickCaptureModal";
 import {
   archiveProjectColumn,
   createProjectColumn,
@@ -210,6 +212,7 @@ export function AppShell(props: AppShellProps) {
   const [isFocusAssistantOpen, setIsFocusAssistantOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+  const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
   const [isWorkspaceHomeOpen, setIsWorkspaceHomeOpen] = useState(activeTeamId !== null);
   const [isTeamsOverviewOpen, setIsTeamsOverviewOpen] = useState(false);
   const [isProjectsOverviewOpen, setIsProjectsOverviewOpen] = useState(false);
@@ -1361,6 +1364,14 @@ export function AppShell(props: AppShellProps) {
           onClose={handleCloseCheckIn}
           onCreateTask={handleOpenTaskComposerFromCheckIn}
           onMoveToTomorrow={handleMoveCheckInTasksToTomorrow}
+        />
+      ) : null}
+      <QuickCaptureFab onOpen={() => setIsQuickCaptureOpen(true)} />
+      {isQuickCaptureOpen ? (
+        <QuickCaptureModal
+          activeTeamId={activeTeamId}
+          onClose={() => setIsQuickCaptureOpen(false)}
+          onCreateTask={handleCreateTask}
         />
       ) : null}
     </div>

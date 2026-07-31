@@ -1,7 +1,7 @@
 import type { TaskPriority } from "./taskTypes";
 
-const GEMINI_MODEL = "gemini-2.0-flash";
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const GROQ_MODEL = "llama-3.1-8b-instant";
+const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 const VALID_PRIORITIES: TaskPriority[] = ["none", "low", "medium", "high"];
 
 export type QuickCaptureParsed = {
@@ -12,38 +12,40 @@ export type QuickCaptureParsed = {
   assigneeName: string | null;
 };
 
-export function isGeminiConfigured(): boolean {
-  return Boolean(import.meta.env.VITE_GEMINI_API_KEY);
+export function isGroqConfigured(): boolean {
+  return Boolean(import.meta.env.VITE_GROQ_API_KEY);
 }
 
-export async function parseVoiceInputWithGemini(text: string, now: Date): Promise<QuickCaptureParsed> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+export async function parseVoiceInputWithGroq(text: string, now: Date): Promise<QuickCaptureParsed> {
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
 
   if (!apiKey) {
-    throw new Error("Gemini API key is not configured");
+    throw new Error("Groq API key is not configured");
   }
 
-  const response = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
+  const response = await fetch(GROQ_ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: buildPrompt(text, now) }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.2,
-      },
+      model: GROQ_MODEL,
+      messages: [{ role: "user", content: buildPrompt(text, now) }],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Gemini request failed with status ${response.status}`);
+    throw new Error(`Groq request failed with status ${response.status}`);
   }
 
   const data: unknown = await response.json();
   const rawText = extractResponseText(data);
 
   if (!rawText) {
-    throw new Error("Gemini response did not contain any text");
+    throw new Error("Groq response did not contain any text");
   }
 
   return validateParsedResult(JSON.parse(rawText));
@@ -78,34 +80,28 @@ function extractResponseText(data: unknown): string | null {
     return null;
   }
 
-  const candidates = (data as { candidates?: unknown }).candidates;
+  const choices = (data as { choices?: unknown }).choices;
 
-  if (!Array.isArray(candidates) || candidates.length === 0) {
+  if (!Array.isArray(choices) || choices.length === 0) {
     return null;
   }
 
-  const content = (candidates[0] as { content?: unknown }).content;
-  const parts = content && typeof content === "object" ? (content as { parts?: unknown }).parts : undefined;
+  const message = (choices[0] as { message?: unknown }).message;
+  const content = message && typeof message === "object" ? (message as { content?: unknown }).content : undefined;
 
-  if (!Array.isArray(parts) || parts.length === 0) {
-    return null;
-  }
-
-  const text = (parts[0] as { text?: unknown }).text;
-
-  return typeof text === "string" ? text : null;
+  return typeof content === "string" ? content : null;
 }
 
 function validateParsedResult(value: unknown): QuickCaptureParsed {
   if (typeof value !== "object" || value === null) {
-    throw new Error("Gemini response is not an object");
+    throw new Error("Groq response is not an object");
   }
 
   const record = value as Record<string, unknown>;
   const title = typeof record.title === "string" ? record.title.trim() : "";
 
   if (!title) {
-    throw new Error("Gemini response is missing a title");
+    throw new Error("Groq response is missing a title");
   }
 
   return {

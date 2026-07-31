@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import type { Project } from "../../projects/projectTypes";
+import { loadProjectColumns, loadProjectsForTeams } from "../../supabase/projectApi";
 import { loadTeamMembers } from "../../supabase/teamApi";
 import { matchAssigneeIdByName } from "../../tasks/assigneeMatch";
 import { resolveQuickCapture } from "../../tasks/quickCaptureResolve";
@@ -22,6 +24,7 @@ export function QuickCaptureModal({ activeTeamId, onClose, onCreateTask }: Quick
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [preview, setPreview] = useState<QuickCapturePreviewState | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [boards, setBoards] = useState<Project[]>([]);
   const speech = useSpeechRecognition();
 
   useEffect(() => {
@@ -66,6 +69,31 @@ export function QuickCaptureModal({ activeTeamId, onClose, onCreateTask }: Quick
     };
   }, [activeTeamId]);
 
+  useEffect(() => {
+    if (!activeTeamId) {
+      setBoards([]);
+      return;
+    }
+
+    let isCancelled = false;
+
+    loadProjectsForTeams([activeTeamId])
+      .then((loadedBoards) => {
+        if (!isCancelled) {
+          setBoards(loadedBoards);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setBoards([]);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeTeamId]);
+
   async function handleProcess() {
     const trimmedText = text.trim();
 
@@ -84,6 +112,7 @@ export function QuickCaptureModal({ activeTeamId, onClose, onCreateTask }: Quick
       dueTime: parsed.dueTime ?? "",
       priority: parsed.priority,
       assigneeId: assigneeId ?? "",
+      projectId: "",
     });
     setInfoMessage(
       usedAi ? null : "AI zpracování nedostupné, použit základní rozpoznávač data a času.",
@@ -91,9 +120,20 @@ export function QuickCaptureModal({ activeTeamId, onClose, onCreateTask }: Quick
     setPhase("preview");
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!preview || !preview.title.trim()) {
       return;
+    }
+
+    let boardColumnKey: string | undefined;
+
+    if (preview.projectId) {
+      try {
+        const columns = await loadProjectColumns(preview.projectId);
+        boardColumnKey = [...columns].sort((a, b) => a.position - b.position)[0]?.key;
+      } catch {
+        boardColumnKey = undefined;
+      }
     }
 
     onCreateTask(preview.title.trim(), {
@@ -102,6 +142,8 @@ export function QuickCaptureModal({ activeTeamId, onClose, onCreateTask }: Quick
       priority: preview.priority,
       assigneeId: preview.assigneeId || null,
       teamId: activeTeamId,
+      projectId: preview.projectId || null,
+      boardColumnKey,
     });
     onClose();
   }
@@ -155,6 +197,7 @@ export function QuickCaptureModal({ activeTeamId, onClose, onCreateTask }: Quick
             onChange={setPreview}
             infoMessage={infoMessage}
             members={members}
+            boards={boards}
             onConfirm={handleConfirm}
             onBack={handleBackToCapture}
             onCancel={onClose}

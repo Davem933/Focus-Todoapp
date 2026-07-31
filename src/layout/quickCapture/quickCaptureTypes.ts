@@ -1,4 +1,4 @@
-import type { TaskPriority } from "../../tasks/taskTypes";
+import type { BoardColumnKey, TaskPriority } from "../../tasks/taskTypes";
 
 export type QuickCapturePreviewState = {
   title: string;
@@ -6,6 +6,7 @@ export type QuickCapturePreviewState = {
   dueTime: string;
   priority: TaskPriority;
   assigneeId: string;
+  projectId: string;
 };
 
 export type QuickCaptureCreateOptions = {
@@ -14,4 +15,6 @@ export type QuickCaptureCreateOptions = {
   priority?: TaskPriority;
   assigneeId?: string | null;
   teamId?: string | null;
+  projectId?: string | null;
+  boardColumnKey?: BoardColumnKey;
 };

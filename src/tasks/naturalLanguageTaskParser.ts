@@ -230,7 +230,7 @@ function findTimeTokens(input: string, dateTokens: ParsedToken[]) {
     const hour = match[1].padStart(2, "0");
     const minute = match[2];
 
-    if (overlapsAnyToken(start, end, dateTokens)) {
+    if (overlapsAnyToken(start, end, dateTokens) || overlapsAnyToken(start, end, tokens)) {
       continue;
     }
 

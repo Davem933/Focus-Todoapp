@@ -2,6 +2,15 @@
 
 Datum: 2026-07-31
 
+> **Dodatek (implementace):** Během implementace se ukázalo, že testovací Gemini
+> klíče měly free-tier kvótu 0 (účtové/regionální omezení, ne chyba klíče) a
+> Grok (x.ai) vyžaduje kredit předem koupený. Provider byl proto přepnut na
+> **Groq** (`console.groq.com`, model `llama-3.1-8b-instant`) — skutečně
+> bezplatný bez nutnosti platby. Veškerá zmínka "Gemini"/`geminiService.ts`
+> níže odpovídá původnímu návrhu; ve výsledném kódu je modul
+> `src/tasks/groqService.ts` s ekvivalentním rozhraním (`isGroqConfigured`,
+> `parseVoiceInputWithGroq`), env proměnná `VITE_GROQ_API_KEY`.
+
 ## Cíl
 
 Uživatel klikne na plovoucí tlačítko mikrofonu, namluví (nebo napíše) požadavek v češtině

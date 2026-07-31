@@ -1,5 +1,5 @@
 import { parseTaskInput } from "./naturalLanguageTaskParser";
-import { isGeminiConfigured, parseVoiceInputWithGemini, type QuickCaptureParsed } from "./geminiService";
+import { isGroqConfigured, parseVoiceInputWithGroq, type QuickCaptureParsed } from "./groqService";
 
 export type QuickCaptureResolution = {
   parsed: QuickCaptureParsed;
@@ -7,9 +7,9 @@ export type QuickCaptureResolution = {
 };
 
 export async function resolveQuickCapture(text: string, now: Date): Promise<QuickCaptureResolution> {
-  if (isGeminiConfigured()) {
+  if (isGroqConfigured()) {
     try {
-      const parsed = await parseVoiceInputWithGemini(text, now);
+      const parsed = await parseVoiceInputWithGroq(text, now);
       return { parsed, usedAi: true };
     } catch {
       // Fall through to the offline parser below — AI failures must never block task creation.

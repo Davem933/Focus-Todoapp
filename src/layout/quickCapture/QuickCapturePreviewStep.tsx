@@ -1,5 +1,6 @@
 import type { TaskPriority } from "../../tasks/taskTypes";
 import { BOARD_CARD_PRIORITY_LABELS, BOARD_CARD_PRIORITY_OPTIONS } from "../../tasks/taskPriorityColors";
+import type { Project } from "../../projects/projectTypes";
 import type { TeamMember } from "../../teams/teamTypes";
 import { getMemberDisplayName } from "../../teams/teamMemberDisplay";
 import type { QuickCapturePreviewState } from "./quickCaptureTypes";
@@ -9,6 +10,7 @@ type QuickCapturePreviewStepProps = {
   onChange: (next: QuickCapturePreviewState) => void;
   infoMessage: string | null;
   members: TeamMember[];
+  boards: Project[];
   onConfirm: () => void;
   onBack: () => void;
   onCancel: () => void;
@@ -19,6 +21,7 @@ export function QuickCapturePreviewStep({
   onChange,
   infoMessage,
   members,
+  boards,
   onConfirm,
   onBack,
   onCancel,
@@ -81,6 +84,21 @@ export function QuickCapturePreviewStep({
           {members.map((member) => (
             <option key={member.userId} value={member.userId}>
               {getMemberDisplayName(member)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="quick-capture-preview__field">
+        Nástěnka
+        <select
+          value={preview.projectId}
+          onChange={(event) => onChange({ ...preview, projectId: event.currentTarget.value })}
+        >
+          <option value="">Bez nástěnky</option>
+          {boards.map((board) => (
+            <option key={board.id} value={board.id}>
+              {board.name}
             </option>
           ))}
         </select>
