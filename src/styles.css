@@ -14185,6 +14185,14 @@ input[type="checkbox"]:focus-visible {
   cursor: pointer;
 }
 
+.quick-capture-overlay__backdrop:hover,
+.quick-capture-overlay__backdrop:focus-visible,
+.quick-capture-overlay__backdrop:active {
+  background: rgba(2, 4, 12, 0.6);
+  border-color: transparent;
+  transform: none;
+}
+
 .quick-capture-overlay__dialog {
   position: relative;
   width: min(480px, calc(100vw - 32px));
