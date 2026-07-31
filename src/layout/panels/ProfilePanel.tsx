@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, LogOut, Moon, Sun } from "lucide-react";
+import { Check, LogOut, Moon, Sun, Sunrise } from "lucide-react";
+import type { Project } from "../../projects/projectTypes";
+import { loadProjectsForTeams } from "../../supabase/projectApi";
+import type { Team } from "../../teams/teamTypes";
 
 type ProfilePanelProps = {
   userEmail: string | null;
   userCreatedAt: string | null;
   nickname: string | null;
+  teams: Team[];
+  dailyBriefingProjectId: string | null;
   themeMode: "dark" | "light";
   authError: string | null;
   authMessage: string | null;
   isAuthActionLoading: boolean;
   onToggleTheme: () => void;
   onUpdateNickname: (nickname: string) => Promise<void>;
+  onUpdateDailyBriefingProject: (projectId: string | null) => Promise<void>;
   onSignOut: () => Promise<void>;
 };
 
@@ -20,19 +26,62 @@ export function ProfilePanel({
   userEmail,
   userCreatedAt,
   nickname,
+  teams,
+  dailyBriefingProjectId,
   themeMode,
   authError,
   authMessage,
   isAuthActionLoading,
   onToggleTheme,
   onUpdateNickname,
+  onUpdateDailyBriefingProject,
   onSignOut,
 }: ProfilePanelProps) {
   const [nicknameDraft, setNicknameDraft] = useState(nickname ?? "");
+  const [briefingProjectDraft, setBriefingProjectDraft] = useState(dailyBriefingProjectId ?? "");
+  const [boards, setBoards] = useState<Project[]>([]);
 
   useEffect(() => {
     setNicknameDraft(nickname ?? "");
   }, [nickname]);
+
+  useEffect(() => {
+    setBriefingProjectDraft(dailyBriefingProjectId ?? "");
+  }, [dailyBriefingProjectId]);
+
+  useEffect(() => {
+    if (teams.length === 0) {
+      setBoards([]);
+      return;
+    }
+
+    let isCancelled = false;
+
+    loadProjectsForTeams(teams.map((team) => team.id))
+      .then((loadedBoards) => {
+        if (!isCancelled) {
+          setBoards(loadedBoards);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setBoards([]);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [teams]);
+
+  async function handleSubmitBriefingProject(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await onUpdateDailyBriefingProject(briefingProjectDraft || null);
+  }
+
+  function getTeamName(teamId: string): string {
+    return teams.find((team) => team.id === teamId)?.name ?? "Tým";
+  }
 
   async function handleSubmitNickname(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,6 +90,7 @@ export function ProfilePanel({
 
   const displayName = nickname || getEmailName(userEmail) || "Uživatel";
   const isNicknameDirty = nicknameDraft.trim() !== (nickname ?? "").trim();
+  const isBriefingProjectDirty = briefingProjectDraft !== (dailyBriefingProjectId ?? "");
   const isDark = themeMode === "dark";
 
   return (
@@ -122,6 +172,48 @@ export function ProfilePanel({
                   className="profile-panel__save-button"
                   type="submit"
                   aria-label="Uložit přezdívku"
+                  disabled={isAuthActionLoading}
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  whileTap={{ scale: 0.9 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <Check aria-hidden="true" size={15} />
+                </motion.button>
+              ) : null}
+            </AnimatePresence>
+          </span>
+        </form>
+
+        <form className="profile-panel__row" onSubmit={handleSubmitBriefingProject}>
+          <span className="profile-panel__row-label">
+            <span className="profile-panel__row-title">
+              <Sunrise aria-hidden="true" size={14} /> Ranní shrnutí
+            </span>
+            <span className="profile-panel__row-hint">
+              Nástěnka, ze které se generuje ranní shrnutí
+            </span>
+          </span>
+          <span className="profile-panel__row-control profile-panel__row-control--input">
+            <select
+              value={briefingProjectDraft}
+              onChange={(event) => setBriefingProjectDraft(event.currentTarget.value)}
+            >
+              <option value="">Žádná</option>
+              {boards.map((board) => (
+                <option key={board.id} value={board.id}>
+                  {getTeamName(board.teamId)} — {board.name}
+                </option>
+              ))}
+            </select>
+            <AnimatePresence>
+              {isBriefingProjectDirty ? (
+                <motion.button
+                  key="save-briefing-project"
+                  className="profile-panel__save-button"
+                  type="submit"
+                  aria-label="Uložit nástěnku pro ranní shrnutí"
                   disabled={isAuthActionLoading}
                   initial={{ opacity: 0, scale: 0.7 }}
                   animate={{ opacity: 1, scale: 1 }}

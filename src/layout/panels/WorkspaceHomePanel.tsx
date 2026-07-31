@@ -6,6 +6,7 @@ import {
   Clock3,
   FolderKanban,
   PlusSquare,
+  Sunrise,
   Users,
 } from "lucide-react";
 import type { Project } from "../../projects/projectTypes";
@@ -23,10 +24,12 @@ type WorkspaceHomePanelProps = {
   currentUserEmail: string | null;
   currentUserNickname: string | null;
   tasks: Task[];
+  hasDailyBriefingBoard: boolean;
   onCreateBoard: () => void;
   onCreateTeam: () => void;
   onOpenProjectsOverview: () => void;
   onOpenTask: (taskId: string) => void;
+  onOpenDailyBriefing: () => void;
 };
 
 type WorkspaceActivityItem = {
@@ -46,10 +49,12 @@ export function WorkspaceHomePanel({
   currentUserEmail,
   currentUserNickname,
   tasks,
+  hasDailyBriefingBoard,
   onCreateBoard,
   onCreateTeam,
   onOpenProjectsOverview,
   onOpenTask,
+  onOpenDailyBriefing,
 }: WorkspaceHomePanelProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -240,12 +245,18 @@ export function WorkspaceHomePanel({
         </div>
 
         <aside className="workspace-home__side">
-          {canCreateTeam || canCreateBoard ? (
+          {canCreateTeam || canCreateBoard || hasDailyBriefingBoard ? (
             <section className="workspace-home__section workspace-home__actions">
               <div className="workspace-home__section-head">
                 <h3>Rychlé akce</h3>
               </div>
               <div className="workspace-home__action-grid">
+                {hasDailyBriefingBoard ? (
+                  <button type="button" onClick={onOpenDailyBriefing}>
+                    <Sunrise aria-hidden="true" size={15} />
+                    <span>Ranní shrnutí</span>
+                  </button>
+                ) : null}
                 {canCreateTeam ? (
                   <button type="button" onClick={onCreateTeam}>
                     <Users aria-hidden="true" size={15} />

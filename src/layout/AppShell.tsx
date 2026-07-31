@@ -7,7 +7,7 @@ import type {
   TouchEvent,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { BarChart3, Bell, CheckCircle2, FolderKanban, Loader2, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Sunrise, Trash2, UserPlus, Users, Wand2, X } from "lucide-react";
+import { BarChart3, Bell, CheckCircle2, FolderKanban, Loader2, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Trash2, UserPlus, Users, Wand2, X } from "lucide-react";
 import { useAppLayout } from "./useAppLayout";
 import { CustomDropdown } from "./CustomDropdown";
 import type { VisiblePanel } from "./layoutTypes";
@@ -57,9 +57,9 @@ import {
 } from "../supabase/teamApi";
 import { QuickCaptureFab } from "./quickCapture/QuickCaptureFab";
 import { QuickCaptureModal } from "./quickCapture/QuickCaptureModal";
+import { DailyBriefingOverlay } from "./DailyBriefingOverlay";
 import { Toast } from "../components/Toast";
-import { summarizeDailyBriefingTasks } from "../tasks/dailyBriefing";
-import { generateDailyBriefingWithGroq, generateSubtasksWithGroq, type DailyBriefing } from "../tasks/groqService";
+import { generateSubtasksWithGroq } from "../tasks/groqService";
 import {
   archiveProjectColumn,
   createProjectColumn,
@@ -154,10 +154,12 @@ type AppShellProps = {
   userEmail: string | null;
   userCreatedAt: string | null;
   nickname: string | null;
+  dailyBriefingProjectId: string | null;
   authError: string | null;
   authMessage: string | null;
   isAuthActionLoading: boolean;
   onUpdateNickname: (nickname: string) => Promise<void>;
+  onUpdateDailyBriefingProject: (projectId: string | null) => Promise<void>;
   onSignOut: () => Promise<void>;
 };
 
@@ -205,10 +207,12 @@ export function AppShell(props: AppShellProps) {
     userEmail,
     userCreatedAt,
     nickname,
+    dailyBriefingProjectId,
     authError,
     authMessage,
     isAuthActionLoading,
     onUpdateNickname,
+    onUpdateDailyBriefingProject,
     onSignOut,
   } = props;
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -216,6 +220,8 @@ export function AppShell(props: AppShellProps) {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
+  const [isDailyBriefingOpen, setIsDailyBriefingOpen] = useState(false);
+  const [dailyBriefingBoardName, setDailyBriefingBoardName] = useState<string | null>(null);
   const [isWorkspaceHomeOpen, setIsWorkspaceHomeOpen] = useState(activeTeamId !== null);
   const [isTeamsOverviewOpen, setIsTeamsOverviewOpen] = useState(false);
   const [isProjectsOverviewOpen, setIsProjectsOverviewOpen] = useState(false);
@@ -356,6 +362,56 @@ export function AppShell(props: AppShellProps) {
       isCancelled = true;
     };
   }, [teams, currentUserId]);
+
+  async function handleOpenDailyBriefing() {
+    if (!dailyBriefingProjectId) {
+      return;
+    }
+
+    try {
+      const boards = await loadProjectsForTeams(teams.map((team) => team.id));
+      const board = boards.find((currentBoard) => currentBoard.id === dailyBriefingProjectId);
+
+      if (board) {
+        setDailyBriefingBoardName(board.name);
+        setIsDailyBriefingOpen(true);
+      }
+    } catch {
+      // Silently ignore — the board picker in Profile already validates the selection.
+    }
+  }
+
+  useEffect(() => {
+    if (!dailyBriefingProjectId || !currentUserId) {
+      return;
+    }
+
+    const storageKey = `donext-daily-briefing-last-shown:${currentUserId}`;
+    const today = getTodayDateValue();
+
+    if (localStorage.getItem(storageKey) === today) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    loadProjectsForTeams(teams.map((team) => team.id))
+      .then((boards) => {
+        const board = boards.find((currentBoard) => currentBoard.id === dailyBriefingProjectId);
+
+        if (!isCancelled && board) {
+          setDailyBriefingBoardName(board.name);
+          setIsDailyBriefingOpen(true);
+          localStorage.setItem(storageKey, today);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isCancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dailyBriefingProjectId, currentUserId]);
 
   function canDeleteTask(task: Task | undefined | null) {
     if (!task) {
@@ -1111,12 +1167,15 @@ export function AppShell(props: AppShellProps) {
               userEmail={userEmail}
               userCreatedAt={userCreatedAt}
               nickname={nickname}
+              teams={teams}
+              dailyBriefingProjectId={dailyBriefingProjectId}
               themeMode={themeMode}
               authError={authError}
               authMessage={authMessage}
               isAuthActionLoading={isAuthActionLoading}
               onToggleTheme={onToggleTheme}
               onUpdateNickname={onUpdateNickname}
+              onUpdateDailyBriefingProject={onUpdateDailyBriefingProject}
               onSignOut={onSignOut}
             />
           ) : isWorkspaceHomeOpen && activeTeamId ? (
@@ -1128,9 +1187,11 @@ export function AppShell(props: AppShellProps) {
               currentUserEmail={userEmail}
               currentUserNickname={nickname}
               tasks={tasks}
+              hasDailyBriefingBoard={Boolean(dailyBriefingProjectId)}
               onCreateBoard={handleOpenProjectCreateFlow}
               onCreateTeam={handleOpenTeamCreateFlow}
               onOpenProjectsOverview={handleOpenProjectsOverview}
+              onOpenDailyBriefing={handleOpenDailyBriefing}
               onOpenTask={(taskId) => {
                 const targetTask = allTasks.find((task) => task.id === taskId);
 
@@ -1358,7 +1419,6 @@ export function AppShell(props: AppShellProps) {
       {isDashboardOpen ? (
         <DashboardOverlay
           summary={dashboardSummary}
-          tasks={listVisibleTasks}
           onClose={handleCloseDashboard}
         />
       ) : null}
@@ -1376,6 +1436,13 @@ export function AppShell(props: AppShellProps) {
           activeTeamId={activeTeamId}
           onClose={() => setIsQuickCaptureOpen(false)}
           onCreateTask={handleCreateTask}
+        />
+      ) : null}
+      {isDailyBriefingOpen && dailyBriefingBoardName ? (
+        <DailyBriefingOverlay
+          boardName={dailyBriefingBoardName}
+          tasks={allTasks.filter((task) => task.projectId === dailyBriefingProjectId)}
+          onClose={() => setIsDailyBriefingOpen(false)}
         />
       ) : null}
     </div>
@@ -3986,16 +4053,10 @@ function buildTeamOverviewRows(
 
 type DashboardOverlayProps = {
   summary: DashboardSummary;
-  tasks: Task[];
   onClose: () => void;
 };
 
-type BriefingPhase = "idle" | "loading" | "ready" | "error";
-
-function DashboardOverlay({ summary, tasks, onClose }: DashboardOverlayProps) {
-  const [briefingPhase, setBriefingPhase] = useState<BriefingPhase>("idle");
-  const [briefing, setBriefing] = useState<DailyBriefing | null>(null);
-
+function DashboardOverlay({ summary, onClose }: DashboardOverlayProps) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -4006,35 +4067,6 @@ function DashboardOverlay({ summary, tasks, onClose }: DashboardOverlayProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
-
-  async function handleGenerateBriefing() {
-    if (briefingPhase === "loading") {
-      return;
-    }
-
-    setBriefingPhase("loading");
-
-    const taskSummaries = summarizeDailyBriefingTasks(tasks);
-
-    if (taskSummaries.length === 0) {
-      setBriefing({
-        pozdravAUvod: "Dobré ráno! Dnes nemáš žádné naléhavé ani zpožděné úkoly.",
-        hlavniBodDne: "Můžeš se v klidu věnovat tomu, co tě dnes čeká.",
-        doporucenePoradi: [],
-        povzbuzeni: "Užij si klidný den!",
-      });
-      setBriefingPhase("ready");
-      return;
-    }
-
-    try {
-      const generatedBriefing = await generateDailyBriefingWithGroq(taskSummaries);
-      setBriefing(generatedBriefing);
-      setBriefingPhase("ready");
-    } catch {
-      setBriefingPhase("error");
-    }
-  }
 
   return (
     <div className="dashboard-overlay" role="presentation">
@@ -4077,58 +4109,6 @@ function DashboardOverlay({ summary, tasks, onClose }: DashboardOverlayProps) {
             <strong>{summary.remainingText}</strong>
             <span>{summary.progressText}</span>
           </div>
-        </div>
-        <div className="dashboard-overlay__briefing">
-          <div className="dashboard-overlay__briefing-header">
-            <Sunrise size={18} aria-hidden="true" />
-            <strong>Ranní shrnutí</strong>
-          </div>
-
-          {briefingPhase === "idle" ? (
-            <button
-              type="button"
-              className="dashboard-overlay__briefing-generate"
-              onClick={handleGenerateBriefing}
-            >
-              <Wand2 size={15} aria-hidden="true" />
-              Vygenerovat ranní shrnutí
-            </button>
-          ) : null}
-
-          {briefingPhase === "loading" ? (
-            <div className="dashboard-overlay__briefing-skeleton" aria-live="polite" aria-busy="true">
-              <Loader2 className="icon-spin" data-spinning="true" size={16} aria-hidden="true" />
-              <span>Připravuji tvé ranní shrnutí…</span>
-            </div>
-          ) : null}
-
-          {briefingPhase === "error" ? (
-            <p className="dashboard-overlay__briefing-error">
-              Shrnutí se nepodařilo načíst, ale tvé úkoly jsou připraveny níže.
-            </p>
-          ) : null}
-
-          {briefingPhase === "ready" && briefing ? (
-            <div className="dashboard-overlay__briefing-content">
-              <p className="dashboard-overlay__briefing-intro">{briefing.pozdravAUvod}</p>
-              {briefing.hlavniBodDne ? (
-                <p className="dashboard-overlay__briefing-highlight">
-                  <Sparkle size={14} aria-hidden="true" />
-                  <strong>{briefing.hlavniBodDne}</strong>
-                </p>
-              ) : null}
-              {briefing.doporucenePoradi.length > 0 ? (
-                <ul className="dashboard-overlay__briefing-steps">
-                  {briefing.doporucenePoradi.map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ul>
-              ) : null}
-              {briefing.povzbuzeni ? (
-                <p className="dashboard-overlay__briefing-cheer">{briefing.povzbuzeni}</p>
-              ) : null}
-            </div>
-          ) : null}
         </div>
         <div className="dashboard-overlay__metric-row">
           <DashboardMetric label="Po term?nu" value={summary.overdueCount} tone="danger" />

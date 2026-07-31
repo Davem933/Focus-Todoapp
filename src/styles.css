@@ -14412,95 +14412,125 @@ input[type="checkbox"]:focus-visible {
   flex-shrink: 0;
 }
 
-/* Daily briefing (Ranní shrnutí) */
-.dashboard-overlay__briefing {
-  background: linear-gradient(135deg, rgba(109, 93, 252, 0.14), rgba(255, 255, 255, 0.03));
-  border: 1px solid rgba(109, 93, 252, 0.28);
-  border-radius: 10px;
-  display: grid;
-  gap: 0.6rem;
-  padding: 0.9rem;
-}
-
-.dashboard-overlay__briefing-header {
-  align-items: center;
-  color: var(--color-text-primary);
-  display: flex;
-  font-weight: 700;
-  gap: 0.4rem;
-}
-
-.dashboard-overlay__briefing-generate {
-  align-items: center;
-  background: var(--color-accent);
-  border: none;
-  border-radius: 8px;
-  color: #fff;
-  display: inline-flex;
-  font-size: 0.85rem;
-  font-weight: 600;
-  gap: 0.4rem;
-  justify-self: start;
-  padding: 0.5rem 0.9rem;
-}
-
-.dashboard-overlay__briefing-skeleton {
-  align-items: center;
-  color: var(--color-text-secondary);
-  display: flex;
-  font-size: 0.85rem;
-  gap: 0.5rem;
-}
-
+/* Daily briefing (Ranní shrnutí) — standalone workspace overlay */
 .icon-spin {
   animation: spin 0.8s linear infinite;
 }
 
-.dashboard-overlay__briefing-error {
-  color: #fca5a5;
-  font-size: 0.85rem;
-  margin: 0;
+.daily-briefing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.dashboard-overlay__briefing-content {
-  display: grid;
+.daily-briefing-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(2, 4, 12, 0.6);
+  cursor: pointer;
+}
+
+.daily-briefing-overlay__backdrop:hover,
+.daily-briefing-overlay__backdrop:focus-visible,
+.daily-briefing-overlay__backdrop:active {
+  background: rgba(2, 4, 12, 0.6);
+  border-color: transparent;
+  transform: none;
+}
+
+.daily-briefing-overlay__dialog {
+  position: relative;
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  background: linear-gradient(135deg, rgba(109, 93, 252, 0.14), var(--color-background-card-strong));
+  color: var(--color-text-primary);
+  border: 1px solid rgba(109, 93, 252, 0.28);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.daily-briefing-overlay__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.daily-briefing-overlay__header-title {
+  align-items: center;
+  display: flex;
   gap: 0.5rem;
 }
 
-.dashboard-overlay__briefing-intro {
-  color: var(--color-text-primary);
-  font-size: 0.92rem;
+.daily-briefing-overlay__close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.daily-briefing-overlay__skeleton {
+  align-items: center;
+  color: var(--color-text-secondary);
+  display: flex;
+  font-size: 0.9rem;
+  gap: 0.5rem;
+  padding: 12px 0;
+}
+
+.daily-briefing-overlay__error {
+  color: #fca5a5;
+  font-size: 0.9rem;
   margin: 0;
 }
 
-.dashboard-overlay__briefing-highlight {
+.daily-briefing-overlay__content {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.daily-briefing-overlay__intro {
+  color: var(--color-text-primary);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.daily-briefing-overlay__highlight {
   align-items: flex-start;
-  background: rgba(109, 93, 252, 0.14);
+  background: rgba(109, 93, 252, 0.16);
   border-radius: 8px;
   color: var(--color-text-primary);
   display: flex;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   gap: 0.4rem;
   margin: 0;
-  padding: 0.5rem 0.65rem;
+  padding: 0.55rem 0.7rem;
 }
 
-.dashboard-overlay__briefing-steps {
+.daily-briefing-overlay__steps {
   display: grid;
-  gap: 0.3rem;
+  gap: 0.35rem;
   margin: 0;
-  padding-left: 1.1rem;
+  padding-left: 1.2rem;
 }
 
-.dashboard-overlay__briefing-steps li {
+.daily-briefing-overlay__steps li {
   color: #cbd5e1;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   line-height: 1.4;
 }
 
-.dashboard-overlay__briefing-cheer {
+.daily-briefing-overlay__cheer {
   color: var(--color-text-secondary);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-style: italic;
   margin: 0;
 }
