@@ -51,6 +51,87 @@ export async function parseVoiceInputWithGroq(text: string, now: Date): Promise<
   return validateParsedResult(JSON.parse(rawText));
 }
 
+export async function generateSubtasksWithGroq(title: string, note: string): Promise<string[]> {
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Groq API key is not configured");
+  }
+
+  const response = await fetch(GROQ_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      messages: [{ role: "user", content: buildSubtasksPrompt(title, note) }],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Groq request failed with status ${response.status}`);
+  }
+
+  const data: unknown = await response.json();
+  const rawText = extractResponseText(data);
+
+  if (!rawText) {
+    throw new Error("Groq response did not contain any text");
+  }
+
+  return validateSubtasksResult(JSON.parse(rawText));
+}
+
+function buildSubtasksPrompt(title: string, note: string): string {
+  const trimmedNote = note.trim();
+  const description = trimmedNote
+    ? `Nazev ukolu: "${title}"\nPopis ukolu: "${trimmedNote}"`
+    : `Nazev ukolu: "${title}"`;
+
+  return `Jsi zkuseny projektovy manazer. Tvym ukolem je rozlozit zadany ukol na 3 az 5 konkretnich, praktickych a jasnych kroku (podukolu), ktere povedou k jeho splneni.
+
+${description}
+
+Vrat POUZE JSON (bez markdown, bez vysvetleni) v presne tomto tvaru:
+{
+  "subtasks": ["Krok 1...", "Krok 2...", "Krok 3..."]
+}
+
+Pravidla:
+- Odpoved MUSI byt v cestine.
+- Vygeneruj 3 az 5 kroku, ne vic, ne min.
+- Kazdy krok je kratka, konkretni a proveditelna akce (ne obecna fraze).
+- Nevracej cislovani ani odrazky uvnitr textu kroku, jen samotny text.`;
+}
+
+function validateSubtasksResult(value: unknown): string[] {
+  if (typeof value !== "object" || value === null) {
+    throw new Error("Groq response is not an object");
+  }
+
+  const subtasksRaw = (value as { subtasks?: unknown }).subtasks;
+
+  if (!Array.isArray(subtasksRaw)) {
+    throw new Error("Groq response is missing a subtasks array");
+  }
+
+  const subtasks = subtasksRaw
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)
+    .slice(0, 5);
+
+  if (subtasks.length === 0) {
+    throw new Error("Groq response did not contain any usable subtasks");
+  }
+
+  return subtasks;
+}
+
 function buildPrompt(text: string, now: Date): string {
   const localDate = formatLocalDate(now);
   const localTime = formatLocalTime(now);

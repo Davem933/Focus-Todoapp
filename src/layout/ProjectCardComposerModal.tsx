@@ -1,6 +1,6 @@
 import type { CSSProperties, FormEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { X } from "lucide-react";
+import { Loader2, Wand2, X } from "lucide-react";
 import { CustomDropdown } from "./CustomDropdown";
 import { createCardLabels } from "../tasks/cardLabels";
 import type { TaskPriority, TaskSubtask } from "../tasks/taskTypes";
@@ -20,6 +20,7 @@ export function ProjectCardComposerModal({
   labelInput,
   labels,
   isEditing,
+  isGeneratingSubtasks,
   members,
   note,
   priority,
@@ -36,6 +37,7 @@ export function ProjectCardComposerModal({
   onLabelsChange,
   onNoteChange,
   onPriorityChange,
+  onGenerateSubtasks,
   onSubtaskTitleChange,
   onSubmit,
   onTitleChange,
@@ -48,6 +50,7 @@ export function ProjectCardComposerModal({
   labelInput: string;
   labels: string;
   isEditing: boolean;
+  isGeneratingSubtasks: boolean;
   members: TeamMember[];
   note: string;
   priority: TaskPriority;
@@ -64,6 +67,7 @@ export function ProjectCardComposerModal({
   onLabelsChange: (value: string) => void;
   onNoteChange: (value: string) => void;
   onPriorityChange: (value: TaskPriority) => void;
+  onGenerateSubtasks: () => void;
   onSubtaskTitleChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onTitleChange: (value: string) => void;
@@ -243,7 +247,23 @@ export function ProjectCardComposerModal({
           ) : null}
 
           <motion.div className="board-card-modal__field board-card-modal__field--full" {...fieldMotion(4)}>
-            <span>Subtasks</span>
+            <span>
+              Subtasks
+              <button
+                type="button"
+                className="ai-subtask-button"
+                aria-label="Rozpadnout úkol na podúkoly pomocí AI"
+                title="Rozpadnout na podúkoly"
+                disabled={isGeneratingSubtasks}
+                onClick={onGenerateSubtasks}
+              >
+                {isGeneratingSubtasks ? (
+                  <Loader2 className="ai-subtask-button__icon" data-spinning="true" size={16} aria-hidden="true" />
+                ) : (
+                  <Wand2 className="ai-subtask-button__icon" size={16} aria-hidden="true" />
+                )}
+              </button>
+            </span>
             <div className="board-card-modal__subtask-input">
               <input
                 data-allow-enter="true"

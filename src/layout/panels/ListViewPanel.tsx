@@ -16,6 +16,8 @@ import {
 } from "../../supabase/projectCustomColumnApi";
 import { createEntityId } from "../../tasks/idUtils";
 import { appendCardLabelValue, createCardLabels } from "../../tasks/cardLabels";
+import { generateSubtasksWithGroq } from "../../tasks/groqService";
+import { Toast } from "../../components/Toast";
 import { CustomDropdown } from "../CustomDropdown";
 import { ProjectCardComposerModal } from "../ProjectCardComposerModal";
 import { classifyColumnState } from "./table/tableStatus";
@@ -62,6 +64,8 @@ export function ListViewPanel({
   const [cardComposerAssigneeId, setCardComposerAssigneeId] = useState("");
   const [cardComposerSubtaskTitle, setCardComposerSubtaskTitle] = useState("");
   const [cardComposerSubtasks, setCardComposerSubtasks] = useState<TaskSubtask[]>([]);
+  const [isGeneratingCardSubtasks, setIsGeneratingCardSubtasks] = useState(false);
+  const [cardSubtaskAiError, setCardSubtaskAiError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeTeamId) {
@@ -215,6 +219,7 @@ export function ListViewPanel({
     setCardComposerAssigneeId("");
     setCardComposerSubtaskTitle("");
     setCardComposerSubtasks([]);
+    setCardSubtaskAiError(null);
   }
 
   function handleOpenTaskInComposer(taskId: string) {
@@ -251,6 +256,29 @@ export function ListViewPanel({
     setCardComposerSubtasks((current) =>
       current.map((subtask) => (subtask.id === subtaskId ? { ...subtask, completed: !subtask.completed } : subtask)),
     );
+  }
+
+  async function handleGenerateComposerSubtasks() {
+    if (!cardComposerTitle.trim() || isGeneratingCardSubtasks) {
+      return;
+    }
+
+    setIsGeneratingCardSubtasks(true);
+
+    try {
+      const generatedTitles = await generateSubtasksWithGroq(cardComposerTitle, cardComposerNote);
+      const newSubtasks: TaskSubtask[] = generatedTitles.map((title) => ({
+        id: createEntityId(),
+        title,
+        completed: false,
+      }));
+
+      setCardComposerSubtasks((current) => [...current, ...newSubtasks]);
+    } catch {
+      setCardSubtaskAiError("Nepodařilo se vygenerovat podúkoly. Zkuste to prosím znovu.");
+    } finally {
+      setIsGeneratingCardSubtasks(false);
+    }
   }
 
   function handleAddComposerLabel(rawValue: string) {
@@ -373,6 +401,7 @@ export function ListViewPanel({
             labelInput={cardComposerLabelInput}
             labels={cardComposerLabels}
             isEditing
+            isGeneratingSubtasks={isGeneratingCardSubtasks}
             members={members}
             note={cardComposerNote}
             priority={cardComposerPriority}
@@ -389,6 +418,7 @@ export function ListViewPanel({
             onLabelsChange={setCardComposerLabels}
             onNoteChange={setCardComposerNote}
             onPriorityChange={setCardComposerPriority}
+            onGenerateSubtasks={handleGenerateComposerSubtasks}
             onSubtaskTitleChange={setCardComposerSubtaskTitle}
             onSubmit={handleSubmitComposer}
             onToggleSubtask={handleToggleComposerSubtask}
@@ -396,6 +426,9 @@ export function ListViewPanel({
           />
         ) : null}
       </AnimatePresence>
+      {cardSubtaskAiError ? (
+        <Toast message={cardSubtaskAiError} onDismiss={() => setCardSubtaskAiError(null)} />
+      ) : null}
     </div>
   );
 }

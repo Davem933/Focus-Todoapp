@@ -2,9 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Filter, Plus, X } from "lucide-react";
+import { Toast } from "../../components/Toast";
 import { CustomDropdown } from "../CustomDropdown";
 import type { DropdownOption } from "../CustomDropdown";
 import { ProjectCardComposerModal } from "../ProjectCardComposerModal";
+import { generateSubtasksWithGroq } from "../../tasks/groqService";
 import { loadProjectColumns, loadProjectsForTeams } from "../../supabase/projectApi";
 import { loadTeamMembers } from "../../supabase/teamApi";
 import type { Project, ProjectColumn } from "../../projects/projectTypes";
@@ -80,6 +82,8 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
   const [cardComposerAssigneeId, setCardComposerAssigneeId] = useState("");
   const [cardComposerSubtaskTitle, setCardComposerSubtaskTitle] = useState("");
   const [cardComposerSubtasks, setCardComposerSubtasks] = useState<TaskSubtask[]>([]);
+  const [isGeneratingCardSubtasks, setIsGeneratingCardSubtasks] = useState(false);
+  const [cardSubtaskAiError, setCardSubtaskAiError] = useState<string | null>(null);
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterAssigneeIds, setFilterAssigneeIds] = useState<string[]>([]);
@@ -383,6 +387,7 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
     setCardComposerAssigneeId("");
     setCardComposerSubtaskTitle("");
     setCardComposerSubtasks([]);
+    setCardSubtaskAiError(null);
   }
 
   function handleOpenTask(taskId: string) {
@@ -448,6 +453,29 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
         subtask.id === subtaskId ? { ...subtask, completed: !subtask.completed } : subtask,
       ),
     );
+  }
+
+  async function handleGenerateComposerSubtasks() {
+    if (!cardComposerTitle.trim() || isGeneratingCardSubtasks) {
+      return;
+    }
+
+    setIsGeneratingCardSubtasks(true);
+
+    try {
+      const generatedTitles = await generateSubtasksWithGroq(cardComposerTitle, cardComposerNote);
+      const newSubtasks: TaskSubtask[] = generatedTitles.map((title) => ({
+        id: createEntityId(),
+        title,
+        completed: false,
+      }));
+
+      setCardComposerSubtasks((current) => [...current, ...newSubtasks]);
+    } catch {
+      setCardSubtaskAiError("Nepodařilo se vygenerovat podúkoly. Zkuste to prosím znovu.");
+    } finally {
+      setIsGeneratingCardSubtasks(false);
+    }
   }
 
   function handleAddComposerLabel(rawValue: string) {
@@ -755,6 +783,7 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
             labelInput={cardComposerLabelInput}
             labels={cardComposerLabels}
             isEditing={Boolean(cardComposerTaskId)}
+            isGeneratingSubtasks={isGeneratingCardSubtasks}
             members={projectMembers}
             note={cardComposerNote}
             priority={cardComposerPriority}
@@ -771,6 +800,7 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
             onLabelsChange={setCardComposerLabels}
             onNoteChange={setCardComposerNote}
             onPriorityChange={setCardComposerPriority}
+            onGenerateSubtasks={handleGenerateComposerSubtasks}
             onSubtaskTitleChange={setCardComposerSubtaskTitle}
             onSubmit={handleSubmitComposer}
             onToggleSubtask={handleToggleComposerSubtask}
@@ -778,6 +808,9 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
           />
         ) : null}
       </AnimatePresence>
+      {cardSubtaskAiError ? (
+        <Toast message={cardSubtaskAiError} onDismiss={() => setCardSubtaskAiError(null)} />
+      ) : null}
     </div>
   );
 }

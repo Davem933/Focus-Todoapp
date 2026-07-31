@@ -7,7 +7,7 @@ import type {
   TouchEvent,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { BarChart3, Bell, CheckCircle2, FolderKanban, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Trash2, UserPlus, Users, X } from "lucide-react";
+import { BarChart3, Bell, CheckCircle2, FolderKanban, Loader2, MailPlus, MoreVertical, Pencil, ShieldCheck, Sparkle, Trash2, UserPlus, Users, Wand2, X } from "lucide-react";
 import { useAppLayout } from "./useAppLayout";
 import { CustomDropdown } from "./CustomDropdown";
 import type { VisiblePanel } from "./layoutTypes";
@@ -57,6 +57,8 @@ import {
 } from "../supabase/teamApi";
 import { QuickCaptureFab } from "./quickCapture/QuickCaptureFab";
 import { QuickCaptureModal } from "./quickCapture/QuickCaptureModal";
+import { Toast } from "../components/Toast";
+import { generateSubtasksWithGroq } from "../tasks/groqService";
 import {
   archiveProjectColumn,
   createProjectColumn,
@@ -2489,6 +2491,8 @@ function ProjectsOverviewPanel({
   const [cardComposerAssigneeId, setCardComposerAssigneeId] = useState("");
   const [cardComposerSubtaskTitle, setCardComposerSubtaskTitle] = useState("");
   const [cardComposerSubtasks, setCardComposerSubtasks] = useState<TaskSubtask[]>([]);
+  const [isGeneratingCardSubtasks, setIsGeneratingCardSubtasks] = useState(false);
+  const [cardSubtaskAiError, setCardSubtaskAiError] = useState<string | null>(null);
   const [manageableTeamIds, setManageableTeamIds] = useState<Set<string>>(new Set());
   const [projectMentioningNotes, setProjectMentioningNotes] = useState<Note[]>([]);
   const [isProjectMentioningNotesLoading, setIsProjectMentioningNotesLoading] = useState(false);
@@ -2802,6 +2806,30 @@ function ProjectsOverviewPanel({
     setCardComposerAssigneeId("");
     setCardComposerSubtaskTitle("");
     setCardComposerSubtasks([]);
+    setCardSubtaskAiError(null);
+  }
+
+  async function handleGenerateCardComposerSubtasks() {
+    if (!cardComposerTitle.trim() || isGeneratingCardSubtasks) {
+      return;
+    }
+
+    setIsGeneratingCardSubtasks(true);
+
+    try {
+      const generatedTitles = await generateSubtasksWithGroq(cardComposerTitle, cardComposerNote);
+      const newSubtasks: TaskSubtask[] = generatedTitles.map((title) => ({
+        id: createEntityId(),
+        title,
+        completed: false,
+      }));
+
+      setCardComposerSubtasks((currentSubtasks) => [...currentSubtasks, ...newSubtasks]);
+    } catch {
+      setCardSubtaskAiError("Nepodařilo se vygenerovat podúkoly. Zkuste to prosím znovu.");
+    } finally {
+      setIsGeneratingCardSubtasks(false);
+    }
   }
 
   function handleCreateProjectTask(columnKey: Task["boardColumnKey"] = "todo") {
@@ -3315,6 +3343,7 @@ function ProjectsOverviewPanel({
             labelInput={cardComposerLabelInput}
             labels={cardComposerLabels}
             isEditing={Boolean(cardComposerTaskId)}
+            isGeneratingSubtasks={isGeneratingCardSubtasks}
             members={projectMembers}
             note={cardComposerNote}
             priority={cardComposerPriority}
@@ -3331,11 +3360,15 @@ function ProjectsOverviewPanel({
             onLabelsChange={setCardComposerLabels}
             onNoteChange={setCardComposerNote}
             onPriorityChange={setCardComposerPriority}
+            onGenerateSubtasks={handleGenerateCardComposerSubtasks}
             onSubtaskTitleChange={setCardComposerSubtaskTitle}
             onSubmit={handleSubmitProjectCard}
             onToggleSubtask={handleToggleCardComposerSubtask}
             onTitleChange={setCardComposerTitle}
           />
+        ) : null}
+        {cardSubtaskAiError ? (
+          <Toast message={cardSubtaskAiError} onDismiss={() => setCardSubtaskAiError(null)} />
         ) : null}
         </AnimatePresence>
         {editProjectModal}

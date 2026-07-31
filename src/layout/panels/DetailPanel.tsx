@@ -3,15 +3,19 @@ import {
   CalendarDays,
   Clock3,
   FolderOpen,
+  Loader2,
   Plus,
   Repeat,
   Star,
   UserRound,
+  Wand2,
 } from "lucide-react";
 import type { CSSProperties, ChangeEvent, FormEvent, KeyboardEvent, MouseEvent } from "react";
+import { Toast } from "../../components/Toast";
 import { CustomDropdown } from "../CustomDropdown";
 import type { DropdownOption } from "../CustomDropdown";
 import { getTodayDateValue } from "../../tasks/dateUtils";
+import { generateSubtasksWithGroq } from "../../tasks/groqService";
 import { createEntityId } from "../../tasks/idUtils";
 import type {
   Task,
@@ -108,6 +112,8 @@ export function DetailPanel({
   const [draftNote, setDraftNote] = useState(task?.note ?? "");
   const [newLabelName, setNewLabelName] = useState("");
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
+  const [subtaskAiError, setSubtaskAiError] = useState<string | null>(null);
   const isCommittingSubtaskRef = useRef(false);
   const mobileNoteTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const labelInputRef = useRef<HTMLInputElement | null>(null);
@@ -264,6 +270,31 @@ export function DetailPanel({
   function handleAddSubtask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     handleCommitNewSubtask();
+  }
+
+  async function handleGenerateSubtasks() {
+    if (!task || isGeneratingSubtasks) {
+      return;
+    }
+
+    setIsGeneratingSubtasks(true);
+
+    try {
+      const generatedTitles = await generateSubtasksWithGroq(activeTask.title, activeTask.note);
+      const newSubtasks: TaskSubtask[] = generatedTitles.map((title) => ({
+        id: createEntityId(),
+        title,
+        completed: false,
+      }));
+
+      onUpdateTask(activeTask.id, {
+        subtasks: [...activeTask.subtasks, ...newSubtasks],
+      });
+    } catch {
+      setSubtaskAiError("Nepodařilo se vygenerovat podúkoly. Zkuste to prosím znovu.");
+    } finally {
+      setIsGeneratingSubtasks(false);
+    }
   }
 
   function getSubtaskUpdate(subtasks: TaskSubtask[]): TaskUpdate {
@@ -763,6 +794,20 @@ export function DetailPanel({
                   {completedSubtasks.length} / {task.subtasks.length} dokončeno
                 </span>
               ) : null}
+              <button
+                type="button"
+                className="ai-subtask-button"
+                aria-label="Rozpadnout úkol na podúkoly pomocí AI"
+                title="Rozpadnout na podúkoly"
+                disabled={isGeneratingSubtasks}
+                onClick={handleGenerateSubtasks}
+              >
+                {isGeneratingSubtasks ? (
+                  <Loader2 className="ai-subtask-button__icon" data-spinning="true" size={16} aria-hidden="true" />
+                ) : (
+                  <Wand2 className="ai-subtask-button__icon" size={16} aria-hidden="true" />
+                )}
+              </button>
             </div>
             {task.subtasks.length > 0 ? (
               <div className="subtask-list">
@@ -1008,6 +1053,9 @@ export function DetailPanel({
           />
         </div>
       </div>
+      {subtaskAiError ? (
+        <Toast message={subtaskAiError} onDismiss={() => setSubtaskAiError(null)} />
+      ) : null}
     </section>
   );
 }
