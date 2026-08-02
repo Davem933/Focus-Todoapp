@@ -115,6 +115,7 @@ itself silently; you re-download only when you choose to.
 |---|---|
 | `create_task` | Create a plain to-do (optionally in a named list) **or** a kanban card on a board (pass `board_id`, optionally `board_column_key`/`assignee_id`). |
 | `list_tasks` | List tasks — filter by list name (to-dos) or by `board_id`/`board_column_key` (kanban cards). |
+| `list_today_tasks` | List tasks due today or overdue (not completed) — same as the app's "Dnes" view. |
 | `update_task` | Change title, due date/time, priority, recurrence, note, or move a kanban card to another column / reassign it. |
 | `complete_task` | Mark a task done/undone. |
 | `delete_task` | Delete a task. |

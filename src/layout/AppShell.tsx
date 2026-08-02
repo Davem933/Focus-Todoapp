@@ -97,6 +97,8 @@ import { appendCardLabelValue, createCardLabels } from "../tasks/cardLabels";
 import { ProjectCardComposerModal } from "./ProjectCardComposerModal";
 import { TableViewPanel } from "./panels/TableViewPanel";
 import { ListViewPanel } from "./panels/ListViewPanel";
+import { CommandPalette } from "./CommandPalette";
+import type { CommandPaletteViewKind } from "./CommandPalette";
 
 type CreateTaskOptions = {
   assigneeId?: string | null;
@@ -220,6 +222,8 @@ export function AppShell(props: AppShellProps) {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [pendingListPriorityFilter, setPendingListPriorityFilter] = useState<TaskPriority | null>(null);
   const [isDailyBriefingOpen, setIsDailyBriefingOpen] = useState(false);
   const [dailyBriefingBoardName, setDailyBriefingBoardName] = useState<string | null>(null);
   const [isWorkspaceHomeOpen, setIsWorkspaceHomeOpen] = useState(activeTeamId !== null);
@@ -252,6 +256,51 @@ export function AppShell(props: AppShellProps) {
       isProfileOpen ||
       hasOpenedViewTabs,
   });
+  useEffect(() => {
+    function isEditableTarget(target: EventTarget | null) {
+      if (!(target instanceof HTMLElement)) {
+        return false;
+      }
+
+      return (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      );
+    }
+
+    function handleGlobalKeyDown(event: KeyboardEvent) {
+      const mod = event.metaKey || event.ctrlKey;
+
+      if (mod && !event.shiftKey && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setIsCommandPaletteOpen((open) => !open);
+        return;
+      }
+
+      if (mod && event.shiftKey && event.key.toLowerCase() === "n") {
+        if (isEditableTarget(event.target)) {
+          return;
+        }
+
+        event.preventDefault();
+        setIsQuickCaptureOpen(true);
+        return;
+      }
+
+      if (mod && event.shiftKey && event.key.toLowerCase() === "d") {
+        if (isEditableTarget(event.target)) {
+          return;
+        }
+
+        event.preventDefault();
+        onToggleTheme();
+      }
+    }
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [onToggleTheme]);
   const [teamCreateRequestToken, setTeamCreateRequestToken] = useState(0);
   const [projectCreateRequestToken, setProjectCreateRequestToken] = useState(0);
   const drawerTouchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -570,6 +619,36 @@ export function AppShell(props: AppShellProps) {
   function handleSelectTask(taskId: string) {
     clearRecommendation();
     onSelectTask(taskId);
+  }
+
+  function handleSelectCommandPaletteTask(taskId: string) {
+    const task = allTasks.find((item) => item.id === taskId);
+
+    if (task?.projectId) {
+      handleOpenProjectsOverview(task.projectId, task.id);
+      return;
+    }
+
+    handleSelectTask(taskId);
+  }
+
+  function handleCommandPaletteNavigate(view: CommandPaletteViewKind) {
+    if (view === "dashboard") {
+      handleOpenDashboardView();
+    } else if (view === "list") {
+      handleOpenList();
+    } else if (view === "table") {
+      handleOpenTable();
+    } else if (view === "calendar") {
+      handleOpenCalendar();
+    } else {
+      handleOpenProfile();
+    }
+  }
+
+  function handleCommandPaletteFilterByPriority(priority: TaskPriority) {
+    setPendingListPriorityFilter(priority);
+    handleOpenList();
   }
 
   function handleOpenNotificationTask(notificationId: string) {
@@ -1256,6 +1335,8 @@ export function AppShell(props: AppShellProps) {
                   handleSelectTask(newTaskId);
                 }
               }}
+              initialPriorityFilter={pendingListPriorityFilter}
+              onInitialPriorityFilterHandled={() => setPendingListPriorityFilter(null)}
             />
           ) : isTableOpen ? (
             <TableViewPanel
@@ -1430,6 +1511,18 @@ export function AppShell(props: AppShellProps) {
           onMoveToTomorrow={handleMoveCheckInTasksToTomorrow}
         />
       ) : null}
+      <CommandPalette
+        open={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        tasks={allTasks}
+        onSelectTask={handleSelectCommandPaletteTask}
+        onNavigate={handleCommandPaletteNavigate}
+        onCreateTask={() => setIsQuickCaptureOpen(true)}
+        onToggleTheme={onToggleTheme}
+        themeMode={themeMode}
+        onMarkAllNotificationsAsRead={onMarkAllNotificationsAsRead}
+        onFilterByPriority={handleCommandPaletteFilterByPriority}
+      />
       <QuickCaptureFab onOpen={() => setIsQuickCaptureOpen(true)} />
       {isQuickCaptureOpen ? (
         <QuickCaptureModal

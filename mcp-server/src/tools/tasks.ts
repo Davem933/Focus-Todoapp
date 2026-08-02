@@ -262,6 +262,33 @@ export function registerTaskTools(server: McpServer): void {
   );
 
   server.tool(
+    "list_today_tasks",
+    "List tasks due today or overdue (not completed) — mirrors the app's 'Today' view.",
+    {},
+    async () => {
+      try {
+        const userId = await getUserId();
+        const today = new Date().toISOString().slice(0, 10);
+
+        const { data, error } = await supabase
+          .from("tasks")
+          .select(`${TASK_SELECT},task_lists!inner(name)`)
+          .eq("owner_id", userId)
+          .eq("is_archived", false)
+          .eq("completed", false)
+          .not("due_date", "is", null)
+          .lte("due_date", today)
+          .order("due_date", { ascending: true });
+
+        if (error) throw error;
+        return toToolResult(data ?? []);
+      } catch (error) {
+        return toToolError(error);
+      }
+    },
+  );
+
+  server.tool(
     "update_task",
     "Update fields on an existing task by id, including moving a kanban card to a different board column or reassigning it.",
     {

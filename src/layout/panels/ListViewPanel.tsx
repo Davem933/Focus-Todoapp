@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { AnimatePresence } from "framer-motion";
 import type { Task, TaskPriority, TaskSubtask, TaskUpdate } from "../../tasks/taskTypes";
@@ -33,6 +33,8 @@ type ListViewPanelProps = {
   currentUserId: string | null;
   onUpdateTask: (taskId: string, patch: TaskUpdate) => void;
   onCreateTaskForBoard: (projectId: string, boardColumnKey?: string) => void;
+  initialPriorityFilter?: TaskPriority | null;
+  onInitialPriorityFilterHandled?: () => void;
 };
 
 export function ListViewPanel({
@@ -41,6 +43,8 @@ export function ListViewPanel({
   tasks,
   onUpdateTask,
   onCreateTaskForBoard,
+  initialPriorityFilter,
+  onInitialPriorityFilterHandled,
 }: ListViewPanelProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -127,6 +131,19 @@ export function ListViewPanel({
     setSearchQuery,
     filteredTasks,
   } = useProjectViewFilters(boardTasks);
+
+  const appliedPriorityFilterRef = useRef<TaskPriority | null>(null);
+
+  useEffect(() => {
+    if (!initialPriorityFilter || appliedPriorityFilterRef.current === initialPriorityFilter) {
+      return;
+    }
+
+    appliedPriorityFilterRef.current = initialPriorityFilter;
+    togglePriorityFilter(initialPriorityFilter);
+    onInitialPriorityFilterHandled?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPriorityFilter]);
 
   const sortedColumns = useMemo(() => columns.slice().sort((a, b) => a.position - b.position), [columns]);
 
