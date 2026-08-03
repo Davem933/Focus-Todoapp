@@ -14664,3 +14664,155 @@ input[type="checkbox"]:focus-visible {
   font-style: italic;
   margin: 0;
 }
+
+.share-task-popover {
+  position: absolute;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 280px;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color, #2a2a2a);
+  background: var(--panel-bg, #1a1a1a);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.share-task-popover__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.share-task-popover__header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.share-task-popover__close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.share-task-popover__loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.share-task-popover__spinner {
+  animation: share-task-popover-spin 1s linear infinite;
+}
+
+@keyframes share-task-popover-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.share-task-popover__error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #ef4444;
+}
+
+.share-task-popover__qr {
+  align-self: center;
+  border-radius: 0.5rem;
+}
+
+.share-task-popover__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.share-task-popover__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.share-task-popover__revoke {
+  color: #ef4444;
+}
+
+.board-card-modal__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.board-card-modal__share {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shared-task-view {
+  max-width: 560px;
+  margin: 3rem auto;
+  padding: 2rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border-color, #2a2a2a);
+  background: var(--panel-bg, #1a1a1a);
+}
+
+.shared-task-view__eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+
+.shared-task-view__title {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+}
+
+.shared-task-view__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.shared-task-view__status--done {
+  color: #10b981;
+}
+
+.shared-task-view__context {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin: 0.25rem 0;
+}
+
+.shared-task-view__note {
+  white-space: pre-wrap;
+  margin: 1rem 0;
+}
+
+.shared-task-view__subtasks {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.shared-task-view__subtask--done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
