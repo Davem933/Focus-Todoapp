@@ -14743,6 +14743,12 @@ input[type="checkbox"]:focus-visible {
   color: #ef4444;
 }
 
+.share-task-popover__idle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .board-card-modal__header-actions {
   display: flex;
   align-items: center;

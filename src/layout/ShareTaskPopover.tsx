@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { Check, Copy, Download, Loader2, Share2, X } from "lucide-react";
+import { Check, Copy, Download, Loader2, QrCode, Share2, X } from "lucide-react";
 import { generateShareToken, revokeShareToken } from "../supabase/taskShareApi";
 
 function dataUrlToFile(dataUrl: string, fileName: string): File {
@@ -38,43 +38,20 @@ export function ShareTaskPopover({
 
   const shareUrl = shareToken ? `${window.location.origin}/share/${shareToken}` : null;
 
-  useEffect(() => {
-    let isCancelled = false;
+  async function handleGenerate() {
+    setError(null);
+    setIsLoading(true);
 
-    async function ensureToken() {
-      setError(null);
-
-      if (shareToken) {
-        return;
-      }
-
-      setIsLoading(true);
-
-      try {
-        const token = await generateShareToken(taskId);
-
-        if (!isCancelled) {
-          onTokenChange(taskId, token);
-        }
-      } catch (shareError) {
-        console.error("Nepodařilo se vytvořit sdílený odkaz na úkol:", shareError);
-
-        if (!isCancelled) {
-          setError("Nepodařilo se vytvořit sdílený odkaz. Zkontrolujte připojení a zkuste to znovu.");
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
-      }
+    try {
+      const token = await generateShareToken(taskId);
+      onTokenChange(taskId, token);
+    } catch (shareError) {
+      console.error("Nepodařilo se vytvořit sdílený odkaz na úkol:", shareError);
+      setError("Nepodařilo se vytvořit sdílený odkaz. Zkontrolujte připojení a zkuste to znovu.");
+    } finally {
+      setIsLoading(false);
     }
-
-    ensureToken();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [taskId, shareToken, onTokenChange]);
+  }
 
   useEffect(() => {
     if (!shareUrl) {
@@ -158,10 +135,10 @@ export function ShareTaskPopover({
     try {
       await revokeShareToken(taskId);
       onTokenChange(taskId, null);
-      onClose();
     } catch (revokeError) {
       console.error("Nepodařilo se zrušit sdílení úkolu:", revokeError);
       setError("Nepodařilo se zrušit sdílení. Zkuste to znovu.");
+    } finally {
       setIsRevoking(false);
     }
   }
@@ -188,6 +165,18 @@ export function ShareTaskPopover({
       ) : null}
 
       {error ? <p className="share-task-popover__error">{error}</p> : null}
+
+      {!isLoading && !shareToken ? (
+        <div className="share-task-popover__idle">
+          <p className="share-task-popover__hint">
+            Vygeneruj QR kód a odkaz, které může otevřít kdokoliv i bez přihlášení do appky.
+          </p>
+          <button type="button" onClick={handleGenerate}>
+            <QrCode size={16} />
+            Vytvořit QR kód
+          </button>
+        </div>
+      ) : null}
 
       {!isLoading && qrDataUrl ? (
         <>
