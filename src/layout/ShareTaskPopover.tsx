@@ -102,9 +102,9 @@ export function ShareTaskPopover({
     try {
       await revokeShareToken(taskId);
       onTokenChange(taskId, null);
+      onClose();
     } catch {
       setError("Nepodařilo se zrušit sdílení. Zkuste to znovu.");
-    } finally {
       setIsRevoking(false);
     }
   }
