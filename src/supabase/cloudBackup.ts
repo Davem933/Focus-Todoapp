@@ -55,6 +55,7 @@ type CloudTaskRow = {
   priority: string;
   recurrence: string;
   title: string;
+  share_token: string | null;
 };
 
 type CloudSubtaskRow = {
@@ -196,7 +197,7 @@ export async function downloadSupabaseData(userId: string): Promise<StoredTaskSt
     supabase
       .from("tasks")
       .select(
-        "id,list_id,title,completed,due_date,due_time,is_archived,note,priority,recurrence,team_id,assignee_id,owner_id,project_id,board_column_key",
+        "id,list_id,title,completed,due_date,due_time,is_archived,note,priority,recurrence,team_id,assignee_id,owner_id,project_id,board_column_key,share_token",
       )
       .or(ownedOrAssignedOrTeamFilter)
       .order("created_at", { ascending: true }),
@@ -697,6 +698,7 @@ function mapCloudTaskRowCore(
     priority: normalizePriority(task.priority),
     recurrence: normalizeRecurrence(task.recurrence),
     title: task.title,
+    shareToken: task.share_token,
   };
 }
 

@@ -37,6 +37,7 @@ export type Task = {
   boardColumnKey: BoardColumnKey;
   labels: TaskLabel[];
   subtasks: TaskSubtask[];
+  shareToken: string | null;
 };
 
 export type TaskSubtask = {

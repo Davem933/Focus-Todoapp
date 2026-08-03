@@ -854,6 +854,7 @@ export function App() {
       boardColumnKey: options.boardColumnKey ?? "todo",
       labels: options.labels ?? [],
       subtasks: options.subtasks ?? [],
+      shareToken: null,
     };
 
     setTasks((currentTasks) => [newTask, ...currentTasks]);

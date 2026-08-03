@@ -116,6 +116,7 @@ function normalizeTask(task: Task): Task {
     subtasks: Array.isArray(task.subtasks)
       ? task.subtasks.filter(isTaskSubtask)
       : [],
+    shareToken: typeof task.shareToken === "string" ? task.shareToken : null,
   };
 }
 
@@ -277,7 +278,10 @@ function isTask(value: unknown): value is Task {
     (typeof value.labels === "undefined" ||
       (Array.isArray(value.labels) && value.labels.every(isTaskLabel))) &&
     (typeof value.subtasks === "undefined" ||
-      (Array.isArray(value.subtasks) && value.subtasks.every(isTaskSubtask)))
+      (Array.isArray(value.subtasks) && value.subtasks.every(isTaskSubtask))) &&
+    (typeof value.shareToken === "string" ||
+      value.shareToken === null ||
+      typeof value.shareToken === "undefined")
   );
 }
 
