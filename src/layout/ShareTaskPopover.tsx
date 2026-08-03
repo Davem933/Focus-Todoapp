@@ -1,7 +1,21 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { Check, Copy, Loader2, X } from "lucide-react";
+import { Check, Copy, Download, Loader2, Share2, X } from "lucide-react";
 import { generateShareToken, revokeShareToken } from "../supabase/taskShareApi";
+
+function dataUrlToFile(dataUrl: string, fileName: string): File {
+  const [header, base64] = dataUrl.split(",");
+  const mimeMatch = header.match(/:(.*?);/);
+  const mimeType = mimeMatch ? mimeMatch[1] : "image/png";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  return new File([bytes], fileName, { type: mimeType });
+}
 
 type ShareTaskPopoverProps = {
   taskId: string;
@@ -95,6 +109,46 @@ export function ShareTaskPopover({
     setTimeout(() => setIsCopied(false), 2000);
   }
 
+  function downloadQrImage() {
+    if (!qrDataUrl) {
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = qrDataUrl;
+    link.download = "ukol-qr-kod.png";
+    link.click();
+  }
+
+  async function handleShareQr() {
+    if (!qrDataUrl || !shareUrl) {
+      return;
+    }
+
+    const file = dataUrlToFile(qrDataUrl, "ukol-qr-kod.png");
+    const canShareFile =
+      typeof navigator.share === "function" &&
+      typeof navigator.canShare === "function" &&
+      navigator.canShare({ files: [file] });
+
+    if (canShareFile) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "QR kód úkolu",
+          text: shareUrl,
+        });
+        return;
+      } catch (shareError) {
+        if (shareError instanceof Error && shareError.name === "AbortError") {
+          return;
+        }
+      }
+    }
+
+    downloadQrImage();
+  }
+
   async function handleRevoke() {
     setIsRevoking(true);
     setError(null);
@@ -145,6 +199,14 @@ export function ShareTaskPopover({
             Kdokoliv s tímto odkazem uvidí náhled úkolu ke čtení, i bez přihlášení.
           </p>
           <div className="share-task-popover__actions">
+            <button type="button" onClick={handleShareQr}>
+              <Share2 size={16} />
+              Sdílet QR kód
+            </button>
+            <button type="button" onClick={downloadQrImage}>
+              <Download size={16} />
+              Stáhnout QR kód
+            </button>
             <button type="button" onClick={handleCopyLink}>
               {isCopied ? <Check size={16} /> : <Copy size={16} />}
               {isCopied ? "Zkopírováno" : "Kopírovat odkaz"}
