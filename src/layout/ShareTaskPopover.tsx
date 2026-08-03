@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { Check, Copy, Download, Loader2, QrCode, Share2, X } from "lucide-react";
+import { ArrowLeft, Check, Copy, Download, Loader2, QrCode, Share2 } from "lucide-react";
 import { generateShareToken, revokeShareToken } from "../supabase/taskShareApi";
 
 function dataUrlToFile(dataUrl: string, fileName: string): File {
@@ -146,15 +146,15 @@ export function ShareTaskPopover({
   return (
     <div className="share-task-popover" role="dialog" aria-label="Sdílet úkol pomocí QR kódu">
       <div className="share-task-popover__header">
-        <h3>Sdílet úkol</h3>
         <button
           type="button"
-          className="share-task-popover__close"
-          aria-label="Zavřít"
+          className="share-task-popover__back"
+          aria-label="Zpět"
           onClick={onClose}
         >
-          <X size={16} />
+          <ArrowLeft size={18} />
         </button>
+        <h3>Sdílet úkol</h3>
       </div>
 
       {isLoading ? (

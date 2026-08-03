@@ -8115,6 +8115,7 @@ input[type="checkbox"]:focus-visible {
 .app-panel--detail {
   background: var(--color-background-sidebar);
   border-left: 1px solid var(--color-border);
+  position: relative;
 }
 
 .sidebar-drawer {
@@ -14667,32 +14668,38 @@ input[type="checkbox"]:focus-visible {
 
 .share-task-popover {
   position: absolute;
+  inset: 0;
   z-index: 40;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  width: 280px;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--border-color, #2a2a2a);
-  background: var(--panel-bg, #1a1a1a);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: inherit;
+  background: var(--panel-bg, #14141c);
+  overflow-y: auto;
 }
 
 .share-task-popover__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .share-task-popover__header h3 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
 }
 
-.share-task-popover__close {
+.share-task-popover__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
   border: none;
-  background: transparent;
+  border-radius: 0.5rem;
+  background: rgba(148, 163, 184, 0.12);
+  color: inherit;
   cursor: pointer;
 }
 
@@ -14724,29 +14731,77 @@ input[type="checkbox"]:focus-visible {
 
 .share-task-popover__qr {
   align-self: center;
-  border-radius: 0.5rem;
+  width: 220px;
+  height: 220px;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: #ffffff;
 }
 
 .share-task-popover__hint {
   margin: 0;
-  font-size: 0.75rem;
+  text-align: center;
+  font-size: 0.85rem;
   opacity: 0.75;
 }
 
 .share-task-popover__actions {
   display: flex;
   flex-direction: column;
+  gap: 0.6rem;
+  margin-top: auto;
+}
+
+.share-task-popover__actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(148, 163, 184, 0.08);
+  color: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.share-task-popover__actions button:first-child {
+  border: none;
+  background: linear-gradient(135deg, var(--color-accent, #6d5dfc), #8b7bff);
+  color: #ffffff;
 }
 
 .share-task-popover__revoke {
-  color: #ef4444;
+  margin-top: 0.4rem;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #ef4444 !important;
 }
 
 .share-task-popover__idle {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 0.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.share-task-popover__idle button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: linear-gradient(135deg, var(--color-accent, #6d5dfc), #8b7bff);
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .board-card-modal__header-actions {
