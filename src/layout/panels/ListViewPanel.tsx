@@ -32,6 +32,7 @@ type ListViewPanelProps = {
   tasks: Task[];
   currentUserId: string | null;
   onUpdateTask: (taskId: string, patch: TaskUpdate) => void;
+  onUpdateTaskShareToken: (taskId: string, token: string | null) => void;
   onCreateTaskForBoard: (projectId: string, boardColumnKey?: string) => void;
   initialPriorityFilter?: TaskPriority | null;
   onInitialPriorityFilterHandled?: () => void;
@@ -42,6 +43,7 @@ export function ListViewPanel({
   activeTeamId,
   tasks,
   onUpdateTask,
+  onUpdateTaskShareToken,
   onCreateTaskForBoard,
   initialPriorityFilter,
   onInitialPriorityFilterHandled,
@@ -425,6 +427,8 @@ export function ListViewPanel({
             projectName={projects.find((project) => project.id === selectedProjectId)?.name ?? ""}
             subtaskTitle={cardComposerSubtaskTitle}
             subtasks={cardComposerSubtasks}
+            taskId={cardComposerTaskId}
+            shareToken={tasks.find((task) => task.id === cardComposerTaskId)?.shareToken ?? null}
             title={cardComposerTitle}
             onAddSubtask={handleAddComposerSubtask}
             onAssigneeChange={setCardComposerAssigneeId}
@@ -436,6 +440,7 @@ export function ListViewPanel({
             onNoteChange={setCardComposerNote}
             onPriorityChange={setCardComposerPriority}
             onGenerateSubtasks={handleGenerateComposerSubtasks}
+            onShareTokenChange={onUpdateTaskShareToken}
             onSubtaskTitleChange={setCardComposerSubtaskTitle}
             onSubmit={handleSubmitComposer}
             onToggleSubtask={handleToggleComposerSubtask}

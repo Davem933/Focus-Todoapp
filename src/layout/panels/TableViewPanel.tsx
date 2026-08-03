@@ -32,6 +32,7 @@ type TableViewPanelProps = {
   tasks: Task[];
   currentUserId: string | null;
   onUpdateTask: (taskId: string, patch: TaskUpdate) => void;
+  onUpdateTaskShareToken: (taskId: string, token: string | null) => void;
   onCreateTaskForBoard: (projectId: string) => void;
   onDeleteTask: (taskId: string) => void;
   canDeleteTask: (task: Task) => boolean;
@@ -50,6 +51,7 @@ export function TableViewPanel({
   activeTeamId,
   tasks,
   onUpdateTask,
+  onUpdateTaskShareToken,
   onCreateTaskForBoard,
   onDeleteTask,
   canDeleteTask,
@@ -346,6 +348,8 @@ export function TableViewPanel({
             projectName={projects.find((project) => project.id === selectedProjectId)?.name ?? ""}
             subtaskTitle={cardComposerSubtaskTitle}
             subtasks={cardComposerSubtasks}
+            taskId={cardComposerTaskId}
+            shareToken={tasks.find((task) => task.id === cardComposerTaskId)?.shareToken ?? null}
             title={cardComposerTitle}
             onAddSubtask={handleAddComposerSubtask}
             onAssigneeChange={setCardComposerAssigneeId}
@@ -357,6 +361,7 @@ export function TableViewPanel({
             onNoteChange={setCardComposerNote}
             onPriorityChange={setCardComposerPriority}
             onGenerateSubtasks={handleGenerateComposerSubtasks}
+            onShareTokenChange={onUpdateTaskShareToken}
             onSubtaskTitleChange={setCardComposerSubtaskTitle}
             onSubmit={handleSubmitComposer}
             onToggleSubtask={handleToggleComposerSubtask}

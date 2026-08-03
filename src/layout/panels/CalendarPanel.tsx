@@ -57,9 +57,16 @@ type CalendarPanelProps = {
   tasks: Task[];
   onCreateTask: (title: string, options?: TaskUpdate) => string | null;
   onUpdateTask: (taskId: string, update: TaskUpdate) => void;
+  onUpdateTaskShareToken: (taskId: string, token: string | null) => void;
 };
 
-export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: CalendarPanelProps) {
+export function CalendarPanel({
+  teams,
+  tasks,
+  onCreateTask,
+  onUpdateTask,
+  onUpdateTaskShareToken,
+}: CalendarPanelProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -790,6 +797,12 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
             projectName={selectedProject.name}
             subtaskTitle={cardComposerSubtaskTitle}
             subtasks={cardComposerSubtasks}
+            taskId={cardComposerTaskId}
+            shareToken={
+              cardComposerTaskId
+                ? tasks.find((task) => task.id === cardComposerTaskId)?.shareToken ?? null
+                : null
+            }
             title={cardComposerTitle}
             onAddSubtask={handleAddComposerSubtask}
             onAssigneeChange={setCardComposerAssigneeId}
@@ -801,6 +814,7 @@ export function CalendarPanel({ teams, tasks, onCreateTask, onUpdateTask }: Cale
             onNoteChange={setCardComposerNote}
             onPriorityChange={setCardComposerPriority}
             onGenerateSubtasks={handleGenerateComposerSubtasks}
+            onShareTokenChange={onUpdateTaskShareToken}
             onSubtaskTitleChange={setCardComposerSubtaskTitle}
             onSubmit={handleSubmitComposer}
             onToggleSubtask={handleToggleComposerSubtask}

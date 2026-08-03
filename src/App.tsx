@@ -757,6 +757,14 @@ export function App() {
     });
   }
 
+  function handleUpdateTaskShareToken(taskId: string, token: string | null) {
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === taskId ? { ...task, shareToken: token } : task,
+      ),
+    );
+  }
+
   function handleArchiveTask(taskId: string) {
     const taskToArchive = tasks.find((task) => task.id === taskId);
 
@@ -1567,6 +1575,7 @@ export function App() {
         onCreateTask={handleCreateTask}
         onUpdateTask={handleUpdateTask}
         onArchiveTask={handleArchiveTask}
+        onUpdateTaskShareToken={handleUpdateTaskShareToken}
         onDeleteTask={handleDeleteTask}
         deletedTaskUndo={deletedTaskUndo}
         onUndoDeleteTask={handleUndoDeleteTask}

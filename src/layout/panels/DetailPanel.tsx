@@ -5,6 +5,7 @@ import {
   FolderOpen,
   Loader2,
   Plus,
+  QrCode,
   Repeat,
   Star,
   UserRound,
@@ -14,6 +15,7 @@ import type { CSSProperties, ChangeEvent, FormEvent, KeyboardEvent, MouseEvent }
 import { Toast } from "../../components/Toast";
 import { CustomDropdown } from "../CustomDropdown";
 import type { DropdownOption } from "../CustomDropdown";
+import { ShareTaskPopover } from "../ShareTaskPopover";
 import { getTodayDateValue } from "../../tasks/dateUtils";
 import { generateSubtasksWithGroq } from "../../tasks/groqService";
 import { createEntityId } from "../../tasks/idUtils";
@@ -43,6 +45,7 @@ type DetailPanelProps = {
   onDeleteTask: (taskId: string) => void;
   onStartFocus: (taskId: string) => void;
   onOpenNoteFromTask: (noteId: string) => void;
+  onShareTokenChange: (taskId: string, token: string | null) => void;
 };
 
 const PRIORITY_OPTIONS: TaskPriority[] = ["none", "low", "medium", "high"];
@@ -99,11 +102,13 @@ export function DetailPanel({
   onDeleteTask,
   onStartFocus,
   onOpenNoteFromTask,
+  onShareTokenChange,
 }: DetailPanelProps) {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
   const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const [isSharePopoverOpen, setIsSharePopoverOpen] = useState(false);
   const [isAddingSubtask, setIsAddingSubtask] = useState(false);
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -608,6 +613,13 @@ export function DetailPanel({
             </button>
             {isActionMenuOpen ? (
               <div className="detail-panel__mobile-menu-content" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => handleMenuAction(() => setIsSharePopoverOpen(true))}
+                >
+                  <QrCode size={16} /> Sdílet QR kódem
+                </button>
                 <button disabled type="button" role="menuitem">
                   Duplikovat
                 </button>
@@ -709,6 +721,13 @@ export function DetailPanel({
             </button>
             {isActionMenuOpen ? (
               <div className="detail-panel__menu-content" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => handleMenuAction(() => setIsSharePopoverOpen(true))}
+                >
+                  <QrCode size={16} /> Sdílet QR kódem
+                </button>
                 <button disabled type="button" role="menuitem">
                   Duplikovat
                 </button>
@@ -735,6 +754,14 @@ export function DetailPanel({
             ) : null}
           </div>
         </div>
+        {isSharePopoverOpen ? (
+          <ShareTaskPopover
+            taskId={task.id}
+            shareToken={task.shareToken}
+            onTokenChange={onShareTokenChange}
+            onClose={() => setIsSharePopoverOpen(false)}
+          />
+        ) : null}
       </div>
 
       <div className="detail-panel__labels" data-empty={activeTask.labels.length === 0}>

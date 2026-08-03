@@ -1,7 +1,9 @@
+import { useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Loader2, Wand2, X } from "lucide-react";
+import { Loader2, QrCode, Wand2, X } from "lucide-react";
 import { CustomDropdown } from "./CustomDropdown";
+import { ShareTaskPopover } from "./ShareTaskPopover";
 import { createCardLabels } from "../tasks/cardLabels";
 import type { TaskPriority, TaskSubtask } from "../tasks/taskTypes";
 import {
@@ -27,6 +29,8 @@ export function ProjectCardComposerModal({
   projectName,
   subtaskTitle,
   subtasks,
+  taskId,
+  shareToken,
   title,
   onAddSubtask,
   onAssigneeChange,
@@ -38,6 +42,7 @@ export function ProjectCardComposerModal({
   onNoteChange,
   onPriorityChange,
   onGenerateSubtasks,
+  onShareTokenChange,
   onSubtaskTitleChange,
   onSubmit,
   onTitleChange,
@@ -57,6 +62,8 @@ export function ProjectCardComposerModal({
   projectName: string;
   subtaskTitle: string;
   subtasks: TaskSubtask[];
+  taskId: string | null;
+  shareToken: string | null;
   title: string;
   onAddSubtask: () => void;
   onAssigneeChange: (value: string) => void;
@@ -68,6 +75,7 @@ export function ProjectCardComposerModal({
   onNoteChange: (value: string) => void;
   onPriorityChange: (value: TaskPriority) => void;
   onGenerateSubtasks: () => void;
+  onShareTokenChange: (taskId: string, token: string | null) => void;
   onSubtaskTitleChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onTitleChange: (value: string) => void;
@@ -75,6 +83,7 @@ export function ProjectCardComposerModal({
 }) {
   const previewLabels = createCardLabels(labels);
   const prefersReducedMotion = useReducedMotion();
+  const [isSharePopoverOpen, setIsSharePopoverOpen] = useState(false);
 
   function fieldMotion(index: number) {
     if (prefersReducedMotion) {
@@ -132,18 +141,38 @@ export function ProjectCardComposerModal({
             <h2 id="board-card-modal-title">{isEditing ? "Upravit kartu" : "Vytvořit kartu"}</h2>
             <p>{isEditing ? "Uprav kartu na nástěnce " + projectName + "." : "Přidej novou kartu do nástěnky " + projectName + "."}</p>
           </div>
-          <motion.button
-            className="board-card-modal__close"
-            type="button"
-            aria-label="Zavřít"
-            onClick={onClose}
-            whileHover={prefersReducedMotion ? undefined : { scale: 1.06, rotate: 90 }}
-            whileTap={prefersReducedMotion ? undefined : { scale: 0.92 }}
-            transition={{ duration: 0.18 }}
-          >
-            <X size={18} />
-          </motion.button>
+          <div className="board-card-modal__header-actions">
+            {taskId ? (
+              <button
+                type="button"
+                className="board-card-modal__share"
+                aria-label="Sdílet QR kódem"
+                onClick={() => setIsSharePopoverOpen((isOpen) => !isOpen)}
+              >
+                <QrCode size={18} />
+              </button>
+            ) : null}
+            <motion.button
+              className="board-card-modal__close"
+              type="button"
+              aria-label="Zavřít"
+              onClick={onClose}
+              whileHover={prefersReducedMotion ? undefined : { scale: 1.06, rotate: 90 }}
+              whileTap={prefersReducedMotion ? undefined : { scale: 0.92 }}
+              transition={{ duration: 0.18 }}
+            >
+              <X size={18} />
+            </motion.button>
+          </div>
         </header>
+        {isSharePopoverOpen && taskId ? (
+          <ShareTaskPopover
+            taskId={taskId}
+            shareToken={shareToken}
+            onTokenChange={onShareTokenChange}
+            onClose={() => setIsSharePopoverOpen(false)}
+          />
+        ) : null}
 
         <div className="board-card-modal__body">
           <motion.label className="board-card-modal__field board-card-modal__field--full" {...fieldMotion(0)}>

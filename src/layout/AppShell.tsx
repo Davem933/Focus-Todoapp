@@ -141,6 +141,7 @@ type AppShellProps = {
   activeTeamId: string | null;
   teams: Team[];
   onUpdateTask: (taskId: string, update: TaskUpdate) => void;
+  onUpdateTaskShareToken: (taskId: string, token: string | null) => void;
   onArchiveTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   deletedTaskUndo: Task | null;
@@ -194,6 +195,7 @@ export function AppShell(props: AppShellProps) {
     activeTeamId,
     teams,
     onUpdateTask,
+    onUpdateTaskShareToken,
     onArchiveTask,
     onDeleteTask,
     deletedTaskUndo,
@@ -1317,6 +1319,7 @@ export function AppShell(props: AppShellProps) {
               tasks={allTasks}
               onCreateTask={handleCreateTask}
               onUpdateTask={onUpdateTask}
+              onUpdateTaskShareToken={onUpdateTaskShareToken}
             />
           ) : isListOpen ? (
             <ListViewPanel
@@ -1325,6 +1328,7 @@ export function AppShell(props: AppShellProps) {
               tasks={allTasks}
               currentUserId={currentUserId}
               onUpdateTask={onUpdateTask}
+              onUpdateTaskShareToken={onUpdateTaskShareToken}
               onCreateTaskForBoard={(projectId, boardColumnKey) => {
                 const newTaskId = handleCreateTask("Novy ukol", {
                   projectId,
@@ -1345,6 +1349,7 @@ export function AppShell(props: AppShellProps) {
               tasks={allTasks}
               currentUserId={currentUserId}
               onUpdateTask={onUpdateTask}
+              onUpdateTaskShareToken={onUpdateTaskShareToken}
               onCreateTaskForBoard={(projectId) => {
                 const newTaskId = handleCreateTask("Novy ukol", { projectId, boardColumnKey: "todo" });
 
@@ -1380,6 +1385,7 @@ export function AppShell(props: AppShellProps) {
               teams={teams}
               onCreateTask={onCreateTask}
               onUpdateTask={onUpdateTask}
+              onUpdateTaskShareToken={onUpdateTaskShareToken}
               onDeleteTask={handleDeleteTaskAction}
               onOpenTask={(taskId) => {
                 setIsProjectsOverviewOpen(false);
@@ -1438,6 +1444,7 @@ export function AppShell(props: AppShellProps) {
             onDeleteTask={handleDeleteTaskAction}
             onStartFocus={onStartFocus}
             onOpenNoteFromTask={(noteId) => handleOpenNotes(noteId)}
+            onShareTokenChange={onUpdateTaskShareToken}
           />
         ) : null}
       </main>
@@ -2603,6 +2610,7 @@ type ProjectsOverviewPanelProps = {
   teams: Team[];
   onCreateTask: (title: string, options?: CreateTaskOptions) => string | null;
   onUpdateTask: (taskId: string, update: TaskUpdate) => void;
+  onUpdateTaskShareToken: (taskId: string, token: string | null) => void;
   onOpenTask: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
 };
@@ -2620,6 +2628,7 @@ function ProjectsOverviewPanel({
   teams,
   onCreateTask,
   onUpdateTask,
+  onUpdateTaskShareToken,
   onOpenTask,
   onDeleteTask,
 }: ProjectsOverviewPanelProps) {
@@ -3510,6 +3519,12 @@ function ProjectsOverviewPanel({
             projectName={selectedProject.name}
             subtaskTitle={cardComposerSubtaskTitle}
             subtasks={cardComposerSubtasks}
+            taskId={cardComposerTaskId}
+            shareToken={
+              cardComposerTaskId
+                ? tasks.find((task) => task.id === cardComposerTaskId)?.shareToken ?? null
+                : null
+            }
             title={cardComposerTitle}
             onAddSubtask={handleAddCardComposerSubtask}
             onAssigneeChange={setCardComposerAssigneeId}
@@ -3521,6 +3536,7 @@ function ProjectsOverviewPanel({
             onNoteChange={setCardComposerNote}
             onPriorityChange={setCardComposerPriority}
             onGenerateSubtasks={handleGenerateCardComposerSubtasks}
+            onShareTokenChange={onUpdateTaskShareToken}
             onSubtaskTitleChange={setCardComposerSubtaskTitle}
             onSubmit={handleSubmitProjectCard}
             onToggleSubtask={handleToggleCardComposerSubtask}
