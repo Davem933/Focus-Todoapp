@@ -136,35 +136,38 @@ export function ProjectCardComposerModal({
           event.preventDefault();
         }}
       >
-        <header className="board-card-modal__header">
-          <div>
-            <h2 id="board-card-modal-title">{isEditing ? "Upravit kartu" : "Vytvořit kartu"}</h2>
-            <p>{isEditing ? "Uprav kartu na nástěnce " + projectName + "." : "Přidej novou kartu do nástěnky " + projectName + "."}</p>
-          </div>
-          <div className="board-card-modal__header-actions">
-            {taskId ? (
-              <button
+        {isSharePopoverOpen && taskId ? null : (
+          <header className="board-card-modal__header">
+            <div>
+              <h2 id="board-card-modal-title">{isEditing ? "Upravit kartu" : "Vytvořit kartu"}</h2>
+              <p>{isEditing ? "Uprav kartu na nástěnce " + projectName + "." : "Přidej novou kartu do nástěnky " + projectName + "."}</p>
+            </div>
+            <div className="board-card-modal__header-actions">
+              {taskId ? (
+                <button
+                  type="button"
+                  className="board-card-modal__share"
+                  aria-label="Sdílet QR kódem"
+                  onClick={() => setIsSharePopoverOpen(true)}
+                >
+                  <QrCode size={18} />
+                </button>
+              ) : null}
+              <motion.button
+                className="board-card-modal__close"
                 type="button"
-                className="board-card-modal__share"
-                aria-label="Sdílet QR kódem"
-                onClick={() => setIsSharePopoverOpen((isOpen) => !isOpen)}
+                aria-label="Zavřít"
+                onClick={onClose}
+                whileHover={prefersReducedMotion ? undefined : { scale: 1.06, rotate: 90 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.92 }}
+                transition={{ duration: 0.18 }}
               >
-                <QrCode size={18} />
-              </button>
-            ) : null}
-            <motion.button
-              className="board-card-modal__close"
-              type="button"
-              aria-label="Zavřít"
-              onClick={onClose}
-              whileHover={prefersReducedMotion ? undefined : { scale: 1.06, rotate: 90 }}
-              whileTap={prefersReducedMotion ? undefined : { scale: 0.92 }}
-              transition={{ duration: 0.18 }}
-            >
-              <X size={18} />
-            </motion.button>
-          </div>
-        </header>
+                <X size={18} />
+              </motion.button>
+            </div>
+          </header>
+        )}
+
         {isSharePopoverOpen && taskId ? (
           <ShareTaskPopover
             taskId={taskId}
@@ -172,8 +175,8 @@ export function ProjectCardComposerModal({
             onTokenChange={onShareTokenChange}
             onClose={() => setIsSharePopoverOpen(false)}
           />
-        ) : null}
-
+        ) : (
+        <>
         <div className="board-card-modal__body">
           <motion.label className="board-card-modal__field board-card-modal__field--full" {...fieldMotion(0)}>
             <span>Název karty</span>
@@ -388,6 +391,8 @@ export function ProjectCardComposerModal({
             {actionLabel}
           </motion.button>
         </footer>
+        </>
+        )}
       </motion.form>
     </div>
   );

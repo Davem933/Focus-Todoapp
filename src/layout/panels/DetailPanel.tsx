@@ -193,6 +193,19 @@ export function DetailPanel({
     );
   }
 
+  if (isSharePopoverOpen) {
+    return (
+      <section className="app-panel app-panel--detail" aria-label="Sdílet úkol">
+        <ShareTaskPopover
+          taskId={task.id}
+          shareToken={task.shareToken}
+          onTokenChange={onShareTokenChange}
+          onClose={() => setIsSharePopoverOpen(false)}
+        />
+      </section>
+    );
+  }
+
   const activeTask = task;
   const targetLists = lists.filter((list) => !list.isSystem && !list.isArchived);
   const currentList = lists.find((list) => list.id === activeTask.listId);
@@ -754,14 +767,6 @@ export function DetailPanel({
             ) : null}
           </div>
         </div>
-        {isSharePopoverOpen ? (
-          <ShareTaskPopover
-            taskId={task.id}
-            shareToken={task.shareToken}
-            onTokenChange={onShareTokenChange}
-            onClose={() => setIsSharePopoverOpen(false)}
-          />
-        ) : null}
       </div>
 
       <div className="detail-panel__labels" data-empty={activeTask.labels.length === 0}>

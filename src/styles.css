@@ -8115,7 +8115,6 @@ input[type="checkbox"]:focus-visible {
 .app-panel--detail {
   background: var(--color-background-sidebar);
   border-left: 1px solid var(--color-border);
-  position: relative;
 }
 
 .sidebar-drawer {
@@ -14667,16 +14666,10 @@ input[type="checkbox"]:focus-visible {
 }
 
 .share-task-popover {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   padding: 1.5rem;
-  border-radius: inherit;
-  background: var(--panel-bg, #14141c);
-  overflow-y: auto;
 }
 
 .share-task-popover__header {
@@ -14749,7 +14742,7 @@ input[type="checkbox"]:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  margin-top: auto;
+  margin-top: 0.5rem;
 }
 
 .share-task-popover__actions button {
