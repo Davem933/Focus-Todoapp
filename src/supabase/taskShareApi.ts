@@ -20,15 +20,32 @@ export type SharedTaskPreview = {
   subtasks: SharedTaskSubtask[];
 };
 
+async function getCurrentUserId(): Promise<string> {
+  if (!supabase) {
+    throw new Error("Cloud sync není nakonfigurovaný.");
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Nejste přihlášeni.");
+  }
+
+  return user.id;
+}
+
 export async function generateShareToken(taskId: string): Promise<string> {
   if (!supabase) {
     throw new Error("Cloud sync není nakonfigurovaný.");
   }
 
+  const ownerId = await getCurrentUserId();
   const token = crypto.randomUUID();
   const { error } = await supabase
     .from("tasks")
-    .update({ share_token: token })
+    .update({ share_token: token, owner_id: ownerId })
     .eq("id", taskId);
 
   if (error) {
@@ -43,9 +60,10 @@ export async function revokeShareToken(taskId: string): Promise<void> {
     throw new Error("Cloud sync není nakonfigurovaný.");
   }
 
+  const ownerId = await getCurrentUserId();
   const { error } = await supabase
     .from("tasks")
-    .update({ share_token: null })
+    .update({ share_token: null, owner_id: ownerId })
     .eq("id", taskId);
 
   if (error) {

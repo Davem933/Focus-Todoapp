@@ -56,7 +56,9 @@ export function ShareTaskPopover({
         if (!isCancelled) {
           onTokenChange(taskId, token);
         }
-      } catch {
+      } catch (shareError) {
+        console.error("Nepodařilo se vytvořit sdílený odkaz na úkol:", shareError);
+
         if (!isCancelled) {
           setError("Nepodařilo se vytvořit sdílený odkaz. Zkontrolujte připojení a zkuste to znovu.");
         }
@@ -157,7 +159,8 @@ export function ShareTaskPopover({
       await revokeShareToken(taskId);
       onTokenChange(taskId, null);
       onClose();
-    } catch {
+    } catch (revokeError) {
+      console.error("Nepodařilo se zrušit sdílení úkolu:", revokeError);
       setError("Nepodařilo se zrušit sdílení. Zkuste to znovu.");
       setIsRevoking(false);
     }
