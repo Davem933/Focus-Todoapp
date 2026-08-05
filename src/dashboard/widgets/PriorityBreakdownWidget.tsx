@@ -1,26 +1,18 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { TASK_PRIORITY_COLORS, BOARD_CARD_PRIORITY_LABELS } from "../../tasks/taskPriorityColors";
-import type { Task, TaskPriority } from "../../tasks/taskTypes";
+import { getPriorityBreakdown } from "../priorityBreakdown";
+import type { Task } from "../../tasks/taskTypes";
 
 type PriorityBreakdownWidgetProps = {
   tasks: Task[];
 };
 
-const PRIORITY_ORDER: TaskPriority[] = ["none", "low", "medium", "high"];
-
 export function PriorityBreakdownWidget({ tasks }: PriorityBreakdownWidgetProps) {
-  const activeTasks = tasks.filter((task) => !task.completed && !task.isArchived);
+  const data = getPriorityBreakdown(tasks);
+  const activeCount = data.reduce((sum, entry) => sum + entry.count, 0);
 
-  if (activeTasks.length === 0) {
+  if (activeCount === 0) {
     return <p className="dashboard-widget__empty">Žádné aktivní úkoly.</p>;
   }
-
-  const data = PRIORITY_ORDER.map((priority) => ({
-    priority,
-    label: BOARD_CARD_PRIORITY_LABELS[priority],
-    count: activeTasks.filter((task) => task.priority === priority).length,
-    color: TASK_PRIORITY_COLORS[priority],
-  }));
 
   return (
     <ResponsiveContainer width="100%" height="100%">
