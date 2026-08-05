@@ -1444,6 +1444,7 @@ export function AppShell(props: AppShellProps) {
           <DetailPanel
             task={selectedTask}
             lists={lists}
+            allTasksForDependencies={allTasks}
             canDeleteTask={canDeleteTask(selectedTask)}
             mentioningNotes={taskMentioningNotes}
             isMentioningNotesLoading={isTaskMentioningNotesLoading}

@@ -3,11 +3,13 @@ import {
   CalendarDays,
   Clock3,
   FolderOpen,
+  Link2,
   Loader2,
   Plus,
   QrCode,
   Repeat,
   Star,
+  TrendingUp,
   UserRound,
   Wand2,
 } from "lucide-react";
@@ -36,6 +38,7 @@ import type { Note } from "../../notes/noteTypes";
 type DetailPanelProps = {
   task: Task | null;
   lists: TaskList[];
+  allTasksForDependencies: Task[];
   canDeleteTask: boolean;
   mentioningNotes: Note[];
   isMentioningNotesLoading: boolean;
@@ -93,6 +96,7 @@ function getTeamMemberDisplayName(member: TeamMember) {
 export function DetailPanel({
   task,
   lists,
+  allTasksForDependencies,
   canDeleteTask,
   mentioningNotes,
   isMentioningNotesLoading,
@@ -957,6 +961,25 @@ export function DetailPanel({
                   }
                 />
               </label>
+
+              <label className="field date-time-field" data-has-value={Boolean(task.startDate)}>
+                <span className="detail-row-icon detail-row-icon--date" aria-hidden="true">
+                  <CalendarDays size={16} strokeWidth={1.9} />
+                </span>
+                <span>Začátek</span>
+                <input
+                  aria-label="Datum začátku"
+                  className="date-time-field__input"
+                  type="date"
+                  value={task.startDate ?? ""}
+                  onClick={handleNativePickerClick}
+                  onChange={(event) =>
+                    onUpdateTask(task.id, {
+                      startDate: event.currentTarget.value || null,
+                    })
+                  }
+                />
+              </label>
             </div>
 
             <label className="field" data-has-value={task.recurrence !== "none"}>
@@ -1013,6 +1036,66 @@ export function DetailPanel({
                 }
               />
             </label>
+
+            <label className="field" data-has-value={task.progress > 0}>
+              <span className="detail-row-icon detail-row-icon--priority" aria-hidden="true">
+                <TrendingUp size={16} strokeWidth={1.9} />
+              </span>
+              <span>Postup ({task.progress}%)</span>
+              <input
+                aria-label="Postup v procentech"
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={task.progress}
+                onChange={(event) =>
+                  onUpdateTask(task.id, { progress: Number(event.currentTarget.value) })
+                }
+              />
+            </label>
+
+            <div className="field field--column" data-has-value={task.dependencies.length > 0}>
+              <span className="detail-row-icon detail-row-icon--priority" aria-hidden="true">
+                <Link2 size={16} strokeWidth={1.9} />
+              </span>
+              <span>Závisí na</span>
+              <div className="detail-panel__dependency-list">
+                {task.dependencies.map((dependencyId) => {
+                  const dependencyTask = allTasksForDependencies.find((entry) => entry.id === dependencyId);
+
+                  return (
+                    <span key={dependencyId} className="detail-panel__dependency-chip">
+                      {dependencyTask?.title ?? "Neznámý úkol"}
+                      <button
+                        type="button"
+                        aria-label="Odebrat závislost"
+                        onClick={() =>
+                          onUpdateTask(task.id, {
+                            dependencies: task.dependencies.filter((id) => id !== dependencyId),
+                          })
+                        }
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+              <CustomDropdown
+                ariaLabel="Přidat závislost"
+                options={allTasksForDependencies
+                  .filter((entry) => entry.id !== task.id && !task.dependencies.includes(entry.id))
+                  .map((entry) => ({ value: entry.id, label: entry.title }))}
+                value=""
+                onChange={(nextValue) =>
+                  nextValue &&
+                  onUpdateTask(task.id, {
+                    dependencies: [...task.dependencies, nextValue],
+                  })
+                }
+              />
+            </div>
 
             <label className="field" data-has-value="true">
               <span className="detail-row-icon detail-row-icon--list" aria-hidden="true">
