@@ -863,6 +863,9 @@ export function App() {
       labels: options.labels ?? [],
       subtasks: options.subtasks ?? [],
       shareToken: null,
+      startDate: null,
+      progress: 0,
+      dependencies: [],
     };
 
     setTasks((currentTasks) => [newTask, ...currentTasks]);
