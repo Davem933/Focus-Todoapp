@@ -8,7 +8,7 @@ type WorkloadWidgetProps = {
   members: TeamMember[];
 };
 
-const OVERLOAD_THRESHOLD = 8;
+export const OVERLOAD_THRESHOLD = 8;
 const WARNING_THRESHOLD = 5;
 
 function getWorkloadColor(assigneeId: string | null, count: number): string {
