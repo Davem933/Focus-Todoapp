@@ -13,6 +13,7 @@ import { LabelBreakdownWidget } from "./widgets/LabelBreakdownWidget";
 import { ProjectBreakdownWidget } from "./widgets/ProjectBreakdownWidget";
 import { WorkloadWidget } from "./widgets/WorkloadWidget";
 import { MemberPriorityWidget } from "./widgets/MemberPriorityWidget";
+import { RiskAlertsWidget } from "./widgets/RiskAlertsWidget";
 import {
   getDefaultDashboardLayout,
   loadDashboardLayout,
@@ -44,6 +45,7 @@ const WIDGET_TITLES: Record<DashboardWidgetKind, string> = {
   projectBreakdown: "Rozdělení podle nástěnky",
   workload: "Vytížení týmu",
   memberPriority: "Priority podle člena",
+  riskAlerts: "Rizika a upozornění",
 };
 
 const ALL_WIDGET_KINDS: DashboardWidgetKind[] = [
@@ -56,6 +58,7 @@ const ALL_WIDGET_KINDS: DashboardWidgetKind[] = [
   "projectBreakdown",
   "workload",
   "memberPriority",
+  "riskAlerts",
 ];
 
 function getExportRowsForWidget(
@@ -86,6 +89,7 @@ function getExportRowsForWidget(
     }
     case "stats":
     case "upcoming":
+    case "riskAlerts":
     default:
       return null;
   }
@@ -259,6 +263,8 @@ export function DashboardPanel({
             onSelectMember={setMemberPriorityWidgetMemberId}
           />
         );
+      case "riskAlerts":
+        return <RiskAlertsWidget tasks={tasks} members={members} onOpenTask={onOpenTask} />;
       default:
         return null;
     }
