@@ -5,7 +5,7 @@ import { Loader2, QrCode, Wand2, X } from "lucide-react";
 import { CustomDropdown } from "./CustomDropdown";
 import { ShareTaskPopover } from "./ShareTaskPopover";
 import { createCardLabels } from "../tasks/cardLabels";
-import type { TaskPriority, TaskSubtask } from "../tasks/taskTypes";
+import type { Task, TaskPriority, TaskSubtask } from "../tasks/taskTypes";
 import {
   BOARD_CARD_PRIORITY_DROPDOWN_OPTIONS,
   BOARD_CARD_PRIORITY_LABELS,
@@ -19,6 +19,10 @@ export function ProjectCardComposerModal({
   assigneeId,
   columnTitle,
   dueDate,
+  startDate,
+  progress,
+  dependencies,
+  allTasksForDependencies,
   labelInput,
   labels,
   isEditing,
@@ -36,6 +40,10 @@ export function ProjectCardComposerModal({
   onAssigneeChange,
   onClose,
   onDueDateChange,
+  onStartDateChange,
+  onProgressChange,
+  onDependencyAdd,
+  onDependencyRemove,
   onLabelInputChange,
   onAddLabel,
   onLabelsChange,
@@ -52,6 +60,10 @@ export function ProjectCardComposerModal({
   assigneeId: string;
   columnTitle: string;
   dueDate: string;
+  startDate: string;
+  progress: number;
+  dependencies: string[];
+  allTasksForDependencies: Task[];
   labelInput: string;
   labels: string;
   isEditing: boolean;
@@ -69,6 +81,10 @@ export function ProjectCardComposerModal({
   onAssigneeChange: (value: string) => void;
   onClose: () => void;
   onDueDateChange: (value: string) => void;
+  onStartDateChange: (value: string) => void;
+  onProgressChange: (value: number) => void;
+  onDependencyAdd: (taskId: string) => void;
+  onDependencyRemove: (taskId: string) => void;
   onLabelInputChange: (value: string) => void;
   onAddLabel: (value: string) => void;
   onLabelsChange: (value: string) => void;
@@ -234,6 +250,46 @@ export function ProjectCardComposerModal({
               <span>Due date</span>
               <input type="date" value={dueDate} onChange={(event) => onDueDateChange(event.currentTarget.value)} />
             </label>
+            <label className="board-card-modal__field">
+              <span>Start date</span>
+              <input type="date" value={startDate} onChange={(event) => onStartDateChange(event.currentTarget.value)} />
+            </label>
+            <label className="board-card-modal__field">
+              <span>Progress ({progress}%)</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={progress}
+                onChange={(event) => onProgressChange(Number(event.currentTarget.value))}
+              />
+            </label>
+            <div className="board-card-modal__field board-card-modal__field--full">
+              <span>Depends on</span>
+              <div className="board-card-modal__dependencies">
+                {dependencies.map((dependencyId) => {
+                  const dependencyTask = allTasksForDependencies.find((entry) => entry.id === dependencyId);
+
+                  return (
+                    <span key={dependencyId} className="board-card-modal__dependency-chip">
+                      {dependencyTask?.title ?? "Unknown task"}
+                      <button type="button" aria-label="Remove dependency" onClick={() => onDependencyRemove(dependencyId)}>
+                        ×
+                      </button>
+                    </span>
+                  );
+                })}
+                <CustomDropdown
+                  ariaLabel="Add dependency"
+                  options={allTasksForDependencies
+                    .filter((entry) => entry.id !== taskId && !dependencies.includes(entry.id))
+                    .map((entry) => ({ value: entry.id, label: entry.title }))}
+                  value=""
+                  onChange={(nextValue) => nextValue && onDependencyAdd(nextValue)}
+                />
+              </div>
+            </div>
           </motion.div>
 
           <motion.label className="board-card-modal__field board-card-modal__field--full" {...fieldMotion(3)}>

@@ -73,6 +73,9 @@ export function TableViewPanel({
   const [cardComposerNote, setCardComposerNote] = useState("");
   const [cardComposerPriority, setCardComposerPriority] = useState<TaskPriority>("none");
   const [cardComposerDueDate, setCardComposerDueDate] = useState("");
+  const [cardComposerStartDate, setCardComposerStartDate] = useState("");
+  const [cardComposerProgress, setCardComposerProgress] = useState(0);
+  const [cardComposerDependencies, setCardComposerDependencies] = useState<string[]>([]);
   const [cardComposerLabels, setCardComposerLabels] = useState("");
   const [cardComposerLabelInput, setCardComposerLabelInput] = useState("");
   const [cardComposerAssigneeId, setCardComposerAssigneeId] = useState("");
@@ -179,6 +182,9 @@ export function TableViewPanel({
     setCardComposerNote("");
     setCardComposerPriority("none");
     setCardComposerDueDate("");
+    setCardComposerStartDate("");
+    setCardComposerProgress(0);
+    setCardComposerDependencies([]);
     setCardComposerLabels("");
     setCardComposerLabelInput("");
     setCardComposerAssigneeId("");
@@ -200,6 +206,9 @@ export function TableViewPanel({
     setCardComposerNote(task.note);
     setCardComposerPriority(task.priority);
     setCardComposerDueDate(task.dueDate ?? "");
+    setCardComposerStartDate(task.startDate ?? "");
+    setCardComposerProgress(task.progress);
+    setCardComposerDependencies(task.dependencies);
     setCardComposerLabels(task.labels.map((label) => label.name).join(", "));
     setCardComposerAssigneeId(task.assigneeId ?? "");
     setCardComposerSubtaskTitle("");
@@ -264,6 +273,9 @@ export function TableViewPanel({
       assigneeId: cardComposerAssigneeId || null,
       boardColumnKey: cardComposerColumnKey,
       dueDate: cardComposerDueDate || null,
+      startDate: cardComposerStartDate || null,
+      progress: cardComposerProgress,
+      dependencies: cardComposerDependencies,
       labels: createCardLabels(cardComposerLabels),
       note: cardComposerNote,
       priority: cardComposerPriority,
@@ -338,6 +350,10 @@ export function TableViewPanel({
             assigneeId={cardComposerAssigneeId}
             columnTitle={columns.find((column) => column.key === cardComposerColumnKey)?.title ?? "Sloupec"}
             dueDate={cardComposerDueDate}
+            startDate={cardComposerStartDate}
+            progress={cardComposerProgress}
+            dependencies={cardComposerDependencies}
+            allTasksForDependencies={tasks}
             labelInput={cardComposerLabelInput}
             labels={cardComposerLabels}
             isEditing
@@ -355,6 +371,12 @@ export function TableViewPanel({
             onAssigneeChange={setCardComposerAssigneeId}
             onClose={resetCardComposer}
             onDueDateChange={setCardComposerDueDate}
+            onStartDateChange={setCardComposerStartDate}
+            onProgressChange={setCardComposerProgress}
+            onDependencyAdd={(taskId) => setCardComposerDependencies((current) => [...current, taskId])}
+            onDependencyRemove={(taskId) =>
+              setCardComposerDependencies((current) => current.filter((id) => id !== taskId))
+            }
             onLabelInputChange={setCardComposerLabelInput}
             onAddLabel={handleAddComposerLabel}
             onLabelsChange={setCardComposerLabels}
