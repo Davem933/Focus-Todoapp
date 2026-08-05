@@ -3,7 +3,16 @@ import type { DashboardWidgetKind, DashboardWidgetLayoutItem } from "./dashboard
 const STORAGE_KEY = "donext.dashboardLayout.v1";
 const HIDDEN_STORAGE_KEY = "donext.dashboardHiddenWidgets.v1";
 
-const VALID_KINDS: DashboardWidgetKind[] = ["stats", "priority", "upcoming", "assigneePie", "assigneeBar"];
+const VALID_KINDS: DashboardWidgetKind[] = [
+  "stats",
+  "priority",
+  "upcoming",
+  "assigneePie",
+  "assigneeBar",
+  "labels",
+  "projectBreakdown",
+  "workload",
+];
 
 const DEFAULT_LAYOUT: DashboardWidgetLayoutItem[] = [
   { i: "stats", x: 0, y: 0, w: 12, h: 2 },
