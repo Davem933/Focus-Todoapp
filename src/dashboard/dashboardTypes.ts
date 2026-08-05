@@ -1,4 +1,4 @@
-export type DashboardWidgetKind = "stats" | "priority" | "upcoming";
+export type DashboardWidgetKind = "stats" | "priority" | "upcoming" | "assigneePie" | "assigneeBar";
 
 export type DashboardWidgetLayoutItem = {
   i: DashboardWidgetKind;

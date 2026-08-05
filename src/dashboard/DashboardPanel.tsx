@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import GridLayout, { WidthProvider } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -7,6 +7,8 @@ import { DashboardWidget } from "./DashboardWidget";
 import { StatsOverviewWidget } from "./widgets/StatsOverviewWidget";
 import { PriorityBreakdownWidget } from "./widgets/PriorityBreakdownWidget";
 import { UpcomingTasksWidget } from "./widgets/UpcomingTasksWidget";
+import { AssigneePieWidget } from "./widgets/AssigneePieWidget";
+import { AssigneeBarWidget } from "./widgets/AssigneeBarWidget";
 import {
   getDefaultDashboardLayout,
   loadDashboardLayout,
@@ -15,7 +17,9 @@ import {
   saveHiddenWidgets,
 } from "./dashboardLayoutStorage";
 import type { DashboardWidgetKind, DashboardWidgetLayoutItem } from "./dashboardTypes";
+import { loadTeamMembers } from "../supabase/teamApi";
 import type { Task, TaskUpdate } from "../tasks/taskTypes";
+import type { TeamMember } from "../teams/teamTypes";
 
 const GridLayoutWithWidth = WidthProvider(GridLayout);
 
@@ -23,28 +27,64 @@ const WIDGET_TITLES: Record<DashboardWidgetKind, string> = {
   stats: "Přehled statistik",
   priority: "Rozdělení podle priorit",
   upcoming: "Nadcházející úkoly",
+  assigneePie: "Úkoly podle assignee (koláčový graf)",
+  assigneeBar: "Úkoly podle assignee (sloupcový graf)",
 };
 
-const ALL_WIDGET_KINDS: DashboardWidgetKind[] = ["stats", "priority", "upcoming"];
+const ALL_WIDGET_KINDS: DashboardWidgetKind[] = [
+  "stats",
+  "priority",
+  "upcoming",
+  "assigneePie",
+  "assigneeBar",
+];
 
 type DashboardPanelProps = {
   tasks: Task[];
+  activeTeamId: string | null;
   onUpdateTask: (taskId: string, patch: TaskUpdate) => void;
   onOpenTask: (taskId: string) => void;
 };
 
-export function DashboardPanel({ tasks, onUpdateTask, onOpenTask }: DashboardPanelProps) {
+export function DashboardPanel({ tasks, activeTeamId, onUpdateTask, onOpenTask }: DashboardPanelProps) {
   const [layout, setLayout] = useState<DashboardWidgetLayoutItem[]>(() => loadDashboardLayout());
   const [hiddenWidgets, setHiddenWidgets] = useState<DashboardWidgetKind[]>(() => loadHiddenWidgets());
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+
+  useEffect(() => {
+    if (!activeTeamId) {
+      setMembers([]);
+      return;
+    }
+
+    let isCancelled = false;
+
+    loadTeamMembers(activeTeamId)
+      .then((nextMembers) => {
+        if (!isCancelled) {
+          setMembers(nextMembers);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setMembers([]);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeTeamId]);
 
   const visibleLayout = useMemo(
     () => layout.filter((item) => !hiddenWidgets.includes(item.i)),
     [layout, hiddenWidgets],
   );
 
-  const availableToAdd = ALL_WIDGET_KINDS.filter((kind) => hiddenWidgets.includes(kind));
+  const visibleKinds = visibleLayout.map((item) => item.i);
+  const availableToAdd = ALL_WIDGET_KINDS.filter((kind) => !visibleKinds.includes(kind));
 
   function handleLayoutChange(nextLayout: Array<{ i: string; x: number; y: number; w: number; h: number }>) {
     if (!isEditMode) {
@@ -104,6 +144,10 @@ export function DashboardPanel({ tasks, onUpdateTask, onOpenTask }: DashboardPan
             onOpenTask={onOpenTask}
           />
         );
+      case "assigneePie":
+        return <AssigneePieWidget tasks={tasks} members={members} />;
+      case "assigneeBar":
+        return <AssigneeBarWidget tasks={tasks} members={members} />;
       default:
         return null;
     }

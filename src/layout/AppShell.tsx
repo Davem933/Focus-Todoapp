@@ -1369,6 +1369,7 @@ export function AppShell(props: AppShellProps) {
           ) : isDashboardViewOpen ? (
             <DashboardPanel
               tasks={allTasks.filter((task) => task.teamId === activeTeamId)}
+              activeTeamId={activeTeamId}
               onUpdateTask={onUpdateTask}
               onOpenTask={handleSelectCommandPaletteTask}
             />
