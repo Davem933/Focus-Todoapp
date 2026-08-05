@@ -22,6 +22,11 @@ import {
 import type { DashboardWidgetKind, DashboardWidgetLayoutItem } from "./dashboardTypes";
 import { loadTeamMembers } from "../supabase/teamApi";
 import { loadProjectsForTeams } from "../supabase/projectApi";
+import { getPriorityBreakdown } from "./priorityBreakdown";
+import { getLabelBreakdown } from "./labelBreakdown";
+import { getAssigneeBreakdown } from "./assigneeBreakdown";
+import { getProjectBreakdown } from "./projectBreakdown";
+import type { ExportRow } from "./dashboardExport";
 import type { Task, TaskUpdate } from "../tasks/taskTypes";
 import type { TeamMember } from "../teams/teamTypes";
 import type { Project } from "../projects/projectTypes";
@@ -49,6 +54,30 @@ const ALL_WIDGET_KINDS: DashboardWidgetKind[] = [
   "projectBreakdown",
   "workload",
 ];
+
+function getExportRowsForWidget(
+  kind: DashboardWidgetKind,
+  tasks: Task[],
+  members: TeamMember[],
+  projects: Project[],
+): ExportRow[] | null {
+  switch (kind) {
+    case "priority":
+      return getPriorityBreakdown(tasks).map((entry) => ({ Kategorie: entry.label, Počet: entry.count }));
+    case "labels":
+      return getLabelBreakdown(tasks).map((entry) => ({ Kategorie: entry.name, Počet: entry.count }));
+    case "assigneePie":
+    case "assigneeBar":
+    case "workload":
+      return getAssigneeBreakdown(tasks, members).map((entry) => ({ Kategorie: entry.name, Počet: entry.count }));
+    case "projectBreakdown":
+      return getProjectBreakdown(tasks, projects).map((entry) => ({ Kategorie: entry.name, Počet: entry.count }));
+    case "stats":
+    case "upcoming":
+    default:
+      return null;
+  }
+}
 
 type DashboardPanelProps = {
   tasks: Task[];
@@ -261,6 +290,7 @@ export function DashboardPanel({
                 title={WIDGET_TITLES[item.i]}
                 isEditMode={isEditMode}
                 onHide={handleHideWidget}
+                exportRows={getExportRowsForWidget(item.i, tasks, members, projects) ?? undefined}
               >
                 {renderWidgetContent(item.i)}
               </DashboardWidget>
