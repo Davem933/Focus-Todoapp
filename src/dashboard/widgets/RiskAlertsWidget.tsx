@@ -1,4 +1,4 @@
-import { TriangleAlert } from "lucide-react";
+import { CalendarClock, TriangleAlert } from "lucide-react";
 import { getAssigneeBreakdown } from "../assigneeBreakdown";
 import { OVERLOAD_THRESHOLD } from "./WorkloadWidget";
 import { getTodayDateValue } from "../../tasks/dateUtils";
@@ -58,16 +58,19 @@ export function RiskAlertsWidget({ tasks, members, onOpenTask }: RiskAlertsWidge
               const assigneeName = assigneeMember ? getMemberDisplayName(assigneeMember) : "Nepřiřazeno";
 
               return (
-                <li className="dashboard-risk__item" key={task.id}>
+                <li key={task.id}>
                   <button
                     type="button"
                     className="dashboard-risk__item-button"
                     onClick={() => onOpenTask(task.id)}
                   >
-                    <span>{task.title}</span>
-                    <small>
-                      {assigneeName} · {task.dueDate}
-                    </small>
+                    <CalendarClock aria-hidden="true" size={14} />
+                    <span className="dashboard-risk__item-button-text">
+                      <span>{task.title}</span>
+                      <small>
+                        {assigneeName} · {task.dueDate}
+                      </small>
+                    </span>
                   </button>
                 </li>
               );
