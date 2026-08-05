@@ -15180,3 +15180,14 @@ input[type="checkbox"]:focus-visible {
     flex-direction: column;
   }
 }
+
+.dashboard-member-priority {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+}
+
+.dashboard-member-priority__select {
+  flex-shrink: 0;
+}
