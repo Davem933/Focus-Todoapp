@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { GripVertical, MoreVertical, EyeOff } from "lucide-react";
+import { EyeOff, FileJson, FileSpreadsheet, GripVertical, MoreVertical } from "lucide-react";
+import { exportRowsAsJson, exportRowsAsXlsx } from "./dashboardExport";
+import type { ExportRow } from "./dashboardExport";
 import type { DashboardWidgetKind } from "./dashboardTypes";
 
 type DashboardWidgetProps = {
@@ -7,10 +9,18 @@ type DashboardWidgetProps = {
   title: string;
   isEditMode: boolean;
   onHide: (kind: DashboardWidgetKind) => void;
+  exportRows?: ExportRow[];
   children: ReactNode;
 };
 
-export function DashboardWidget({ kind, title, isEditMode, onHide, children }: DashboardWidgetProps) {
+export function DashboardWidget({
+  kind,
+  title,
+  isEditMode,
+  onHide,
+  exportRows,
+  children,
+}: DashboardWidgetProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -29,6 +39,8 @@ export function DashboardWidget({ kind, title, isEditMode, onHide, children }: D
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMenuOpen]);
 
+  const showMenu = isEditMode || exportRows !== undefined;
+
   return (
     <div className="dashboard-widget">
       <div className="dashboard-widget__header">
@@ -38,7 +50,7 @@ export function DashboardWidget({ kind, title, isEditMode, onHide, children }: D
           </span>
         ) : null}
         <strong>{title}</strong>
-        {isEditMode ? (
+        {showMenu ? (
           <div className="dashboard-widget__menu" ref={menuRef}>
             <button
               type="button"
@@ -50,17 +62,45 @@ export function DashboardWidget({ kind, title, isEditMode, onHide, children }: D
             </button>
             {isMenuOpen ? (
               <div className="dashboard-widget__menu-list" role="menu">
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    onHide(kind);
-                  }}
-                >
-                  <EyeOff aria-hidden="true" size={14} />
-                  Skrýt widget
-                </button>
+                {exportRows !== undefined ? (
+                  <>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        exportRowsAsJson(exportRows, `dashboard-${kind}`);
+                      }}
+                    >
+                      <FileJson aria-hidden="true" size={14} />
+                      Exportovat jako JSON
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        exportRowsAsXlsx(exportRows, `dashboard-${kind}`);
+                      }}
+                    >
+                      <FileSpreadsheet aria-hidden="true" size={14} />
+                      Exportovat jako Excel
+                    </button>
+                  </>
+                ) : null}
+                {isEditMode ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onHide(kind);
+                    }}
+                  >
+                    <EyeOff aria-hidden="true" size={14} />
+                    Skrýt widget
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </div>
