@@ -38,6 +38,9 @@ export type Task = {
   labels: TaskLabel[];
   subtasks: TaskSubtask[];
   shareToken: string | null;
+  startDate: string | null;
+  progress: number;
+  dependencies: string[];
 };
 
 export type TaskSubtask = {
@@ -64,5 +67,8 @@ export type TaskUpdate = Partial<
     | "listId"
     | "labels"
     | "subtasks"
+    | "startDate"
+    | "progress"
+    | "dependencies"
   >
 >;
