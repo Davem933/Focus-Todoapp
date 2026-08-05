@@ -6,7 +6,8 @@ export type DashboardWidgetKind =
   | "assigneeBar"
   | "labels"
   | "projectBreakdown"
-  | "workload";
+  | "workload"
+  | "memberPriority";
 
 export type DashboardWidgetLayoutItem = {
   i: DashboardWidgetKind;

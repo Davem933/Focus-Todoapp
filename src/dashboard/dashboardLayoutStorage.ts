@@ -12,6 +12,7 @@ const VALID_KINDS: DashboardWidgetKind[] = [
   "labels",
   "projectBreakdown",
   "workload",
+  "memberPriority",
 ];
 
 const DEFAULT_LAYOUT: DashboardWidgetLayoutItem[] = [
