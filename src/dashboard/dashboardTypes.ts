@@ -7,7 +7,8 @@ export type DashboardWidgetKind =
   | "labels"
   | "projectBreakdown"
   | "workload"
-  | "memberPriority";
+  | "memberPriority"
+  | "riskAlerts";
 
 export type DashboardWidgetLayoutItem = {
   i: DashboardWidgetKind;
