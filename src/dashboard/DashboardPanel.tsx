@@ -9,6 +9,9 @@ import { PriorityBreakdownWidget } from "./widgets/PriorityBreakdownWidget";
 import { UpcomingTasksWidget } from "./widgets/UpcomingTasksWidget";
 import { AssigneePieWidget } from "./widgets/AssigneePieWidget";
 import { AssigneeBarWidget } from "./widgets/AssigneeBarWidget";
+import { LabelBreakdownWidget } from "./widgets/LabelBreakdownWidget";
+import { ProjectBreakdownWidget } from "./widgets/ProjectBreakdownWidget";
+import { WorkloadWidget } from "./widgets/WorkloadWidget";
 import {
   getDefaultDashboardLayout,
   loadDashboardLayout,
@@ -18,8 +21,10 @@ import {
 } from "./dashboardLayoutStorage";
 import type { DashboardWidgetKind, DashboardWidgetLayoutItem } from "./dashboardTypes";
 import { loadTeamMembers } from "../supabase/teamApi";
+import { loadProjectsForTeams } from "../supabase/projectApi";
 import type { Task, TaskUpdate } from "../tasks/taskTypes";
 import type { TeamMember } from "../teams/teamTypes";
+import type { Project } from "../projects/projectTypes";
 
 const GridLayoutWithWidth = WidthProvider(GridLayout);
 
@@ -29,6 +34,9 @@ const WIDGET_TITLES: Record<DashboardWidgetKind, string> = {
   upcoming: "Nadcházející úkoly",
   assigneePie: "Úkoly podle assignee (koláčový graf)",
   assigneeBar: "Úkoly podle assignee (sloupcový graf)",
+  labels: "Rozdělení podle štítků",
+  projectBreakdown: "Rozdělení podle nástěnky",
+  workload: "Vytížení týmu",
 };
 
 const ALL_WIDGET_KINDS: DashboardWidgetKind[] = [
@@ -37,6 +45,9 @@ const ALL_WIDGET_KINDS: DashboardWidgetKind[] = [
   "upcoming",
   "assigneePie",
   "assigneeBar",
+  "labels",
+  "projectBreakdown",
+  "workload",
 ];
 
 type DashboardPanelProps = {
@@ -44,14 +55,22 @@ type DashboardPanelProps = {
   activeTeamId: string | null;
   onUpdateTask: (taskId: string, patch: TaskUpdate) => void;
   onOpenTask: (taskId: string) => void;
+  onOpenProject: (projectId: string) => void;
 };
 
-export function DashboardPanel({ tasks, activeTeamId, onUpdateTask, onOpenTask }: DashboardPanelProps) {
+export function DashboardPanel({
+  tasks,
+  activeTeamId,
+  onUpdateTask,
+  onOpenTask,
+  onOpenProject,
+}: DashboardPanelProps) {
   const [layout, setLayout] = useState<DashboardWidgetLayoutItem[]>(() => loadDashboardLayout());
   const [hiddenWidgets, setHiddenWidgets] = useState<DashboardWidgetKind[]>(() => loadHiddenWidgets());
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     if (!activeTeamId) {
@@ -70,6 +89,31 @@ export function DashboardPanel({ tasks, activeTeamId, onUpdateTask, onOpenTask }
       .catch(() => {
         if (!isCancelled) {
           setMembers([]);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeTeamId]);
+
+  useEffect(() => {
+    if (!activeTeamId) {
+      setProjects([]);
+      return;
+    }
+
+    let isCancelled = false;
+
+    loadProjectsForTeams([activeTeamId])
+      .then((nextProjects) => {
+        if (!isCancelled) {
+          setProjects(nextProjects);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setProjects([]);
         }
       });
 
@@ -148,6 +192,12 @@ export function DashboardPanel({ tasks, activeTeamId, onUpdateTask, onOpenTask }
         return <AssigneePieWidget tasks={tasks} members={members} />;
       case "assigneeBar":
         return <AssigneeBarWidget tasks={tasks} members={members} />;
+      case "labels":
+        return <LabelBreakdownWidget tasks={tasks} />;
+      case "projectBreakdown":
+        return <ProjectBreakdownWidget tasks={tasks} projects={projects} onOpenProject={onOpenProject} />;
+      case "workload":
+        return <WorkloadWidget tasks={tasks} members={members} />;
       default:
         return null;
     }
