@@ -1372,6 +1372,7 @@ export function AppShell(props: AppShellProps) {
               activeTeamId={activeTeamId}
               onUpdateTask={onUpdateTask}
               onOpenTask={handleSelectCommandPaletteTask}
+              onOpenProject={(projectId) => handleOpenProjectsOverview(projectId)}
             />
           ) : isProjectsOverviewOpen ? (
             <ProjectsOverviewPanel
