@@ -1653,6 +1653,9 @@ function createCloudSyncSnapshot(lists: TaskList[], tasks: Task[]) {
       priority: task.priority,
       projectId: task.projectId,
       recurrence: task.recurrence,
+      startDate: task.startDate,
+      progress: task.progress,
+      dependencies: task.dependencies,
       subtasks: task.subtasks.map((subtask) => ({
         id: subtask.id,
         completed: subtask.completed,

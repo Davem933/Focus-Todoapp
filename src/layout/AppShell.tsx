@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type {
   CSSProperties,
   DragEvent,
@@ -97,6 +98,7 @@ import {
 import { appendCardLabelValue, createCardLabels } from "../tasks/cardLabels";
 import { ProjectCardComposerModal } from "./ProjectCardComposerModal";
 import { TableViewPanel } from "./panels/TableViewPanel";
+import { GanttViewPanel } from "./panels/GanttViewPanel";
 import { ListViewPanel } from "./panels/ListViewPanel";
 import { CommandPalette } from "./CommandPalette";
 import type { CommandPaletteViewKind } from "./CommandPalette";
@@ -1362,10 +1364,13 @@ export function AppShell(props: AppShellProps) {
               canDeleteTask={canDeleteTask}
             />
           ) : isGanttOpen ? (
-            <div className="app-panel view-placeholder">
-              <h2>Gantt diagram</h2>
-              <p>Gantt zobrazení se připravuje.</p>
-            </div>
+            <GanttViewPanel
+              tasks={allTasks}
+              currentUserId={currentUserId}
+              themeMode={themeMode}
+              onUpdateTask={onUpdateTask}
+              onOpenTask={handleSelectCommandPaletteTask}
+            />
           ) : isDashboardViewOpen ? (
             <DashboardPanel
               tasks={allTasks.filter((task) => task.teamId === activeTeamId)}
@@ -3353,7 +3358,7 @@ function ProjectsOverviewPanel({
   const plannedProjects = projects.filter((project) => project.startDate || project.endDate).length;
   const completedProjects = projects.filter((project) => project.status === "completed").length;
 
-  const editProjectModal = isCreateOpen ? (
+  const editProjectModal = isCreateOpen ? createPortal(
     <div className="team-create-flow" role="presentation">
       <button
         className="team-create-flow__backdrop"
@@ -3467,7 +3472,8 @@ function ProjectsOverviewPanel({
           </div>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body,
   ) : null;
 
   if (selectedProject) {
