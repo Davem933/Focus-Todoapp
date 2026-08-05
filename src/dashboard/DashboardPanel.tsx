@@ -12,6 +12,7 @@ import { AssigneeBarWidget } from "./widgets/AssigneeBarWidget";
 import { LabelBreakdownWidget } from "./widgets/LabelBreakdownWidget";
 import { ProjectBreakdownWidget } from "./widgets/ProjectBreakdownWidget";
 import { WorkloadWidget } from "./widgets/WorkloadWidget";
+import { MemberPriorityWidget } from "./widgets/MemberPriorityWidget";
 import {
   getDefaultDashboardLayout,
   loadDashboardLayout,
@@ -42,6 +43,7 @@ const WIDGET_TITLES: Record<DashboardWidgetKind, string> = {
   labels: "Rozdělení podle štítků",
   projectBreakdown: "Rozdělení podle nástěnky",
   workload: "Vytížení týmu",
+  memberPriority: "Priority podle člena",
 };
 
 const ALL_WIDGET_KINDS: DashboardWidgetKind[] = [
@@ -53,6 +55,7 @@ const ALL_WIDGET_KINDS: DashboardWidgetKind[] = [
   "labels",
   "projectBreakdown",
   "workload",
+  "memberPriority",
 ];
 
 function getExportRowsForWidget(
@@ -60,6 +63,7 @@ function getExportRowsForWidget(
   tasks: Task[],
   members: TeamMember[],
   projects: Project[],
+  memberPriorityWidgetMemberId: string | null,
 ): ExportRow[] | null {
   switch (kind) {
     case "priority":
@@ -72,6 +76,14 @@ function getExportRowsForWidget(
       return getAssigneeBreakdown(tasks, members).map((entry) => ({ Kategorie: entry.name, Počet: entry.count }));
     case "projectBreakdown":
       return getProjectBreakdown(tasks, projects).map((entry) => ({ Kategorie: entry.name, Počet: entry.count }));
+    case "memberPriority": {
+      if (memberPriorityWidgetMemberId === null) {
+        return null;
+      }
+
+      const memberTasks = tasks.filter((task) => task.assigneeId === memberPriorityWidgetMemberId);
+      return getPriorityBreakdown(memberTasks).map((entry) => ({ Kategorie: entry.label, Počet: entry.count }));
+    }
     case "stats":
     case "upcoming":
     default:
@@ -100,6 +112,7 @@ export function DashboardPanel({
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [memberPriorityWidgetMemberId, setMemberPriorityWidgetMemberId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeTeamId) {
@@ -150,6 +163,16 @@ export function DashboardPanel({
       isCancelled = true;
     };
   }, [activeTeamId]);
+
+  useEffect(() => {
+    setMemberPriorityWidgetMemberId(null);
+  }, [activeTeamId]);
+
+  useEffect(() => {
+    if (memberPriorityWidgetMemberId === null && members.length > 0) {
+      setMemberPriorityWidgetMemberId(members[0].userId);
+    }
+  }, [members, memberPriorityWidgetMemberId]);
 
   const visibleLayout = useMemo(
     () => layout.filter((item) => !hiddenWidgets.includes(item.i)),
@@ -227,6 +250,15 @@ export function DashboardPanel({
         return <ProjectBreakdownWidget tasks={tasks} projects={projects} onOpenProject={onOpenProject} />;
       case "workload":
         return <WorkloadWidget tasks={tasks} members={members} />;
+      case "memberPriority":
+        return (
+          <MemberPriorityWidget
+            tasks={tasks}
+            members={members}
+            selectedMemberId={memberPriorityWidgetMemberId}
+            onSelectMember={setMemberPriorityWidgetMemberId}
+          />
+        );
       default:
         return null;
     }
@@ -290,7 +322,9 @@ export function DashboardPanel({
                 title={WIDGET_TITLES[item.i]}
                 isEditMode={isEditMode}
                 onHide={handleHideWidget}
-                exportRows={getExportRowsForWidget(item.i, tasks, members, projects) ?? undefined}
+                exportRows={
+                  getExportRowsForWidget(item.i, tasks, members, projects, memberPriorityWidgetMemberId) ?? undefined
+                }
               >
                 {renderWidgetContent(item.i)}
               </DashboardWidget>
