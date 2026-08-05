@@ -19,6 +19,11 @@ const ZOOM_SCALES: Record<GanttZoomMode, { unit: string; step: number; format: s
   month: [{ unit: "month", step: 1, format: "%F %Y" }],
 };
 
+const GANTT_TASK_TYPES = [
+  { id: "gantt-overdue", label: "Po termínu" },
+  { id: "gantt-in-progress", label: "Probíhá" },
+];
+
 type GanttViewPanelProps = {
   tasks: Task[];
   currentUserId: string | null;
@@ -69,6 +74,7 @@ export function GanttViewPanel({ tasks, currentUserId, themeMode, onUpdateTask, 
             tasks={ganttTasks}
             links={ganttLinks}
             scales={ZOOM_SCALES[zoomMode]}
+            taskTypes={GANTT_TASK_TYPES}
             init={(api: IApi) => {
               apiRef.current = api;
 

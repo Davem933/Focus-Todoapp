@@ -15282,3 +15282,73 @@ input[type="checkbox"]:focus-visible {
   color: var(--color-text-secondary);
   font-size: 0.75rem;
 }
+
+.gantt-view-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  --wx-background: var(--color-background-card);
+  --wx-background-alt: var(--color-background-card-strong);
+  --wx-background-hover: var(--color-background-card-hover);
+  --wx-border-color: var(--color-border);
+  --wx-gantt-border-color: var(--color-border);
+  --wx-color-font: var(--color-text-primary);
+  --wx-color-font-alt: var(--color-text-secondary);
+  --wx-gantt-task-color: var(--color-accent);
+  --wx-gantt-select-color: var(--color-accent-soft);
+}
+
+.gantt-view-panel__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-background-card);
+}
+
+.gantt-view-panel__zoom {
+  display: flex;
+  gap: 4px;
+}
+
+.gantt-view-panel__zoom button,
+.gantt-view-panel__today-button {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-background-card);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.gantt-view-panel__zoom button:hover,
+.gantt-view-panel__today-button:hover {
+  background: var(--color-background-card-hover);
+  color: var(--color-text-primary);
+}
+
+.gantt-view-panel__zoom button[data-active="true"] {
+  background: var(--color-accent-soft);
+  color: var(--color-text-primary);
+  border-color: var(--color-accent);
+}
+
+.gantt-view-panel__chart {
+  flex: 1;
+  min-height: 0;
+}
+
+.gantt-view-panel .wx-bar.gantt-overdue {
+  background-color: #ef4444 !important;
+  border-color: #dc2626 !important;
+}
+
+.gantt-view-panel .wx-bar.gantt-in-progress {
+  background-color: #38bdf8 !important;
+  border-color: #0ea5e9 !important;
+}

@@ -8,8 +8,7 @@ export type SvarGanttTask = {
   end: Date;
   duration: number;
   progress: number;
-  type: "task";
-  css: string;
+  type: "gantt-overdue" | "gantt-in-progress";
 };
 
 export type SvarGanttLink = {
@@ -33,9 +32,9 @@ function daysBetween(start: Date, end: Date): number {
   return Math.max(1, Math.round((end.getTime() - start.getTime()) / msPerDay) + 1);
 }
 
-export function getGanttBarStatusClass(task: Task): "gantt-bar--overdue" | "gantt-bar--in-progress" {
+export function getGanttBarStatusType(task: Task): SvarGanttTask["type"] {
   const today = getTodayDateValue();
-  return task.dueDate && task.dueDate < today ? "gantt-bar--overdue" : "gantt-bar--in-progress";
+  return task.dueDate && task.dueDate < today ? "gantt-overdue" : "gantt-in-progress";
 }
 
 export function toGanttTasks(tasks: Task[]): SvarGanttTask[] {
@@ -50,8 +49,7 @@ export function toGanttTasks(tasks: Task[]): SvarGanttTask[] {
       end,
       duration: daysBetween(start, end),
       progress: task.progress,
-      type: "task",
-      css: getGanttBarStatusClass(task),
+      type: getGanttBarStatusType(task),
     };
   });
 }
