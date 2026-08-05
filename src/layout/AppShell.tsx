@@ -18,6 +18,7 @@ import { ListPanel } from "./panels/ListPanel";
 import { SidebarPanel } from "./panels/SidebarPanel";
 import { WorkspaceHomePanel } from "./panels/WorkspaceHomePanel";
 import { CalendarPanel } from "./panels/CalendarPanel";
+import { DashboardPanel } from "../dashboard/DashboardPanel";
 import { TopNavBar } from "./TopNavBar";
 import { ViewTabsBar } from "./ViewTabsBar";
 import type { ViewTabKind } from "./ViewTabsBar";
@@ -1366,10 +1367,11 @@ export function AppShell(props: AppShellProps) {
               <p>Gantt zobrazení se připravuje.</p>
             </div>
           ) : isDashboardViewOpen ? (
-            <div className="app-panel view-placeholder">
-              <h2>Dashboard</h2>
-              <p>Dashboard zobrazení se připravuje.</p>
-            </div>
+            <DashboardPanel
+              tasks={allTasks.filter((task) => task.teamId === activeTeamId)}
+              onUpdateTask={onUpdateTask}
+              onOpenTask={handleSelectCommandPaletteTask}
+            />
           ) : isProjectsOverviewOpen ? (
             <ProjectsOverviewPanel
               activeTeamId={activeTeamId}
