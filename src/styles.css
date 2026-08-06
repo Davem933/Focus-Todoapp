@@ -15342,7 +15342,14 @@ input[type="checkbox"]:focus-visible {
   flex: 1;
   min-height: 0;
   position: relative;
+}
+
+.gantt-view-panel__today-line-clip {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
 }
 
 .gantt-view-panel__today-line {
@@ -15351,8 +15358,6 @@ input[type="checkbox"]:focus-visible {
   bottom: 0;
   width: 2px;
   background: #f43f5e;
-  z-index: 5;
-  pointer-events: none;
 }
 
 .gantt-view-panel__today-line::before {

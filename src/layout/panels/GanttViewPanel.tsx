@@ -90,6 +90,16 @@ export function GanttViewPanel({ tasks, currentUserId, themeMode, onUpdateTask, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomMode, ganttTasks]);
 
+  // Land on today by default, once, after the widget has finished its first layout pass.
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      apiRef.current?.exec("scroll-chart", { date: new Date() });
+    });
+
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="app-panel gantt-view-panel">
       <div className="gantt-view-panel__toolbar">
@@ -110,7 +120,9 @@ export function GanttViewPanel({ tasks, currentUserId, themeMode, onUpdateTask, 
       </div>
       <div className="gantt-view-panel__chart" ref={chartWrapperRef}>
         {todayLineLeft !== null ? (
-          <div className="gantt-view-panel__today-line" style={{ left: todayLineLeft }} aria-hidden="true" />
+          <div className="gantt-view-panel__today-line-clip">
+            <div className="gantt-view-panel__today-line" style={{ left: todayLineLeft }} aria-hidden="true" />
+          </div>
         ) : null}
         <ThemeWrapper>
           <Gantt
@@ -119,24 +131,13 @@ export function GanttViewPanel({ tasks, currentUserId, themeMode, onUpdateTask, 
             scales={ZOOM_SCALES[zoomMode]}
             taskTypes={GANTT_TASK_TYPES}
             init={(api: IApi) => {
-              apiRef.current = api;
-
-              // Land on today by default so the user never has to hunt for it on open.
-              // Nudge left of exact-today so it isn't flush against the grid edge.
-              const initialScale = api.getState()._scales;
-              if (initialScale) {
-                const offsetPx = computeOffsetPx(
-                  { start: new Date(initialScale.start), lengthUnit: initialScale.lengthUnit, lengthUnitWidth: initialScale.lengthUnitWidth },
-                  new Date(),
-                );
-                api.exec("scroll-chart", { left: Math.max(0, offsetPx - 150) });
-              } else {
-                api.exec("scroll-chart", { date: new Date() });
+              if (apiRef.current === api) {
+                return;
               }
 
+              apiRef.current = api;
               api.on("scroll-chart", () => refreshTodayLine());
               api.on("resize-chart", () => refreshTodayLine());
-              refreshTodayLine();
 
               api.intercept("delete-link", ({ id }) => {
                 const link = api.getState().links.byId(id);

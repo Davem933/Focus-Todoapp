@@ -104,9 +104,7 @@ export type GanttScaleInfo = {
 
 /**
  * Pixel offset of `date` from the chart's scale start, for the currently active
- * zoom unit. Mirrors how SVAR itself lays out cells for day/week/month scales -
- * verified against SVAR's own `scroll-chart` result for "day" mode (see
- * GanttViewPanel's today-line effect).
+ * zoom unit. Verified against SVAR's own `scroll-chart` result for "day" mode.
  */
 export function computeOffsetPx(scale: GanttScaleInfo, date: Date): number {
   const msPerDay = 24 * 60 * 60 * 1000;
