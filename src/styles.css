@@ -15341,6 +15341,32 @@ input[type="checkbox"]:focus-visible {
 .gantt-view-panel__chart {
   flex: 1;
   min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.gantt-view-panel__today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #f43f5e;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.gantt-view-panel__today-line::before {
+  content: "Dnes";
+  position: absolute;
+  top: 0;
+  left: 4px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: #f43f5e;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .gantt-view-panel .wx-bar.gantt-overdue {

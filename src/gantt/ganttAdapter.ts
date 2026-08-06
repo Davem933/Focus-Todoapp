@@ -95,3 +95,34 @@ export function fromDragUpdate(startDate: Date, endDate: Date): Pick<TaskUpdate,
 export function fromProgressUpdate(progress: number): Pick<TaskUpdate, "progress"> {
   return { progress: Math.max(0, Math.min(100, Math.round(progress))) };
 }
+
+export type GanttScaleInfo = {
+  start: Date;
+  lengthUnit: "day" | "week" | "month" | string;
+  lengthUnitWidth: number;
+};
+
+/**
+ * Pixel offset of `date` from the chart's scale start, for the currently active
+ * zoom unit. Mirrors how SVAR itself lays out cells for day/week/month scales -
+ * verified against SVAR's own `scroll-chart` result for "day" mode (see
+ * GanttViewPanel's today-line effect).
+ */
+export function computeOffsetPx(scale: GanttScaleInfo, date: Date): number {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const daysFromStart = (date.getTime() - scale.start.getTime()) / msPerDay;
+
+  if (scale.lengthUnit === "week") {
+    return (daysFromStart / 7) * scale.lengthUnitWidth;
+  }
+
+  if (scale.lengthUnit === "month") {
+    const months =
+      (date.getFullYear() - scale.start.getFullYear()) * 12 + (date.getMonth() - scale.start.getMonth());
+    const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    const fraction = (date.getDate() - scale.start.getDate()) / daysInMonth;
+    return (months + fraction) * scale.lengthUnitWidth;
+  }
+
+  return daysFromStart * scale.lengthUnitWidth;
+}

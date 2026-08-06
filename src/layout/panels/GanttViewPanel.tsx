@@ -1,9 +1,16 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Gantt, Willow, WillowDark } from "@svar-ui/react-gantt";
 import "@svar-ui/react-gantt/all.css";
 import type { IApi } from "@svar-ui/gantt-store";
 import type { Task, TaskUpdate } from "../../tasks/taskTypes";
-import { toGanttLinks, toGanttTasks, fromDragUpdate, fromProgressUpdate } from "../../gantt/ganttAdapter";
+import {
+  toGanttLinks,
+  toGanttTasks,
+  fromDragUpdate,
+  fromProgressUpdate,
+  computeOffsetPx,
+  type GanttScaleInfo,
+} from "../../gantt/ganttAdapter";
 
 type GanttZoomMode = "day" | "week" | "month";
 
@@ -34,7 +41,9 @@ type GanttViewPanelProps = {
 
 export function GanttViewPanel({ tasks, currentUserId, themeMode, onUpdateTask, onOpenTask }: GanttViewPanelProps) {
   const [zoomMode, setZoomMode] = useState<GanttZoomMode>("day");
+  const [todayLineLeft, setTodayLineLeft] = useState<number | null>(null);
   const apiRef = useRef<IApi | null>(null);
+  const chartWrapperRef = useRef<HTMLDivElement | null>(null);
 
   const visibleTasks = useMemo(
     () => tasks.filter((task) => task.assigneeId === currentUserId || task.ownerId === currentUserId),
@@ -46,9 +55,40 @@ export function GanttViewPanel({ tasks, currentUserId, themeMode, onUpdateTask, 
 
   const ThemeWrapper = themeMode === "light" ? Willow : WillowDark;
 
+  function refreshTodayLine() {
+    const api = apiRef.current;
+
+    if (!api) {
+      return;
+    }
+
+    const state = api.getState();
+
+    if (!state._scales) {
+      return;
+    }
+
+    const scale: GanttScaleInfo = {
+      start: new Date(state._scales.start),
+      lengthUnit: state._scales.lengthUnit,
+      lengthUnitWidth: state._scales.lengthUnitWidth,
+    };
+    const offsetPx = computeOffsetPx(scale, new Date());
+    const gridWidth =
+      chartWrapperRef.current?.querySelector<HTMLElement>('[class*="table-container"]')?.getBoundingClientRect()
+        .width ?? 0;
+    setTodayLineLeft(gridWidth + offsetPx - state.scrollLeft);
+  }
+
   function handleJumpToToday() {
     apiRef.current?.exec("scroll-chart", { date: new Date() });
   }
+
+  // Re-anchor the today line whenever the zoom scale changes (cell width/unit differs per mode).
+  useEffect(() => {
+    refreshTodayLine();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoomMode, ganttTasks]);
 
   return (
     <div className="app-panel gantt-view-panel">
@@ -68,7 +108,10 @@ export function GanttViewPanel({ tasks, currentUserId, themeMode, onUpdateTask, 
           Dnes
         </button>
       </div>
-      <div className="gantt-view-panel__chart">
+      <div className="gantt-view-panel__chart" ref={chartWrapperRef}>
+        {todayLineLeft !== null ? (
+          <div className="gantt-view-panel__today-line" style={{ left: todayLineLeft }} aria-hidden="true" />
+        ) : null}
         <ThemeWrapper>
           <Gantt
             tasks={ganttTasks}
@@ -77,6 +120,23 @@ export function GanttViewPanel({ tasks, currentUserId, themeMode, onUpdateTask, 
             taskTypes={GANTT_TASK_TYPES}
             init={(api: IApi) => {
               apiRef.current = api;
+
+              // Land on today by default so the user never has to hunt for it on open.
+              // Nudge left of exact-today so it isn't flush against the grid edge.
+              const initialScale = api.getState()._scales;
+              if (initialScale) {
+                const offsetPx = computeOffsetPx(
+                  { start: new Date(initialScale.start), lengthUnit: initialScale.lengthUnit, lengthUnitWidth: initialScale.lengthUnitWidth },
+                  new Date(),
+                );
+                api.exec("scroll-chart", { left: Math.max(0, offsetPx - 150) });
+              } else {
+                api.exec("scroll-chart", { date: new Date() });
+              }
+
+              api.on("scroll-chart", () => refreshTodayLine());
+              api.on("resize-chart", () => refreshTodayLine());
+              refreshTodayLine();
 
               api.intercept("delete-link", ({ id }) => {
                 const link = api.getState().links.byId(id);
