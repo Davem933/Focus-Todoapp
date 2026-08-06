@@ -246,26 +246,7 @@ export function ProjectCardComposerModal({
                 )}
               />
             </div>
-            <label className="board-card-modal__field">
-              <span>Due date</span>
-              <input type="date" value={dueDate} onChange={(event) => onDueDateChange(event.currentTarget.value)} />
-            </label>
-            <label className="board-card-modal__field">
-              <span>Start date</span>
-              <input type="date" value={startDate} onChange={(event) => onStartDateChange(event.currentTarget.value)} />
-            </label>
-            <label className="board-card-modal__field">
-              <span>Progress ({progress}%)</span>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={5}
-                value={progress}
-                onChange={(event) => onProgressChange(Number(event.currentTarget.value))}
-              />
-            </label>
-            <div className="board-card-modal__field board-card-modal__field--full">
+            <div className="board-card-modal__field">
               <span>Depends on</span>
               <div className="board-card-modal__dependencies">
                 {dependencies.map((dependencyId) => {
@@ -290,6 +271,26 @@ export function ProjectCardComposerModal({
                 />
               </div>
             </div>
+            <label className="board-card-modal__field">
+              <span>Start date</span>
+              <input type="date" value={startDate} onChange={(event) => onStartDateChange(event.currentTarget.value)} />
+            </label>
+            <label className="board-card-modal__field">
+              <span>Due date</span>
+              <input type="date" value={dueDate} onChange={(event) => onDueDateChange(event.currentTarget.value)} />
+            </label>
+            <label className="board-card-modal__field board-card-modal__field--full">
+              <span>Progress ({progress}%)</span>
+              <input
+                className="board-card-modal__progress-input"
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={progress}
+                onChange={(event) => onProgressChange(Number(event.currentTarget.value))}
+              />
+            </label>
           </motion.div>
 
           <motion.label className="board-card-modal__field board-card-modal__field--full" {...fieldMotion(3)}>

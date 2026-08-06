@@ -11607,6 +11607,10 @@ input[type="checkbox"]:focus-visible {
   gap: 0.45rem;
 }
 
+.board-card-modal__grid .board-card-modal__field--full {
+  grid-column: 1 / -1;
+}
+
 .board-card-modal__field > span {
   color: var(--color-text-muted);
   font-size: 0.68rem;
@@ -11639,6 +11643,55 @@ input[type="checkbox"]:focus-visible {
 .board-card-modal__field textarea {
   min-height: 104px;
   resize: vertical;
+}
+
+.board-card-modal__progress-input {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  min-height: 0;
+  padding: 0.4rem 0;
+}
+
+.board-card-modal__progress-input:focus-visible {
+  box-shadow: none;
+  outline: none;
+}
+
+.board-card-modal__progress-input::-webkit-slider-runnable-track {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  height: 4px;
+}
+
+.board-card-modal__progress-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-text-primary);
+  border: 3px solid rgba(167, 139, 250, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.16);
+  cursor: pointer;
+  height: 18px;
+  margin-top: -7px;
+  width: 18px;
+}
+
+.board-card-modal__progress-input::-moz-range-track {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  height: 4px;
+}
+
+.board-card-modal__progress-input::-moz-range-thumb {
+  background: var(--color-text-primary);
+  border: 3px solid rgba(167, 139, 250, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.16);
+  cursor: pointer;
+  height: 18px;
+  width: 18px;
 }
 
 .board-card-modal__priority-dropdown.custom-dropdown {
