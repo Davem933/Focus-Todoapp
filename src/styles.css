@@ -14630,7 +14630,8 @@ input[type="checkbox"]:focus-visible {
   width: min(480px, calc(100vw - 32px));
   max-height: calc(100vh - 64px);
   overflow-y: auto;
-  background: linear-gradient(135deg, rgba(109, 93, 252, 0.14), var(--color-background-card-strong));
+  background-color: var(--color-background-card-strong);
+  background-image: linear-gradient(135deg, rgba(109, 93, 252, 0.14), rgba(109, 93, 252, 0));
   color: var(--color-text-primary);
   border: 1px solid rgba(109, 93, 252, 0.28);
   border-radius: var(--radius-lg);
